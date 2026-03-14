@@ -1,5 +1,5 @@
 #include "log.hpp"
-#include "vifo/binding.hpp"
+#include "vifo/environment.hpp"
 #include "vifo/exit_code.hpp"
 #include <cstdlib>
 #include <exception>
@@ -9,20 +9,26 @@
 namespace vifo::cli {
 namespace {
 auto test(std::string_view const arg1, std::string_view const arg2) -> ExitCode {
-	auto const result = Binding::extract(arg1, arg2);
-	if (!result) {
-		log.error("{}", result.error().message);
-		return ExitCode::Failure;
-	}
+	{
+		auto const input_format = std::string_view{"{year} - {title}"};
+		auto env = Environment::create(input_format);
+		if (!env) {
+			log.error("{}", env.error().message);
+			return ExitCode::Failure;
+		}
 
-	if (result->empty()) {
-		log.info("no phrases found: fmt: '{}', text: '{}'", arg1, arg2);
-		return ExitCode::Failure;
-	}
+		auto expr = std::string_view{"2015 - ABC Murders"};
+		auto fmt = std::string_view{"({year}) {title}"};
+		auto text = env->interpolate(expr, fmt);
+		std::println("expression\t: {}", expr);
+		if (!text) {
+			std::println(stderr, "error: {}", text.error().message);
+			return ExitCode::Failure;
+		}
+		std::println("transform\t: {}", *text);
 
-	std::println("format\t: {}\ninput\t: {}", arg1, arg2);
-	for (auto const& binding : *result) { std::println("{}: {}", binding.key, binding.value); }
-	return ExitCode::Success;
+		return ExitCode::Success;
+	}
 }
 } // namespace
 } // namespace vifo::cli
