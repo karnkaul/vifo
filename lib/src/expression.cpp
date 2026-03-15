@@ -12,13 +12,6 @@
 namespace vifo {
 namespace expression {
 namespace {
-// TODO: remove
-enum class MatchOutcome : std::int8_t { Match, NotMatch };
-inline auto const outcome_name_map = klib::EnumNameMap<MatchOutcome>{
-	{MatchOutcome::Match, "Match"},
-	{MatchOutcome::NotMatch, "NotMatch"},
-};
-
 struct Token {
 	enum class Type : std::int8_t { Substring, BraceLeft, BraceRight };
 	inline static auto const type_name_map = klib::EnumNameMap<Type>{
@@ -226,28 +219,6 @@ auto Substring::consume(std::string_view& out_input) const -> bool {
 	out_input.remove_prefix(text.size());
 	return true;
 }
-
-// auto Expression::extract_bindings(std::vector<Binding>& out, std::string_view const text) const -> MatchOutcome {
-// 	if (subexpressions.empty()) { return MatchOutcome::NotMatch; }
-
-// 	auto remain = text;
-// 	for (auto const& subexpression : subexpressions) {
-// 		if (auto const* substring = std::get_if<Substring>(&subexpression)) {
-// 			auto const outcome = substring->consume(remain);
-// 			if (outcome == MatchOutcome::NotMatch) { return outcome; }
-// 			continue;
-// 		}
-
-// 		auto const& identifier = std::get<std::unique_ptr<IdentifierImpl>>(subexpression);
-// 		auto binding = Binding{.name = std::string{identifier->get_name()}};
-// 		auto const outcome = identifier->parse_value(remain, binding.value);
-// 		if (outcome == MatchOutcome::NotMatch) { return outcome; }
-
-// 		out.push_back(std::move(binding));
-// 	}
-
-// 	return MatchOutcome::Match;
-// }
 } // namespace expression
 
 auto expression::parse(std::string_view input) -> Result<Expression> {
