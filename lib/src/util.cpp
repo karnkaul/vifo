@@ -70,6 +70,11 @@ auto util::ghost_copy(fs::path const& source, fs::path const& destination, bool 
 	return ret;
 }
 
+auto util::prefix_parent(fs::path const& parent_source, fs::path const& target) -> fs::path {
+	if (!parent_source.has_parent_path()) { return target; }
+	return parent_source.parent_path() / target;
+}
+
 auto util::to_int(std::string_view const text, int const fallback) -> int {
 	if (text.empty()) { return fallback; }
 	auto ret = int{};
