@@ -1,4 +1,6 @@
 #include "vifo/formatter.hpp"
+#include "detail/common.hpp"
+#include "vifo/error.hpp"
 #include "vifo/expression.hpp"
 #include "vifo/result.hpp"
 #include <cstdlib>
@@ -8,6 +10,9 @@
 
 namespace vifo {
 using expression::Expression;
+using expression::Identifier;
+using expression::Substring;
+using expression::Token;
 
 namespace {
 class IReference : public klib::Polymorphic {
@@ -62,7 +67,10 @@ class Year : public IReference {
 	}
 };
 
-using Symbol = std::variant<expression::Substring, std::unique_ptr<IReference const>>;
+struct Symbol {
+	Token token{};
+	std::variant<Substring, std::unique_ptr<IReference const>> value{};
+};
 
 struct Source {
 	std::vector<Symbol> symbols{};
@@ -70,49 +78,65 @@ struct Source {
 
 struct Context {
 	Source source{};
-	expression::Expression transform{};
+	Expression transform{};
 	std::unordered_map<std::string_view, std::string> value_map{};
 };
 
+[[nodiscard]] auto format_error(Token const& token, std::string_view const format, std::string_view const msg) {
+	return detail::to_error(Error::Type::Format, token, format, msg);
+}
+
 class ReferenceBuilder {
   public:
-	explicit ReferenceBuilder(Context& context) : m_context(context) {}
+	explicit ReferenceBuilder(Context& context, std::string_view const format) : m_context(context), m_format(format) {}
 
-	[[nodiscard]] auto create(expression::Identifier const& identifier) -> Result<void> {
-		return verify_unique(identifier).and_then([&] {
-			return create_reference(identifier).transform([&](std::unique_ptr<IReference> reference) {
+	[[nodiscard]] auto create(Token const& token, Identifier const& identifier) -> Result<void> {
+		return verify_unique(token, identifier).and_then([&] {
+			return create_reference(token, identifier).transform([&](std::unique_ptr<IReference> reference) {
 				m_context.value_map.insert_or_assign(reference->get_name(), std::string{});
-				m_context.source.symbols.emplace_back(std::move(reference));
+				m_context.source.symbols.push_back(Symbol{.token = token, .value = std::move(reference)});
 			});
 		});
 	}
 
   private:
-	[[nodiscard]] auto verify_unique(expression::Identifier const& identifier) const -> Result<void> {
+	[[nodiscard]] auto verify_unique(Token const& token, Identifier const& identifier) const -> Result<void> {
 		if (m_context.value_map.contains(identifier.name)) {
-			return to_error(Error::Type::Format, std::format("duplicate identifier in input expression: '{}'", identifier.name));
+			return format_error(token, m_format, std::format("duplicate identifier in input expression: '{}'", identifier.name));
 		}
 		return {};
 	}
 
-	[[nodiscard]] auto create_reference(expression::Identifier const& identifier) -> Result<std::unique_ptr<IReference>> {
+	[[nodiscard]] auto create_reference(Token const& token, Identifier const& identifier) -> Result<std::unique_ptr<IReference>> {
 		if (identifier.name == "year") { return std::make_unique<Year>(); }
 
 		if (identifier.length == 0) {
-			if (m_zero_length_variable) { return to_error(Error::Type::Format, std::format("excess identifier after 0-length parsed: '{}'", identifier.name)); }
+			if (m_zero_length_variable) { return format_error(token, m_format, std::format("excess identifier after 0-length parsed: '{}'", identifier.name)); }
 			m_zero_length_variable = true;
 		}
 		return std::make_unique<Variable>(std::string{identifier.name}, identifier.length);
 	}
 
 	Context& m_context;
+	std::string_view m_format{};
 	bool m_zero_length_variable{};
 };
 
 class Interpolator : public IFormatter {
   public:
-	[[nodiscard]] auto initialize(Expression input, Expression output) -> Result<void> {
-		return build_source(std::move(input)).and_then([&] { return build_transform(std::move(output)); });
+	[[nodiscard]] auto initialize(std::string_view const input_format, std::string_view const output_format) -> Result<void> {
+		auto input_expression = Expression{};
+		auto output_expression = Expression{};
+		return expression::parse(input_format)
+			.and_then([&](Expression ie) {
+				input_expression = std::move(ie);
+				return expression::parse(output_format);
+			})
+			.and_then([&](Expression oe) {
+				output_expression = std::move(oe);
+				return build_source(std::move(input_expression), input_format);
+			})
+			.and_then([&] { return build_transform(std::move(output_expression), output_format); });
 	}
 
   private:
@@ -121,28 +145,28 @@ class Interpolator : public IFormatter {
 		return interpolate();
 	}
 
-	[[nodiscard]] auto build_source(Expression input) -> Result<void> {
-		auto reference_builder = ReferenceBuilder{m_context};
-		for (auto& atom : input.atoms) {
-			if (auto* substring = std::get_if<expression::Substring>(&atom)) {
-				m_context.source.symbols.emplace_back(std::move(*substring));
+	[[nodiscard]] auto build_source(Expression expression, std::string_view const format) -> Result<void> {
+		auto reference_builder = ReferenceBuilder{m_context, format};
+		for (auto& atom : expression.atoms) {
+			if (auto* substring = std::get_if<Substring>(&atom.value)) {
+				m_context.source.symbols.push_back(Symbol{.token = atom.token, .value = std::move(*substring)});
 				continue;
 			}
 
-			auto result = reference_builder.create(std::get<expression::Identifier>(atom));
+			auto result = reference_builder.create(atom.token, std::get<Identifier>(atom.value));
 			if (!result) { return std::unexpected{std::move(result.error())}; }
 		}
 
 		return {};
 	}
 
-	[[nodiscard]] auto build_transform(Expression transform) -> Result<void> {
+	[[nodiscard]] auto build_transform(Expression transform, std::string_view const format) -> Result<void> {
 		for (auto const& atom : transform.atoms) {
-			auto const* identifier = std::get_if<expression::Identifier>(&atom);
+			auto const* identifier = std::get_if<Identifier>(&atom.value);
 			if (!identifier) { continue; }
 
 			if (!m_context.value_map.contains(identifier->name)) {
-				return to_error(Error::Type::Format, std::format("undefined identifier in output expression: '{}'", identifier->name));
+				return format_error(atom.token, format, std::format("undefined identifier in output expression: '{}'", identifier->name));
 			}
 		}
 
@@ -158,29 +182,27 @@ class Interpolator : public IFormatter {
 	}
 
 	[[nodiscard]] auto match_symbol(std::string_view& out_input, Symbol const& symbol) -> bool {
-		if (auto const* substring = std::get_if<expression::Substring>(&symbol)) { return substring->consume(out_input); }
+		if (auto const* substring = std::get_if<Substring>(&symbol.value)) { return substring->consume(out_input); }
 
-		auto const& reference = std::get<std::unique_ptr<IReference const>>(symbol);
+		auto const& reference = std::get<std::unique_ptr<IReference const>>(symbol.value);
 		auto& value = m_context.value_map[reference->get_name()];
-		// value.clear();
+		value.clear();
 		return reference->parse_value(out_input, value);
 	}
 
 	[[nodiscard]] auto interpolate() -> std::string {
 		auto ret = std::string{};
 		for (auto const& atom : m_context.transform.atoms) {
-			if (auto const* substring = std::get_if<expression::Substring>(&atom)) {
+			if (auto const* substring = std::get_if<Substring>(&atom.value)) {
 				ret += substring->text;
 				continue;
 			}
 
-			auto const& identifer = std::get<expression::Identifier>(atom);
+			auto const& identifer = std::get<Identifier>(atom.value);
 			auto const it = m_context.value_map.find(identifer.name);
 			if (it == m_context.value_map.end()) { return {}; }
 			ret += it->second;
 		}
-
-		for (auto& [_, value] : m_context.value_map) { value.clear(); }
 
 		return ret;
 	}
@@ -191,15 +213,6 @@ class Interpolator : public IFormatter {
 } // namespace vifo
 
 auto vifo::create_interpolator(std::string_view const input_format, std::string_view const output_format) -> Result<std::unique_ptr<IFormatter>> {
-	auto input = Expression{};
-	auto ret = std::unique_ptr<Interpolator>{};
-	return expression::parse(input_format)
-		.and_then([&](Expression i) {
-			input = std::move(i);
-			return expression::parse(output_format);
-		})
-		.and_then([&](Expression output) {
-			ret = std::make_unique<Interpolator>();
-			return ret->initialize(std::move(input), std::move(output)).transform([&] { return std::move(ret); });
-		});
+	auto ret = std::make_unique<Interpolator>();
+	return ret->initialize(input_format, output_format).transform([&] { return std::move(ret); });
 }

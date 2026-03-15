@@ -35,19 +35,14 @@ struct Identifier {
 	std::size_t length{};
 };
 
-using Atom = std::variant<Substring, Identifier>;
+struct Atom {
+	std::variant<Substring, Identifier> value{};
+	Token token{};
+};
 
 struct Expression {
 	std::vector<Atom> atoms{};
 };
 
-template <typename Type>
-struct Pipeline {
-	Type input{};
-	Type output{};
-};
-
 [[nodiscard]] auto parse(std::string_view input) -> Result<Expression>;
-
-[[nodiscard]] auto parse_pipeline(Pipeline<std::string_view> input_pipeline) -> Result<Pipeline<Expression>>;
 } // namespace vifo::expression

@@ -1,4 +1,5 @@
 #include "vifo/expression.hpp"
+#include "detail/common.hpp"
 #include "klib/assert.hpp"
 #include "klib/base_types.hpp"
 #include "klib/ptr.hpp"
@@ -60,34 +61,36 @@ class Parser {
 		m_tokens = tokenize(m_input);
 		m_index = 0;
 
+		auto ret = Expression{};
 		while (!at_end()) {
 			switch (current().type) {
 			case Token::Type::Substring: {
-				m_ret.atoms.emplace_back(Substring{.text = std::string{current().get_lexeme(m_input)}});
+				auto atom = Atom{
+					.value = Substring{.text = std::string(current().get_lexeme(m_input))},
+					.token = current(),
+				};
+				ret.atoms.push_back(std::move(atom));
 				advance();
 				break;
 			}
 			case Token::Type::BraceLeft: {
-				auto ret = parse_identifier();
-				if (!ret) { return std::unexpected{ret.error()}; }
-				m_ret.atoms.emplace_back(std::move(*ret));
+				auto id_token = Token{};
+				auto identifier = parse_identifier(id_token);
+				if (!identifier) { return std::unexpected{identifier.error()}; }
+				ret.atoms.push_back(Atom{.value = std::move(*identifier), .token = id_token});
 				break;
 			}
-			case Token::Type::BraceRight: return create_syntax_error(current(), "unexpected '}'");
-			default: return create_syntax_error(current(), "ICE");
+			case Token::Type::BraceRight: return syntax_error(current(), "unexpected '}'");
+			default: return syntax_error(current(), "ICE");
 			}
 		}
 
-		return std::move(m_ret);
+		return ret;
 	}
 
   private:
-	[[nodiscard]] auto create_syntax_error(Token const token, std::string_view const msg) const -> std::unexpected<Error> {
-		auto message = std::string{msg};
-		std::format_to(std::back_inserter(message), "\n | {}\n | ", m_input);
-		for (std::size_t i = 0; i < token.start_index; ++i) { message.push_back(' '); }
-		for (std::size_t i = 0; i < token.length; ++i) { message.push_back('^'); }
-		return to_error(Error::Type::Syntax, message);
+	[[nodiscard]] auto syntax_error(Token const token, std::string_view const msg) const -> std::unexpected<Error> {
+		return detail::to_error(Error::Type::Syntax, token, m_input, msg);
 	}
 
 	[[nodiscard]] auto create_identifier(Token const token) const -> Result<Identifier> {
@@ -95,13 +98,13 @@ class Parser {
 		auto name = lexeme;
 		auto length = 0uz;
 		if (auto const i = name.find(':'); i != std::string_view::npos) {
-			if (i == 0) { return create_syntax_error(token, "missing Identifier name"); }
-			if (i + 1 == name.size()) { return create_syntax_error(token, "missing length"); }
+			if (i == 0) { return syntax_error(token, "missing Identifier name"); }
+			if (i + 1 == name.size()) { return syntax_error(token, "missing length"); }
 
 			name = lexeme.substr(0, i);
 			auto const length_str = lexeme.substr(i + 1);
 			auto const i_length = util::to_int(length_str, -1);
-			if (i_length < 0) { return create_syntax_error(token, std::format("invalid length: {}", length_str)); }
+			if (i_length < 0) { return syntax_error(token, std::format("invalid length: {}", length_str)); }
 
 			length = std::size_t(i_length);
 		}
@@ -127,25 +130,23 @@ class Parser {
 		++m_index;
 	}
 
-	[[nodiscard]] auto parse_identifier() -> Result<Identifier> {
+	[[nodiscard]] auto parse_identifier(Token& out_id) -> Result<Identifier> {
 		auto const brace_open = current();
 		advance();
-		if (at_end()) { return create_syntax_error(brace_open, "incomplete identifier"); }
+		if (at_end()) { return syntax_error(brace_open, "incomplete identifier"); }
 
-		auto const id = current();
+		out_id = current();
 		advance();
-		if (at_end()) { return create_syntax_error(brace_open, "incomplete identifier"); }
-		if (current().type != Token::Type::BraceRight) { return create_syntax_error(brace_open, "missing '}'"); }
+		if (at_end()) { return syntax_error(brace_open, "incomplete identifier"); }
+		if (current().type != Token::Type::BraceRight) { return syntax_error(brace_open, "missing '}'"); }
 		advance();
 
-		return create_identifier(id);
+		return create_identifier(out_id);
 	}
 
 	std::string_view m_input{};
 	std::vector<Token> m_tokens{};
 	std::size_t m_index{};
-
-	Expression m_ret{};
 };
 
 class IIdentifier : public klib::Polymorphic {
@@ -215,18 +216,5 @@ auto Substring::consume(std::string_view& out_input) const -> bool {
 auto expression::parse(std::string_view input) -> Result<Expression> {
 	auto parser = Parser{};
 	return parser.parse(input);
-}
-
-auto expression::parse_pipeline(Pipeline<std::string_view> const input_pipeline) -> Result<Pipeline<Expression>> {
-	auto ret = Pipeline<Expression>{};
-	return parse(input_pipeline.input)
-		.and_then([&](Expression input) {
-			ret.input = std::move(input);
-			return parse(input_pipeline.output);
-		})
-		.transform([&](Expression output) {
-			ret.output = std::move(output);
-			return ret;
-		});
 }
 } // namespace vifo
