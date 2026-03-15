@@ -19,9 +19,9 @@ namespace {
 
 void RenameDirs::populate_args() {
 	m_args = {
-		klib::args::positional_required(m_input_format, "input_fmt"),
-		klib::args::positional_required(m_output_format, "output_fmt"),
-		klib::args::positional_optional(m_root, "root directory"),
+		klib::args::positional_required(m_input_format, "IFMT", "input dirname format string"),
+		klib::args::positional_required(m_output_format, "OFMT", "output dirname format string"),
+		klib::args::positional_optional(m_root, "ROOT", "root directory"),
 	};
 }
 
