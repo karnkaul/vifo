@@ -1,7 +1,8 @@
 #include "vifo/formatter.hpp"
 #include "vifo/expression.hpp"
 #include "vifo/result.hpp"
-#include "vifo/util.hpp"
+#include <cstdlib>
+#include <regex>
 #include <string_view>
 #include <unordered_map>
 
@@ -50,10 +51,11 @@ class Year : public IReference {
 	[[nodiscard]] auto parse_value(std::string_view& out_input, std::string& out_output) const -> bool final {
 		if (out_input.size() < 4) { return false; }
 
-		auto const value = out_input.substr(0, 4);
-		auto const i_value = util::to_int(value);
-		if (i_value < 1000) { return false; }
+		static auto const s_regex = std::regex{R"([1-9][0-9]{3}[ _.].*)"};
+		char const* end = out_input.data() + out_input.size();
+		if (!std::regex_match(out_input.data(), end, s_regex)) { return false; }
 
+		auto const value = out_input.substr(0, 4);
 		out_input.remove_prefix(value.size());
 		out_output += value;
 		return true;
@@ -160,10 +162,11 @@ class Interpolator : public IFormatter {
 
 		auto const& reference = std::get<std::unique_ptr<IReference const>>(symbol);
 		auto& value = m_context.value_map[reference->get_name()];
+		// value.clear();
 		return reference->parse_value(out_input, value);
 	}
 
-	[[nodiscard]] auto interpolate() const -> std::string {
+	[[nodiscard]] auto interpolate() -> std::string {
 		auto ret = std::string{};
 		for (auto const& atom : m_context.transform.atoms) {
 			if (auto const* substring = std::get_if<expression::Substring>(&atom)) {
@@ -176,6 +179,8 @@ class Interpolator : public IFormatter {
 			if (it == m_context.value_map.end()) { return {}; }
 			ret += it->second;
 		}
+
+		for (auto& [_, value] : m_context.value_map) { value.clear(); }
 
 		return ret;
 	}
