@@ -1,30 +1,15 @@
 #include "vifo/expression.hpp"
 #include "klib/assert.hpp"
 #include "klib/base_types.hpp"
-#include "klib/enum_name.hpp"
 #include "klib/ptr.hpp"
 #include "vifo/util.hpp"
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <string_view>
 
 namespace vifo {
 namespace expression {
 namespace {
-struct Token {
-	enum class Type : std::int8_t { Substring, BraceLeft, BraceRight };
-	inline static auto const type_name_map = klib::EnumNameMap<Type>{
-		{Type::Substring, "Substring"},
-		{Type::BraceLeft, "BraceLeft"},
-		{Type::BraceRight, "BraceRight"},
-	};
-
-	Type type{};
-	std::string_view lexeme{};
-	std::size_t start_index{};
-};
-
 class Tokenizer {
   public:
 	explicit constexpr Tokenizer(std::string_view const input) : m_text(input) {}
@@ -43,8 +28,8 @@ class Tokenizer {
 	[[nodiscard]] constexpr auto at_end() const -> bool { return m_index >= m_text.size(); }
 
 	[[nodiscard]] constexpr auto to_token(Token::Type type, std::size_t const length) -> Token {
-		auto const ret = Token{.type = type, .lexeme = m_text.substr(m_index, length), .start_index = m_index};
-		m_index += ret.lexeme.size();
+		auto const ret = Token{.type = type, .start_index = m_index, .length = length};
+		m_index += length;
 		return ret;
 	}
 
@@ -78,7 +63,7 @@ class Parser {
 		while (!at_end()) {
 			switch (current().type) {
 			case Token::Type::Substring: {
-				m_ret.atoms.emplace_back(Substring{.text = std::string{current().lexeme}});
+				m_ret.atoms.emplace_back(Substring{.text = std::string{current().get_lexeme(m_input)}});
 				advance();
 				break;
 			}
@@ -101,19 +86,20 @@ class Parser {
 		auto message = std::string{msg};
 		std::format_to(std::back_inserter(message), "\n | {}\n | ", m_input);
 		for (std::size_t i = 0; i < token.start_index; ++i) { message.push_back(' '); }
-		for (std::size_t i = 0; i < token.lexeme.size(); ++i) { message.push_back('^'); }
+		for (std::size_t i = 0; i < token.length; ++i) { message.push_back('^'); }
 		return to_error(Error::Type::Syntax, message);
 	}
 
 	[[nodiscard]] auto create_identifier(Token const token) const -> Result<Identifier> {
-		auto name = token.lexeme;
+		auto const lexeme = token.get_lexeme(m_input);
+		auto name = lexeme;
 		auto length = 0uz;
 		if (auto const i = name.find(':'); i != std::string_view::npos) {
 			if (i == 0) { return create_syntax_error(token, "missing Identifier name"); }
 			if (i + 1 == name.size()) { return create_syntax_error(token, "missing length"); }
 
-			name = token.lexeme.substr(0, i);
-			auto const length_str = token.lexeme.substr(i + 1);
+			name = lexeme.substr(0, i);
+			auto const length_str = lexeme.substr(i + 1);
 			auto const i_length = util::to_int(length_str, -1);
 			if (i_length < 0) { return create_syntax_error(token, std::format("invalid length: {}", length_str)); }
 
@@ -214,6 +200,11 @@ class Year : public IIdentifier {
 };
 } // namespace
 
+auto Token::get_lexeme(std::string_view const text) const -> std::string_view {
+	KLIB_ASSERT(start_index + length <= text.size());
+	return text.substr(start_index, length);
+}
+
 auto Substring::consume(std::string_view& out_input) const -> bool {
 	if (!out_input.starts_with(text)) { return false; }
 	out_input.remove_prefix(text.size());
@@ -224,5 +215,18 @@ auto Substring::consume(std::string_view& out_input) const -> bool {
 auto expression::parse(std::string_view input) -> Result<Expression> {
 	auto parser = Parser{};
 	return parser.parse(input);
+}
+
+auto expression::parse_pipeline(Pipeline<std::string_view> const input_pipeline) -> Result<Pipeline<Expression>> {
+	auto ret = Pipeline<Expression>{};
+	return parse(input_pipeline.input)
+		.and_then([&](Expression input) {
+			ret.input = std::move(input);
+			return parse(input_pipeline.output);
+		})
+		.transform([&](Expression output) {
+			ret.output = std::move(output);
+			return ret;
+		});
 }
 } // namespace vifo
