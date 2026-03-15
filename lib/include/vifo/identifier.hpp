@@ -16,8 +16,8 @@ class Identifier : public klib::Polymorphic {
 
 	struct Spec;
 
-	[[nodiscard]] static auto try_strip_spec(std::string_view& out_format) -> Result<std::string_view>;
-	[[nodiscard]] static auto parse_spec(std::string_view spec_text) -> Result<Spec>;
+	[[nodiscard]] static auto try_strip_spec(std::string_view& out_format) -> ResultOld<std::string_view>;
+	[[nodiscard]] static auto parse_spec(std::string_view spec_text) -> ResultOld<Spec>;
 	[[nodiscard]] static auto create(Spec spec) -> std::unique_ptr<Identifier>;
 
 	explicit Identifier(std::string name, std::size_t max_length) : m_name(std::move(name)), m_max_length(max_length) {}

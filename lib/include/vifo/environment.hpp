@@ -9,9 +9,9 @@
 namespace vifo {
 class Environment {
   public:
-	[[nodiscard]] static auto create(std::string_view input_format) -> Result<Environment>;
+	[[nodiscard]] static auto create(std::string_view input_format) -> ResultOld<Environment>;
 
-	[[nodiscard]] auto interpolate(std::string_view input, std::string_view output_format) const -> Result<std::string>;
+	[[nodiscard]] auto interpolate(std::string_view input, std::string_view output_format) const -> ResultOld<std::string>;
 
 	[[nodiscard]] auto get_identifiers() const -> std::span<std::unique_ptr<Identifier const> const> { return m_identifiers; }
 

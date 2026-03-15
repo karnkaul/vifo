@@ -48,29 +48,29 @@ template <typename Type>
 }
 } // namespace
 
-auto Identifier::try_strip_spec(std::string_view& out_format) -> Result<std::string_view> {
+auto Identifier::try_strip_spec(std::string_view& out_format) -> ResultOld<std::string_view> {
 	if (out_format.size() < 2 || out_format.front() != open_v) { return {}; }
 
 	auto const close_idx = out_format.find(Identifier::close_v);
 	if (close_idx == std::string_view::npos) {
-		return to_error(Error::Type::SyntaxError, std::format("missing identifier close ({}): '{}'", Identifier::close_v, out_format));
+		return to_error(ErrorOld::Type::SyntaxError, std::format("missing identifier close ({}): '{}'", Identifier::close_v, out_format));
 	}
-	if (close_idx == 1) { return to_error(Error::Type::SyntaxError, std::format("missing identifier name: '{}'", out_format)); }
+	if (close_idx == 1) { return to_error(ErrorOld::Type::SyntaxError, std::format("missing identifier name: '{}'", out_format)); }
 
 	auto ret = out_format.substr(0, close_idx + 1);
 	out_format = out_format.substr(close_idx + 1);
 	return ret;
 }
 
-auto Identifier::parse_spec(std::string_view spec_text) -> Result<Spec> {
+auto Identifier::parse_spec(std::string_view spec_text) -> ResultOld<Spec> {
 	if (spec_text.size() < 2 || spec_text.front() != open_v || spec_text.back() != close_v) {
-		return to_error(Error::Type::SyntaxError, std::format("not an identifier: '{}'", spec_text));
+		return to_error(ErrorOld::Type::SyntaxError, std::format("not an identifier: '{}'", spec_text));
 	}
 
 	spec_text.remove_prefix(1);
 	spec_text.remove_suffix(1);
 
-	if (spec_text.empty()) { return to_error(Error::Type::SyntaxError, "identifier missing name"); }
+	if (spec_text.empty()) { return to_error(ErrorOld::Type::SyntaxError, "identifier missing name"); }
 
 	auto ret = Spec{};
 	auto const delim_idx = spec_text.find(delim_v);
@@ -83,7 +83,7 @@ auto Identifier::parse_spec(std::string_view spec_text) -> Result<Spec> {
 
 	auto const length_text = spec_text.substr(delim_idx + 1);
 	auto const i_length = util::to_int(length_text);
-	if (i_length < 0) { return to_error(Error::Type::SyntaxError, std::format("invalid length: '{}'", length_text)); }
+	if (i_length < 0) { return to_error(ErrorOld::Type::SyntaxError, std::format("invalid length: '{}'", length_text)); }
 
 	ret.max_length = std::size_t(i_length);
 

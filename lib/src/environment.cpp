@@ -19,7 +19,7 @@ struct Binding {
 	return Binding{.key = std::string{identifier.get_name()}, .value = std::move(*value)};
 }
 
-auto parse_identifier(std::string_view const id_text) -> Result<std::unique_ptr<Identifier>> {
+auto parse_identifier(std::string_view const id_text) -> ResultOld<std::unique_ptr<Identifier>> {
 	if (id_text.empty()) { return {}; }
 	return Identifier::parse_spec(id_text).transform([&](Identifier::Spec const spec) { return Identifier::create(spec); });
 }
@@ -29,7 +29,7 @@ class Extractor {
 	explicit Extractor(std::span<std::unique_ptr<Identifier const> const> const& identifiers, std::string_view const format, std::string_view const text)
 		: m_identifiers(identifiers), m_format(format), m_input(text) {}
 
-	auto operator()() -> Result<std::vector<Binding>> {
+	auto operator()() -> ResultOld<std::vector<Binding>> {
 		while (!m_format.empty() && !m_input.empty()) {
 			auto id_text = Identifier::try_strip_spec(m_format);
 			if (!id_text) { return std::unexpected{std::move(id_text.error())}; }
@@ -69,7 +69,7 @@ class Extractor {
 };
 } // namespace
 
-auto Environment::create(std::string_view input_format) -> Result<Environment> {
+auto Environment::create(std::string_view input_format) -> ResultOld<Environment> {
 	auto ret = Environment{};
 	ret.m_input_format = input_format;
 
@@ -89,7 +89,7 @@ auto Environment::create(std::string_view input_format) -> Result<Environment> {
 	return ret;
 }
 
-auto Environment::interpolate(std::string_view const input, std::string_view const output_format) const -> Result<std::string> {
+auto Environment::interpolate(std::string_view const input, std::string_view const output_format) const -> ResultOld<std::string> {
 	auto const bindings = Extractor{m_identifiers, m_input_format, input}();
 	if (!bindings) { return std::unexpected{std::move(bindings.error())}; }
 
