@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace vifo {
+namespace vifo::util {
 struct WordToken {
 	enum class Type : std::int8_t { Word, BracketOpen, BracketClose, Phrase };
 
@@ -95,4 +95,4 @@ class WordScanner {
 
 	std::string_view m_remain{};
 };
-} // namespace vifo
+} // namespace vifo::util

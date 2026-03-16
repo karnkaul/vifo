@@ -1,7 +1,7 @@
 #include "detail/json_io.hpp"
 #include "djson/json.hpp"
 #include "vifo/omdb.hpp"
-#include "vifo/util.hpp"
+#include "vifo/util/util.hpp"
 #include <string_view>
 
 namespace vifo {

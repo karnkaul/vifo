@@ -1,7 +1,7 @@
 #include "command/rename_dirs.hpp"
 #include "klib/args/arg.hpp"
 #include "klib/text_table.hpp"
-#include "vifo/directory_renamer.hpp"
+#include "vifo/directory/renamer.hpp"
 #include "vifo/exit_code.hpp"
 #include <print>
 #include <ranges>
@@ -26,7 +26,7 @@ void RenameDirs::populate_args() {
 }
 
 auto RenameDirs::execute() -> ExitCode {
-	auto renamer = DirectoryRenamer::create_interpolator(m_input_format, m_output_format);
+	auto renamer = directory::Renamer::create_interpolator(m_input_format, m_output_format);
 	if (!renamer) {
 		std::println(stderr, "{}", renamer.error().message);
 		return to_exit_code(renamer.error().type);

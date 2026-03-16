@@ -1,13 +1,13 @@
-#include "vifo/directory_visitor.hpp"
+#include "vifo/directory/visitor.hpp"
 #include <filesystem>
 
-namespace vifo {
-void DirectoryVisitor::visit(fs::path const& root) {
+namespace vifo::directory {
+void Visitor::visit(fs::path const& root) {
 	if (!fs::is_directory(root)) { return; }
 	visit_subdirectory(root, {});
 }
 
-void DirectoryVisitor::visit_subdirectory(fs::path const& root, fs::path const& subdir, int const depth) {
+void Visitor::visit_subdirectory(fs::path const& root, fs::path const& subdir, int const depth) {
 	for (auto const& it : fs::directory_iterator{root / subdir}) {
 		auto const path = fs::relative(it.path(), root);
 		if (it.is_regular_file()) {
@@ -22,4 +22,4 @@ void DirectoryVisitor::visit_subdirectory(fs::path const& root, fs::path const& 
 		}
 	}
 }
-} // namespace vifo
+} // namespace vifo::directory

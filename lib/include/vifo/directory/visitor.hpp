@@ -2,10 +2,10 @@
 #include "klib/base_types.hpp"
 #include <filesystem>
 
-namespace vifo {
+namespace vifo::directory {
 namespace fs = std::filesystem;
 
-class DirectoryVisitor : public klib::Polymorphic {
+class Visitor : public klib::Polymorphic {
   public:
 	virtual auto accept_directory(fs::path const& /*path*/) -> bool { return true; }
 	virtual void accept_file(fs::path const& /*path*/) {}
@@ -17,4 +17,4 @@ class DirectoryVisitor : public klib::Polymorphic {
   private:
 	void visit_subdirectory(fs::path const& root, fs::path const& subdir, int depth = 0);
 };
-} // namespace vifo
+} // namespace vifo::directory

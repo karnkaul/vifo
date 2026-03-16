@@ -1,20 +1,20 @@
-#include "vifo/directory_renamer.hpp"
-#include "vifo/directory_visitor.hpp"
+#include "vifo/directory/renamer.hpp"
+#include "vifo/directory/visitor.hpp"
 #include "vifo/formatter.hpp"
-#include "vifo/util.hpp"
+#include "vifo/util/util.hpp"
 #include <filesystem>
 
-namespace vifo {
+namespace vifo::directory {
 namespace {
-class Visitor : public DirectoryVisitor {
+class VisitorImpl : public Visitor {
   public:
-	explicit Visitor(IFormatter& formatter) : m_formatter(formatter) {}
+	explicit VisitorImpl(IFormatter& formatter) : m_formatter(formatter) {}
 
 	Manifest manifest{};
 
 	void visit(fs::path const& path) final {
 		manifest.root = path;
-		DirectoryVisitor::visit(path);
+		Visitor::visit(path);
 	}
 
   private:
@@ -31,17 +31,17 @@ class Visitor : public DirectoryVisitor {
 };
 } // namespace
 
-auto DirectoryRenamer::create_interpolator(std::string input_format, std::string output_format) -> Result<DirectoryRenamer> {
+auto Renamer::create_interpolator(std::string input_format, std::string output_format) -> Result<Renamer> {
 	return vifo::create_interpolator(std::move(input_format), std::move(output_format)).transform([](std::unique_ptr<IFormatter> interpolator) {
-		return DirectoryRenamer{std::move(interpolator)};
+		return Renamer{std::move(interpolator)};
 	});
 }
 
-auto DirectoryRenamer::build_manifest(fs::path const& root) const -> Manifest {
+auto Renamer::build_manifest(fs::path const& root) const -> Manifest {
 	if (!m_formatter || !fs::is_directory(root)) { return {}; }
 
-	auto visitor = Visitor{*m_formatter};
+	auto visitor = VisitorImpl{*m_formatter};
 	visitor.visit(root);
 	return std::move(visitor.manifest);
 }
-} // namespace vifo
+} // namespace vifo::directory

@@ -1,5 +1,5 @@
 #pragma once
-#include "vifo/word_scanner.hpp"
+#include "vifo/util/word_scanner.hpp"
 #include <string>
 #include <string_view>
 
@@ -10,9 +10,9 @@ class TitleParser {
 	[[nodiscard]] auto parse_and_trim(std::string_view& out_text) -> std::string;
 
   private:
-	using Type = WordToken::Type;
+	using Type = util::WordToken::Type;
 
-	auto parse(WordToken const& token) -> bool;
+	auto parse(util::WordToken const& token) -> bool;
 
 	std::string m_title{};
 	int m_bracket_depth{0};

@@ -7,14 +7,10 @@
 #include "klib/c_string.hpp"
 #include "log.hpp"
 #include "vifo/build_version.hpp"
-#include "vifo/exit_code.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/panic.hpp"
-#include "vifo/util.hpp"
+#include "vifo/util/util.hpp"
 #include <cstdlib>
-#include <filesystem>
-#include <iostream>
-#include <print>
 #include <string>
 #include <string_view>
 

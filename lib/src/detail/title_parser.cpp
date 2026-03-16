@@ -1,6 +1,6 @@
 #include "detail/title_parser.hpp"
 #include "vifo/panic.hpp"
-#include "vifo/util.hpp"
+#include "vifo/util/util.hpp"
 #include <string_view>
 
 namespace vifo::detail {
@@ -8,8 +8,8 @@ auto TitleParser::parse_and_trim(std::string_view& out_text) -> std::string {
 	m_title.clear();
 	m_bracket_depth = 0;
 
-	auto scanner = WordScanner{out_text};
-	auto token = WordToken{};
+	auto scanner = util::WordScanner{out_text};
+	auto token = util::WordToken{};
 	while (scanner.next(token)) {
 		if (!parse(token)) { break; }
 	}
@@ -18,7 +18,7 @@ auto TitleParser::parse_and_trim(std::string_view& out_text) -> std::string {
 	return std::move(m_title);
 }
 
-auto TitleParser::parse(WordToken const& token) -> bool {
+auto TitleParser::parse(util::WordToken const& token) -> bool {
 	switch (token.type) {
 	case Type::BracketOpen: ++m_bracket_depth; return true;
 	case Type::BracketClose: m_bracket_depth = std::max(m_bracket_depth - 1, 0); return true;

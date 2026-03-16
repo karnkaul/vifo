@@ -3,7 +3,7 @@
 #include "klib/assert.hpp"
 #include "klib/base_types.hpp"
 #include "klib/ptr.hpp"
-#include "vifo/util.hpp"
+#include "vifo/util/util.hpp"
 #include <cstddef>
 #include <string>
 #include <string_view>
