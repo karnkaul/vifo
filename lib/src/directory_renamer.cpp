@@ -31,8 +31,8 @@ class Visitor : public DirectoryVisitor {
 };
 } // namespace
 
-auto DirectoryRenamer::create_interpolator(std::string_view const input_expression, std::string_view const output_expression) -> Result<DirectoryRenamer> {
-	return vifo::create_interpolator(input_expression, output_expression).transform([](std::unique_ptr<IFormatter> interpolator) {
+auto DirectoryRenamer::create_interpolator(std::string input_format, std::string output_format) -> Result<DirectoryRenamer> {
+	return vifo::create_interpolator(std::move(input_format), std::move(output_format)).transform([](std::unique_ptr<IFormatter> interpolator) {
 		return DirectoryRenamer{std::move(interpolator)};
 	});
 }

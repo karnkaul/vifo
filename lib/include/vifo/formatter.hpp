@@ -12,5 +12,5 @@ class IFormatter : public klib::Polymorphic {
 	[[nodiscard]] virtual auto format(std::string_view input) -> std::string = 0;
 };
 
-[[nodiscard]] auto create_interpolator(std::string_view input_format, std::string_view output_format) -> Result<std::unique_ptr<IFormatter>>;
+[[nodiscard]] auto create_interpolator(std::string input_format, std::string output_format) -> Result<std::unique_ptr<IFormatter>>;
 } // namespace vifo

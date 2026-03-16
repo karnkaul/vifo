@@ -14,8 +14,8 @@ class RenameDirs : public Command {
 
 	[[nodiscard]] auto execute() -> ExitCode final;
 
-	std::string_view m_input_format{};
-	std::string_view m_output_format{};
+	std::string m_input_format{};
+	std::string m_output_format{};
 	std::string_view m_root{"."};
 };
 } // namespace vifo::cli::command
