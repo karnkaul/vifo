@@ -10,10 +10,7 @@ enum class ExitCode : std::int8_t {
 	SyntaxError = 10,
 	FormatError = 11,
 
-	InvalidArgument = 10,
-	SourceFailure = 11,
-	ManifestFailure = 12,
-	TransformFailure = 13,
-	OmdbServiceFailure = 15,
+	InvalidArgument = 20,
+	ForcedHalt = 21,
 };
 } // namespace vifo
