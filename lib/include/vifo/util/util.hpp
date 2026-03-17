@@ -25,6 +25,7 @@ void join_to(std::string& out, std::string_view item, std::string_view delim = "
 auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwrite) -> std::int64_t;
 
 [[nodiscard]] auto prefix_parent(fs::path const& parent_source, fs::path const& target) -> fs::path;
+[[nodiscard]] auto concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::path;
 
 constexpr auto video_extensions_v = std::array{
 	".mp4", ".mkv", ".avi", ".m4v", ".webm",

@@ -75,6 +75,11 @@ auto util::prefix_parent(fs::path const& parent_source, fs::path const& target) 
 	return parent_source.parent_path() / target;
 }
 
+auto util::concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::path {
+	if (prefix.empty()) { return subpath; }
+	return prefix / subpath;
+}
+
 auto util::to_int(std::string_view const text, int const fallback) -> int {
 	if (text.empty()) { return fallback; }
 	auto ret = int{};

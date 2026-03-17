@@ -1,6 +1,6 @@
 #pragma once
 #include "command/command.hpp"
-#include <string_view>
+#include <string>
 
 namespace vifo::cli::command {
 class RenameDirs : public Command {
@@ -16,6 +16,6 @@ class RenameDirs : public Command {
 
 	std::string m_input_format{};
 	std::string m_output_format{};
-	std::string_view m_root{"."};
+	std::string m_root{"."};
 };
 } // namespace vifo::cli::command
