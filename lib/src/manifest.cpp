@@ -1,66 +1,56 @@
 #include "vifo/manifest.hpp"
+#include "klib/text_table.hpp"
 #include "vifo/formatter.hpp"
 #include "vifo/util/util.hpp"
 #include <filesystem>
+#include <ranges>
 
 namespace vifo {
 namespace {
-class Scanner {
-  public:
-	explicit Scanner(IFormatter& formatter, Manifest& out) : m_formatter(formatter), m_manifest(out) {}
-
-	void build_manifest(fs::path const& root) {
-		m_root = root;
-		if (fs::is_regular_file(m_root)) {
-			accept_path(m_root);
-			return;
-		}
-
-		if (!fs::is_directory(m_root)) { return; }
-		iterate(m_root);
+void adjust_parent(fs::path& out_parent, fs::path const& entry) {
+	if (out_parent.empty()) {
+		out_parent = entry.parent_path();
+		return;
 	}
 
-  private:
-	void iterate(fs::path const& directory) {
-		for (auto const& it : fs::directory_iterator{directory}) {
-			if (it.is_directory()) {
-				iterate(it.path());
-				accept_path(it.path());
-				continue;
-			}
-
-			if (it.is_regular_file()) { accept_path(it.path()); }
-		}
-	}
-
-	void accept_path(fs::path const& path) {
-		auto const src_filename = path.filename().generic_string();
-		if (auto const dst_filename = m_formatter.format(src_filename); !dst_filename.empty()) {
-			auto dst_path = util::prefix_parent(path, dst_filename);
-			if (fs::exists(dst_path)) { ++m_manifest.collision_count; }
-			dst_path = fs::relative(dst_path, m_root);
-			m_manifest.entries.push_back(Manifest::Entry{.source = fs::relative(path, m_root), .destination = std::move(dst_path)});
-		}
-	}
-
-	IFormatter& m_formatter;
-	Manifest& m_manifest;
-
-	fs::path m_root{};
-};
+	if (out_parent != entry) { return; }
+	out_parent = entry.parent_path();
+}
 } // namespace
 
-auto Manifest::build(IFormatter& formatter, fs::path const& root) -> Manifest {
+auto Manifest::build(IFormatter& formatter, std::span<fs::path> sources) -> Manifest {
 	auto ret = Manifest{};
-	append_to(ret, formatter, root);
+	for (auto& source : sources) {
+		auto const src_filename = source.filename().string();
+		auto const dst_filename = formatter.format(src_filename);
+		if (dst_filename.empty()) { continue; }
+
+		auto destination = util::prefix_parent(source, dst_filename);
+		if (fs::exists(destination)) { ++ret.collision_count; }
+		adjust_parent(ret.parent, source);
+		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination)});
+	}
 	return ret;
 }
 
-void Manifest::append_to(Manifest& out, IFormatter& formatter, fs::path const& subdirectory) {
-	auto const path = util::concat_path(out.root, subdirectory);
-	if (!fs::is_directory(path)) { return; }
+auto Manifest::serialize_to_table() const -> std::string {
+	if (entries.empty()) { return {}; }
 
-	if (out.root.empty()) { out.root = path; }
-	Scanner{formatter, out}.build_manifest(path);
+	auto table = klib::TextTable::Builder{}.add_column("#", klib::TextTable::Align::Right).add_column("destination").add_column("source").build();
+	auto const to_relative = [&](fs::path const& path) {
+		if (parent.empty()) { return path; }
+		return fs::relative(path, parent);
+	};
+
+	auto row = std::vector<std::string>{};
+	for (auto const [index, entry] : std::views::enumerate(entries)) {
+		row.reserve(3);
+		row.push_back(std::format("{}", index + 1));
+		row.push_back(to_relative(entry.destination).generic_string());
+		row.push_back(to_relative(entry.source).generic_string());
+		table.push_row(std::move(row));
+	}
+
+	return table.serialize();
 }
 } // namespace vifo

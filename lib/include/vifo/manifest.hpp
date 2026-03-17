@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <vector>
 
 namespace vifo {
@@ -14,10 +15,11 @@ struct Manifest {
 		fs::path destination{};
 	};
 
-	[[nodiscard]] static auto build(IFormatter& formatter, fs::path const& root) -> Manifest;
-	static void append_to(Manifest& out, IFormatter& formatter, fs::path const& subdirectory);
+	[[nodiscard]] static auto build(IFormatter& formatter, std::span<fs::path> sources) -> Manifest;
 
-	fs::path root{};
+	[[nodiscard]] auto serialize_to_table() const -> std::string;
+
+	fs::path parent{};
 	std::vector<Entry> entries{};
 	std::int64_t collision_count{};
 };

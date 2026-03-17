@@ -1,21 +1,22 @@
 #include "command/rename_dirs.hpp"
 #include "klib/args/arg.hpp"
 #include "klib/assert.hpp"
-#include "klib/text_table.hpp"
 #include "vifo/exit_code.hpp"
 #include "vifo/formatter.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
+#include "vifo/path/scanner.hpp"
+#include <filesystem>
 #include <print>
-#include <ranges>
 
 namespace vifo::cli::command {
 namespace {
 struct Storage {
 	std::string input_format{};
 	std::string output_format{};
-	std::string root_directory{"."};
+	fs::path root_path{};
 	std::unique_ptr<IFormatter> formatter{};
+	std::vector<fs::path> path_list{};
 	Manifest manifest{};
 };
 
@@ -49,6 +50,16 @@ class StateCreateInterpolator : public State {
 	auto execute() -> std::unique_ptr<MachineState> final;
 };
 
+class StateCollectPaths : public State, public path::Scanner {
+  public:
+	explicit StateCollectPaths(Storage state) : State(std::move(state), "CollectPaths") {}
+
+  private:
+	auto execute() -> std::unique_ptr<MachineState> final;
+
+	[[nodiscard]] auto should_store(fs::path const& path) const -> bool final { return fs::is_directory(path); }
+};
+
 class StateBuildManifest : public State {
   public:
 	explicit StateBuildManifest(Storage state) : State(std::move(state), "BuildManifest") {}
@@ -64,23 +75,29 @@ auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
 	if (!interpolator) { return handle_error(interpolator.error()); }
 
 	m_storage.formatter = std::move(*interpolator);
+	return std::make_unique<StateCollectPaths>(std::move(m_storage));
+}
+
+auto StateCollectPaths::execute() -> std::unique_ptr<MachineState> {
+	m_storage.path_list = scan_paths(m_storage.root_path);
+	if (m_storage.path_list.empty()) {
+		std::println("no paths collected");
+		return {};
+	}
+
 	return std::make_unique<StateBuildManifest>(std::move(m_storage));
 }
 
 auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
 	KLIB_ASSERT(m_storage.formatter);
-	m_storage.manifest = Manifest::build(*m_storage.formatter, m_storage.root_directory);
-	std::println("manifest root: {}", m_storage.manifest.root.generic_string());
-	auto table = klib::TextTable::Builder{}.add_column("#", klib::TextTable::Align::Right).add_column("destination").add_column("source").build();
-	auto row = std::vector<std::string>{};
-	for (auto const [index, entry] : std::views::enumerate(m_storage.manifest.entries)) {
-		row.reserve(3);
-		row.push_back(std::format("{}", index + 1));
-		row.push_back(entry.destination.generic_string());
-		row.push_back(entry.source.generic_string());
-		table.push_row(std::move(row));
+	m_storage.manifest = Manifest::build(*m_storage.formatter, m_storage.path_list);
+	if (m_storage.manifest.entries.empty()) {
+		std::println("nothing to rename");
+		return {};
 	}
-	std::println("{}", table.serialize());
+
+	std::println("parent: {}", m_storage.manifest.parent.generic_string());
+	std::println("{}", m_storage.manifest.serialize_to_table());
 
 	std::println("{} entries to rename, {} collision(s)", m_storage.manifest.entries.size(), m_storage.manifest.collision_count);
 	if (!should_continue()) { return {}; }
@@ -99,10 +116,16 @@ void RenameDirs::populate_args() {
 }
 
 auto RenameDirs::execute() -> ExitCode {
+	auto const root = fs::path{m_root};
+	if (!fs::exists(root)) {
+		std::println(stderr, "invalid path: '{}'", m_root);
+		return ExitCode::InvalidArgument;
+	}
+
 	auto storage = Storage{
 		.input_format = std::move(m_input_format),
 		.output_format = std::move(m_output_format),
-		.root_directory = std::move(m_root),
+		.root_path = fs::canonical(root),
 	};
 	return execute_state_machine(std::make_unique<StateCreateInterpolator>(std::move(storage)));
 }
