@@ -22,7 +22,9 @@ class VisitorImpl : public Visitor {
 		auto const src_filename = path.filename().generic_string();
 		if (auto const dst_filename = m_formatter.format(src_filename); !dst_filename.empty()) {
 			auto dst_path = util::prefix_parent(path, dst_filename);
-			manifest.entries.push_back(Manifest::Entry{.source = path, .destination = std::move(dst_path)});
+			auto const exists = fs::exists(dst_path);
+			manifest.entries.push_back(Manifest::Entry{.source = path, .destination = std::move(dst_path), .exists = exists});
+			if (exists) { ++manifest.collision_count; }
 		}
 		return true;
 	}
