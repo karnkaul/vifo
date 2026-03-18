@@ -1,14 +1,11 @@
 #pragma once
 #include "klib/base_types.hpp"
-#include <filesystem>
-#include <vector>
+#include "vifo/path/list.hpp"
 
 namespace vifo::path {
-namespace fs = std::filesystem;
-
 class Scanner : public klib::Polymorphic {
   public:
-	[[nodiscard]] virtual auto scan_paths(fs::path path) -> std::vector<fs::path>;
+	[[nodiscard]] virtual auto scan_paths(fs::path path) -> List;
 
 	int max_depth{10};
 
@@ -20,6 +17,6 @@ class Scanner : public klib::Polymorphic {
 	void iterate(fs::path const& directory, int current_depth);
 	void store(fs::path path);
 
-	std::vector<fs::path> m_ret{};
+	List m_ret{};
 };
 } // namespace vifo::path

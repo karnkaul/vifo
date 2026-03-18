@@ -4,6 +4,7 @@
 #include "vifo/formatter.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
+#include "vifo/path/list.hpp"
 #include "vifo/path/scanner.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
@@ -20,7 +21,7 @@ struct Storage {
 	fs::path root_path{};
 
 	std::unique_ptr<IFormatter> formatter{};
-	std::vector<fs::path> path_list{};
+	path::List path_list{};
 	Manifest manifest{};
 
 	bool overwrite{};
@@ -75,9 +76,9 @@ class StateCreateInterpolator : public State {
 	auto execute() -> std::unique_ptr<MachineState> final;
 };
 
-class StateCollectPaths : public State, public path::Scanner {
+class StateScanPaths : public State, public path::Scanner {
   public:
-	explicit StateCollectPaths(Storage state) : State(std::move(state), "CollectPaths") {}
+	explicit StateScanPaths(Storage state) : State(std::move(state), "ScanPaths") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
@@ -108,13 +109,13 @@ auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
 	if (!interpolator) { return handle_error(interpolator.error()); }
 
 	m_storage.formatter = std::move(*interpolator);
-	return std::make_unique<StateCollectPaths>(std::move(m_storage));
+	return std::make_unique<StateScanPaths>(std::move(m_storage));
 }
 
-auto StateCollectPaths::execute() -> std::unique_ptr<MachineState> {
+auto StateScanPaths::execute() -> std::unique_ptr<MachineState> {
 	m_storage.path_list = scan_paths(m_storage.root_path);
-	if (m_storage.path_list.empty()) {
-		std::println("no paths collected");
+	if (m_storage.path_list.paths.empty()) {
+		std::println("no paths scanned");
 		return {};
 	}
 

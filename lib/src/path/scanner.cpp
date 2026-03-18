@@ -2,7 +2,7 @@
 #include "klib/assert.hpp"
 
 namespace vifo::path {
-auto Scanner::scan_paths(fs::path path) -> std::vector<fs::path> {
+auto Scanner::scan_paths(fs::path path) -> List {
 	if (!fs::is_directory(path) && !fs::is_regular_file(path)) { return {}; }
 
 	path = fs::canonical(fs::absolute(path));
@@ -27,6 +27,6 @@ void Scanner::iterate(fs::path const& directory, int const current_depth) {
 
 void Scanner::store(fs::path path) {
 	if (!should_store(path)) { return; }
-	m_ret.push_back(std::move(path));
+	m_ret.paths.push_back(std::move(path));
 }
 } // namespace vifo::path

@@ -1,6 +1,6 @@
 #pragma once
+#include "vifo/path/list.hpp"
 #include <cstdint>
-#include <filesystem>
 #include <span>
 #include <vector>
 
@@ -15,7 +15,7 @@ struct Manifest {
 		fs::path destination{};
 	};
 
-	[[nodiscard]] static auto build(IFormatter& formatter, std::span<fs::path> sources) -> Manifest;
+	[[nodiscard]] static auto build(IFormatter& formatter, path::List path_list) -> Manifest;
 
 	[[nodiscard]] auto format_table() const -> std::string;
 

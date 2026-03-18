@@ -1,15 +1,16 @@
 #include "vifo/manifest.hpp"
 #include "klib/text_table.hpp"
 #include "vifo/formatter.hpp"
+#include "vifo/path/list.hpp"
 #include "vifo/util/util.hpp"
 #include <filesystem>
 #include <ranges>
 #include <string_view>
 
 namespace vifo {
-auto Manifest::build(IFormatter& formatter, std::span<fs::path> sources) -> Manifest {
+auto Manifest::build(IFormatter& formatter, path::List path_list) -> Manifest {
 	auto ret = Manifest{};
-	for (auto& source : sources) {
+	for (auto& source : path_list.paths) {
 		auto const src_filename = source.filename().string();
 		auto const dst_filename = formatter.format(src_filename);
 		if (dst_filename.empty()) { continue; }
@@ -18,7 +19,10 @@ auto Manifest::build(IFormatter& formatter, std::span<fs::path> sources) -> Mani
 		if (fs::exists(destination)) { ++ret.collision_count; }
 		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination)});
 	}
-	if (!ret.entries.empty()) { ret.parent = ret.entries.back().source.parent_path(); }
+	if (!ret.entries.empty()) {
+		// last entry is assumed to be in outermost directory.
+		ret.parent = ret.entries.back().source.parent_path();
+	}
 	return ret;
 }
 
