@@ -145,12 +145,12 @@ auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 
 	if (m_storage.transaction.success.empty()) { return {}; }
 
-	if (!should_continue("undo?")) {
+	if (!should_continue("rollback?")) {
 		if (!m_storage.transaction.failure.empty()) { m_exit_code = ExitCode::TransformFailure; }
 		return {};
 	}
 
-	m_storage.transaction = util::undo(m_storage.transaction);
+	m_storage.transaction = util::rollback(m_storage.transaction);
 	if (!m_storage.transaction.failure.empty()) { m_exit_code = ExitCode::TransformFailure; }
 	print_transaction(m_storage.transaction);
 

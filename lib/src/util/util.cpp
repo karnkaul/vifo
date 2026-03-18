@@ -116,7 +116,7 @@ auto util::transform(Manifest const& manifest, Operation const operation, bool c
 	return ret;
 }
 
-auto util::undo(Transaction const& transaction) -> Transaction {
+auto util::rollback(Transaction const& transaction) -> Transaction {
 	auto ret = Transaction{.parent = transaction.parent};
 	auto const transformer = path::Transformer{};
 	for (auto const& record : std::views::reverse(transaction.success)) {

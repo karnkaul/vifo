@@ -12,7 +12,6 @@
 #include <ranges>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace vifo::util {
 namespace fs = std::filesystem;
@@ -36,7 +35,7 @@ auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwr
 [[nodiscard]] auto trim_identified_title(std::string_view& out_text) -> std::string;
 
 [[nodiscard]] auto transform(Manifest const& manifest, Operation operation, bool overwrite = false) -> Transaction;
-[[nodiscard]] auto undo(Transaction const& transaction) -> Transaction;
+[[nodiscard]] auto rollback(Transaction const& transaction) -> Transaction;
 
 constexpr auto video_extensions_v = std::array{
 	".mp4", ".mkv", ".avi", ".m4v", ".webm",
