@@ -1,7 +1,6 @@
 #include "vifo/expression.hpp"
 #include "detail/common.hpp"
 #include "klib/assert.hpp"
-#include "klib/base_types.hpp"
 #include "klib/ptr.hpp"
 #include "vifo/util/util.hpp"
 #include <cstddef>
@@ -147,57 +146,6 @@ class Parser {
 	std::string_view m_input{};
 	std::vector<Token> m_tokens{};
 	std::size_t m_index{};
-};
-
-class IIdentifier : public klib::Polymorphic {
-  public:
-	explicit IIdentifier(std::string name) : m_name(std::move(name)) {}
-
-	virtual auto parse_value(std::string_view& out_input, std::string& out_output) const -> bool = 0;
-
-	[[nodiscard]] auto get_name() const -> std::string_view { return m_name; }
-
-  private:
-	std::string m_name{};
-};
-
-class Variable : public IIdentifier {
-  public:
-	explicit Variable(std::string name, std::size_t const max_length) : IIdentifier(std::move(name)), m_max_length(max_length) {}
-
-  private:
-	auto parse_value(std::string_view& out_text, std::string& out_output) const -> bool final {
-		auto const length = [&] {
-			if (m_max_length == 0) { return out_text.length(); }
-			return std::min(m_max_length, out_text.length());
-		}();
-
-		out_output += out_text.substr(0, length);
-		out_text.remove_prefix(length);
-		return true;
-	}
-
-	std::size_t m_max_length{};
-};
-
-class Year : public IIdentifier {
-  public:
-	static constexpr std::string_view name_v{"year"};
-
-	explicit Year() : IIdentifier(std::string{name_v}) {}
-
-  private:
-	[[nodiscard]] auto parse_value(std::string_view& out_input, std::string& out_output) const -> bool final {
-		if (out_input.size() < 4) { return false; }
-
-		auto const value = out_input.substr(0, 4);
-		auto const i_value = util::to_int(value);
-		if (i_value < 1000) { return false; }
-
-		out_input.remove_prefix(value.size());
-		out_output += value;
-		return true;
-	}
 };
 } // namespace
 

@@ -4,6 +4,7 @@
 #include "vifo/expression.hpp"
 #include "vifo/result.hpp"
 #include "vifo/types.hpp"
+#include "vifo/util/util.hpp"
 #include <algorithm>
 #include <cstdlib>
 #include <regex>
@@ -71,6 +72,19 @@ class Year : public Binding {
 	}
 };
 
+class Title : public Binding {
+  public:
+	static constexpr std::string_view name_v{"title"};
+
+	explicit Title() : Binding(std::string{name_v}) {}
+
+  private:
+	[[nodiscard]] auto parse_value(std::string_view& out_input) -> bool final {
+		m_value = util::trim_identified_title(out_input);
+		return !m_value.empty();
+	}
+};
+
 struct Term {
 	std::string format{};
 	Expression expression{};
@@ -112,6 +126,7 @@ class BindingBuilder {
 
 	[[nodiscard]] auto create_binding(Token const& token, Identifier const& identifier) -> Result<std::unique_ptr<Binding>> {
 		if (identifier.name == "year") { return std::make_unique<Year>(); }
+		if (identifier.name == "title") { return std::make_unique<Title>(); }
 
 		if (identifier.length == 0) {
 			if (m_zero_length_variable) {

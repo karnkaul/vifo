@@ -1,17 +1,19 @@
 #include "vifo/transaction.hpp"
 #include "klib/text_table.hpp"
+#include "vifo/util/util.hpp"
+#include <filesystem>
 #include <ranges>
 
 namespace vifo {
-auto Transaction::format_table(std::span<Record const> records) -> std::string {
-	auto table = klib::TextTable::Builder{}.add_column("#", klib::TextTable::Align::Right).add_column("source").add_column("destination").build();
+auto Transaction::format_table(fs::path const& parent, std::span<Record const> records) -> std::string {
+	auto table = klib::TextTable::Builder{}.add_column("#", klib::TextTable::Align::Right).add_column("destination").add_column("source").build();
 
 	auto row = std::vector<std::string>{};
 	for (auto const [index, record] : std::views::enumerate(records)) {
 		row.reserve(3);
 		row.push_back(std::format("{}", index + 1));
-		row.push_back(record.source.filename().generic_string());
-		row.push_back(record.destination.filename().generic_string());
+		row.push_back(util::to_relative(parent, record.destination).generic_string());
+		row.push_back(util::to_relative(parent, record.source).generic_string());
 		table.push_row(std::move(row));
 	}
 	return table.serialize();

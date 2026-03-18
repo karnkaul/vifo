@@ -38,17 +38,17 @@ struct Storage {
 void print_transaction(Transaction const& transaction) {
 	if (!transaction.failure.empty()) {
 		std::println(stderr, "[!] some transforms failed:");
-		auto table = Transaction::format_table(transaction.failure);
+		auto table = Transaction::format_table(transaction.parent, transaction.failure);
 		std::println(stderr, "{}", table);
 	}
 	if (!transaction.pass.empty()) {
 		std::println("pass:");
-		auto table = Transaction::format_table(transaction.pass);
+		auto table = Transaction::format_table(transaction.parent, transaction.pass);
 		std::println(stderr, "{}", table);
 	}
 	if (!transaction.success.empty()) {
 		std::println("success:");
-		auto table = Transaction::format_table(transaction.success);
+		auto table = Transaction::format_table(transaction.parent, transaction.success);
 		std::println(stderr, "{}", table);
 	}
 }
@@ -150,7 +150,7 @@ auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 		return {};
 	}
 
-	m_storage.transaction = util::undo(m_storage.transaction.success);
+	m_storage.transaction = util::undo(m_storage.transaction);
 	if (!m_storage.transaction.failure.empty()) { m_exit_code = ExitCode::TransformFailure; }
 	print_transaction(m_storage.transaction);
 

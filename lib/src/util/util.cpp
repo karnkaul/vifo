@@ -1,7 +1,7 @@
-// #include "detail/title_parser.hpp"
 // #include <optional>
 // #include <regex>
 #include "vifo/util/util.hpp"
+#include "detail/title_parser.hpp"
 #include "log.hpp"
 #include "vifo/path/transformer.hpp"
 #include "vifo/transaction.hpp"
@@ -63,6 +63,11 @@ auto util::path_if_directory(std::string_view const path) -> fs::path {
 	return ret;
 }
 
+auto util::to_relative(fs::path const& parent, fs::path const& target) -> fs::path {
+	if (parent.empty()) { return target; }
+	return fs::relative(target, parent);
+}
+
 auto util::ghost_copy(fs::path const& source, fs::path const& destination, bool const overwrite) -> std::int64_t {
 	auto const root = destination / source.filename();
 	if (!mkdir(root)) { return -1; }
@@ -92,8 +97,16 @@ auto util::concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::p
 	return prefix / subpath;
 }
 
+auto util::identify_title(fs::path const& path) -> std::string {
+	if (!fs::exists(path)) { return {}; }
+	auto const stem = fs::canonical(path).stem();
+	return detail::TitleParser{}.parse(stem.string());
+}
+
+auto util::trim_identified_title(std::string_view& out_text) -> std::string { return detail::TitleParser{}.parse_and_trim(out_text); }
+
 auto util::transform(Manifest const& manifest, Operation const operation, bool const overwrite) -> Transaction {
-	auto ret = Transaction{};
+	auto ret = Transaction{.parent = manifest.parent};
 	auto const transformer = path::Transformer{.overwrite = overwrite};
 	for (auto const& entry : manifest.entries) {
 		auto const outcome = transformer.transform(entry.source, entry.destination, operation);
@@ -103,10 +116,10 @@ auto util::transform(Manifest const& manifest, Operation const operation, bool c
 	return ret;
 }
 
-auto util::undo(std::span<Record const> records) -> Transaction {
-	auto ret = Transaction{};
+auto util::undo(Transaction const& transaction) -> Transaction {
+	auto ret = Transaction{.parent = transaction.parent};
 	auto const transformer = path::Transformer{};
-	for (auto const& record : records) {
+	for (auto const& record : std::views::reverse(transaction.success)) {
 		auto operation = std::optional<Operation>{};
 		switch (record.operation) {
 		case Operation::Copy: operation = Operation::Delete; break;
@@ -172,12 +185,6 @@ auto util::join(std::span<std::string_view const> items, std::string_view const 
 // 	if (!fs::exists(path)) { return {}; }
 // 	static auto const s_regex = std::regex{R"(.*S[0-9]{2}E[0-9]{2}.*)"};
 // 	return std::regex_match(fs::canonical(path).string(), s_regex);
-// }
-
-// auto util::identify_title(fs::path const& path) -> std::string {
-// 	if (!fs::exists(path)) { return {}; }
-// 	auto const stem = fs::canonical(path).stem();
-// 	return detail::TitleParser{}.parse(stem.string());
 // }
 
 // auto util::extract_season_id(std::string const& name) -> std::optional<SeasonId> {
