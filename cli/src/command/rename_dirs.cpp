@@ -35,6 +35,24 @@ struct Storage {
 	}
 }
 
+void print_transaction(Transaction const& transaction) {
+	if (!transaction.failure.empty()) {
+		std::println(stderr, "[!] some transforms failed:");
+		auto table = Transaction::format_table(transaction.failure);
+		std::println(stderr, "{}", table);
+	}
+	if (!transaction.pass.empty()) {
+		std::println("pass:");
+		auto table = Transaction::format_table(transaction.pass);
+		std::println(stderr, "{}", table);
+	}
+	if (!transaction.success.empty()) {
+		std::println("success:");
+		auto table = Transaction::format_table(transaction.success);
+		std::println(stderr, "{}", table);
+	}
+}
+
 class State : public MachineState {
   public:
 	explicit State(Storage storage, std::string_view name) : MachineState(name), m_storage(std::move(storage)) {}
@@ -123,10 +141,21 @@ auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 	if (!confirm_rename()) { return {}; }
 
 	m_storage.transaction = util::transform(m_storage.manifest, Operation::Rename, m_storage.overwrite);
-	if (!m_storage.transaction.failure.empty()) {
-		//
+	print_transaction(m_storage.transaction);
+
+	if (m_storage.transaction.success.empty()) { return {}; }
+
+	if (!should_continue("undo?")) {
+		if (!m_storage.transaction.failure.empty()) { m_exit_code = ExitCode::TransformFailure; }
+		return {};
 	}
-	m_log.debug("TODO");
+
+	m_storage.transaction = util::undo(m_storage.transaction.success);
+	if (!m_storage.transaction.failure.empty()) { m_exit_code = ExitCode::TransformFailure; }
+	print_transaction(m_storage.transaction);
+
+	std::println("transform complete");
+
 	return {};
 }
 

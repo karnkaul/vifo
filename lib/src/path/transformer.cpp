@@ -1,5 +1,4 @@
 #include "vifo/path/transformer.hpp"
-#include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
 #include <filesystem>
 #include <system_error>
@@ -9,7 +8,7 @@ auto Transformer::remove_if_overwrite(fs::path const& destination) const -> Outc
 	if (fs::exists(destination)) {
 		if (!overwrite) { return Outcome::Pass; }
 		auto err = std::error_code{};
-		if (!fs::remove(destination, err)) { return Outcome::Failure; }
+		if (!fs::remove_all(destination, err)) { return Outcome::Failure; }
 	}
 	return Outcome::Success;
 }
