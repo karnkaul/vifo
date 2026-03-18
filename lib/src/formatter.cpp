@@ -1,9 +1,9 @@
 #include "vifo/formatter.hpp"
 #include "detail/common.hpp"
 #include "klib/ptr.hpp"
-#include "vifo/error.hpp"
 #include "vifo/expression.hpp"
 #include "vifo/result.hpp"
+#include "vifo/types.hpp"
 #include <algorithm>
 #include <cstdlib>
 #include <regex>

@@ -3,8 +3,9 @@
 // #include <regex>
 #include "vifo/util/util.hpp"
 #include "log.hpp"
-#include "vifo/operation.hpp"
 #include "vifo/path/transformer.hpp"
+#include "vifo/transaction.hpp"
+#include "vifo/types.hpp"
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -17,6 +18,14 @@ namespace {
 	if (path.empty()) { return true; }
 	if (fs::exists(path)) { return fs::is_directory(path); }
 	return fs::create_directories(path);
+}
+
+[[nodiscard]] auto to_record(fs::path source, fs::path destination, Operation const operation) -> Record {
+	return Record{
+		.source = std::move(source),
+		.destination = std::move(destination),
+		.operation = operation,
+	};
 }
 } // namespace
 } // namespace util
@@ -83,17 +92,19 @@ auto util::concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::p
 	return prefix / subpath;
 }
 
-auto util::transform(Manifest const& manifest, Operation const operation, bool const overwrite) -> std::vector<Record> {
-	auto ret = std::vector<Record>{};
+auto util::transform(Manifest const& manifest, Operation const operation, bool const overwrite) -> Transaction {
+	auto ret = Transaction{};
 	auto const transformer = path::Transformer{.overwrite = overwrite};
-	ret.reserve(manifest.entries.size());
-	for (auto const& entry : manifest.entries) { ret.push_back(transformer.transform(entry.source, entry.destination, operation)); }
+	for (auto const& entry : manifest.entries) {
+		auto const outcome = transformer.transform(entry.source, entry.destination, operation);
+		auto record = to_record(entry.source, entry.destination, operation);
+		ret.triage_record(std::move(record), outcome);
+	}
 	return ret;
 }
 
-auto util::undo(std::span<Record const> records) -> std::vector<Record> {
-	auto ret = std::vector<Record>{};
-	ret.reserve(records.size());
+auto util::undo(std::span<Record const> records) -> Transaction {
+	auto ret = Transaction{};
 	auto const transformer = path::Transformer{};
 	for (auto const& record : records) {
 		auto operation = std::optional<Operation>{};
@@ -104,7 +115,8 @@ auto util::undo(std::span<Record const> records) -> std::vector<Record> {
 		}
 		if (!operation) { continue; }
 
-		ret.push_back(transformer.transform(record.destination, record.source, *operation));
+		auto const outcome = transformer.transform(record.destination, record.source, *operation);
+		ret.triage_record(to_record(record.destination, record.source, *operation), outcome);
 	}
 	return ret;
 }

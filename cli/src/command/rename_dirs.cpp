@@ -1,13 +1,14 @@
 #include "command/rename_dirs.hpp"
 #include "klib/args/arg.hpp"
 #include "klib/assert.hpp"
-#include "vifo/exit_code.hpp"
 #include "vifo/formatter.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/path/scanner.hpp"
-#include "vifo/path/transformer.hpp"
+#include "vifo/transaction.hpp"
+#include "vifo/types.hpp"
 #include "vifo/util/prompt.hpp"
+#include "vifo/util/util.hpp"
 #include <filesystem>
 #include <print>
 
@@ -23,6 +24,7 @@ struct Storage {
 	Manifest manifest{};
 
 	bool overwrite{};
+	Transaction transaction{};
 };
 
 [[nodiscard]] constexpr auto to_exit_code(Error::Type const type) {
@@ -80,7 +82,7 @@ class StateTransform : public State {
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
 
-	[[nodiscard]] auto confirm() -> bool;
+	[[nodiscard]] auto confirm_rename() -> bool;
 };
 
 auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
@@ -110,7 +112,7 @@ auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
 	}
 
 	std::println("parent: {}", m_storage.manifest.parent.generic_string());
-	std::println("{}", m_storage.manifest.serialize_to_table());
+	std::println("{}", m_storage.manifest.format_table());
 
 	std::println("{} entries to rename, {} collision(s)", m_storage.manifest.entries.size(), m_storage.manifest.collision_count);
 
@@ -118,18 +120,25 @@ auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
 }
 
 auto StateTransform::execute() -> std::unique_ptr<MachineState> {
-	if (m_storage.manifest.collision_count > 0) {
-		auto const options = std::array{
-			prompt::Option{.text = "overwrite existing", .callback = [this] { m_storage.overwrite = true; }},
-			prompt::Option{.text = "skip existing", .callback = [this] { m_storage.overwrite = false; }},
-		};
-		if (!should_continue(options)) { return {}; }
-	} else {
-		if (!should_continue()) { return {}; }
-	}
+	if (!confirm_rename()) { return {}; }
 
+	m_storage.transaction = util::transform(m_storage.manifest, Operation::Rename, m_storage.overwrite);
+	if (!m_storage.transaction.failure.empty()) {
+		//
+	}
 	m_log.debug("TODO");
 	return {};
+}
+
+auto StateTransform::confirm_rename() -> bool {
+	if (m_storage.manifest.collision_count == 0) { return should_continue("rename?"); }
+
+	std::println("rename:");
+	auto const options = std::array{
+		prompt::Option{.text = "overwrite existing", .callback = [this] { m_storage.overwrite = true; }},
+		prompt::Option{.text = "skip existing", .callback = [this] { m_storage.overwrite = false; }},
+	};
+	return should_continue(options);
 }
 } // namespace
 

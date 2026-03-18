@@ -34,7 +34,7 @@ auto Manifest::build(IFormatter& formatter, std::span<fs::path> sources) -> Mani
 	return ret;
 }
 
-auto Manifest::serialize_to_table() const -> std::string {
+auto Manifest::format_table() const -> std::string {
 	if (entries.empty()) { return {}; }
 
 	auto table = klib::TextTable::Builder{}.add_column("#", klib::TextTable::Align::Right).add_column("destination").add_column("source").build();

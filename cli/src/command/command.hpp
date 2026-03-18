@@ -1,7 +1,7 @@
 #pragma once
 #include "klib/args/arg.hpp"
 #include "klib/base_types.hpp"
-#include "vifo/exit_code.hpp"
+#include "vifo/types.hpp"
 #include <span>
 #include <string_view>
 #include <vector>

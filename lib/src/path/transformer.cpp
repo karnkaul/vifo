@@ -1,20 +1,10 @@
 #include "vifo/path/transformer.hpp"
-#include "vifo/operation.hpp"
-#include "vifo/record.hpp"
+#include "vifo/transaction.hpp"
+#include "vifo/types.hpp"
 #include <filesystem>
 #include <system_error>
 
 namespace vifo::path {
-namespace {
-auto to_record(fs::path source, fs::path destination, Operation const operation) -> Record {
-	return Record{
-		.source = std::move(source),
-		.destination = std::move(destination),
-		.operation = operation,
-	};
-}
-} // namespace
-
 auto Transformer::remove_if_overwrite(fs::path const& destination) const -> Outcome {
 	if (fs::exists(destination)) {
 		if (!overwrite) { return Outcome::Pass; }
@@ -24,31 +14,25 @@ auto Transformer::remove_if_overwrite(fs::path const& destination) const -> Outc
 	return Outcome::Success;
 }
 
-auto Transformer::transform(fs::path const& source, fs::path const& destination, Operation const operation) const -> Record {
-	auto ret = to_record(source, destination, operation);
-
+auto Transformer::transform(fs::path const& source, fs::path const& destination, Operation const operation) const -> Outcome {
 	auto err = std::error_code{};
 	if (operation == Operation::Delete) {
-		ret.destination.clear();
-		if (fs::exists(source) && !fs::remove(source, err)) { ret.outcome = Outcome::Failure; }
-		return ret;
+		if (fs::exists(source) && !fs::remove(source, err)) { return Outcome::Failure; }
+		return Outcome::Success;
 	}
 
-	if (!fs::exists(source)) {
-		ret.outcome = Outcome::Pass;
-		return ret;
-	}
+	if (!fs::exists(source)) { return Outcome::Pass; }
 
-	ret.outcome = remove_if_overwrite(destination);
-	if (ret.outcome != Outcome::Success) { return ret; }
+	auto const outcome = remove_if_overwrite(destination);
+	if (outcome != Outcome::Success) { return outcome; }
 
 	if (operation == Operation::Copy) {
 		fs::copy(source, destination, err);
 	} else {
 		fs::rename(source, destination, err);
 	}
-	if (err != std::errc{}) { ret.outcome = Outcome::Failure; }
+	if (err != std::errc{}) { return Outcome::Failure; }
 
-	return ret;
+	return Outcome::Success;
 }
 } // namespace vifo::path

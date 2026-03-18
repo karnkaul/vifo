@@ -1,5 +1,5 @@
 #pragma once
-#include "vifo/error.hpp"
+#include "vifo/types.hpp"
 #include <expected>
 
 namespace vifo {

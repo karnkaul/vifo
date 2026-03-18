@@ -1,6 +1,6 @@
 #pragma once
-#include "vifo/error.hpp"
 #include "vifo/expression.hpp"
+#include "vifo/types.hpp"
 #include <expected>
 #include <string_view>
 

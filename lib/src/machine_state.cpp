@@ -1,5 +1,5 @@
 #include "vifo/machine_state.hpp"
-#include "vifo/exit_code.hpp"
+#include "vifo/types.hpp"
 #include "vifo/util/prompt.hpp"
 #include <print>
 

@@ -17,7 +17,7 @@ struct Manifest {
 
 	[[nodiscard]] static auto build(IFormatter& formatter, std::span<fs::path> sources) -> Manifest;
 
-	[[nodiscard]] auto serialize_to_table() const -> std::string;
+	[[nodiscard]] auto format_table() const -> std::string;
 
 	fs::path parent{};
 	std::vector<Entry> entries{};

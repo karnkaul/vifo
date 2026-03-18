@@ -4,7 +4,7 @@
 // #include "vifo/types.hpp"
 // #include <optional>
 #include "vifo/manifest.hpp"
-#include "vifo/record.hpp"
+#include "vifo/transaction.hpp"
 #include <algorithm>
 #include <array>
 #include <filesystem>
@@ -41,8 +41,8 @@ constexpr auto subtitle_extensions_v = std::array{
 };
 constexpr auto is_subtitle_file(std::string_view const extension) { return std::ranges::find(subtitle_extensions_v, extension) != subtitle_extensions_v.end(); }
 
-[[nodiscard]] auto transform(Manifest const& manifest, Operation operation, bool overwrite = false) -> std::vector<Record>;
-[[nodiscard]] auto undo(std::span<Record const> records) -> std::vector<Record>;
+[[nodiscard]] auto transform(Manifest const& manifest, Operation operation, bool overwrite = false) -> Transaction;
+[[nodiscard]] auto undo(std::span<Record const> records) -> Transaction;
 
 // [[nodiscard]] auto is_year(std::string_view word) -> bool;
 
