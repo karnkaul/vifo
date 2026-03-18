@@ -4,6 +4,7 @@
 #include "vifo/util/util.hpp"
 #include <filesystem>
 #include <ranges>
+#include <string_view>
 
 namespace vifo {
 namespace {
@@ -45,7 +46,8 @@ auto Manifest::serialize_to_table() const -> std::string {
 	auto row = std::vector<std::string>{};
 	for (auto const [index, entry] : std::views::enumerate(entries)) {
 		row.reserve(3);
-		row.push_back(std::format("{}", index + 1));
+		std::string_view const prefix = fs::exists(entry.destination) ? "*" : "";
+		row.push_back(std::format("{}{}", prefix, index + 1));
 		row.push_back(to_relative(entry.destination).generic_string());
 		row.push_back(to_relative(entry.source).generic_string());
 		table.push_row(std::move(row));

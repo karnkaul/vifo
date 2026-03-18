@@ -6,6 +6,8 @@
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/path/scanner.hpp"
+#include "vifo/path/transformer.hpp"
+#include "vifo/util/prompt.hpp"
 #include <filesystem>
 #include <print>
 
@@ -15,9 +17,12 @@ struct Storage {
 	std::string input_format{};
 	std::string output_format{};
 	fs::path root_path{};
+
 	std::unique_ptr<IFormatter> formatter{};
 	std::vector<fs::path> path_list{};
 	Manifest manifest{};
+
+	bool overwrite{};
 };
 
 [[nodiscard]] constexpr auto to_exit_code(Error::Type const type) {
@@ -66,8 +71,16 @@ class StateBuildManifest : public State {
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
+};
 
-	[[nodiscard]] auto confirm_overwrite() -> bool;
+class StateTransform : public State {
+  public:
+	explicit StateTransform(Storage state) : State(std::move(state), "BuildManifest") {}
+
+  private:
+	auto execute() -> std::unique_ptr<MachineState> final;
+
+	[[nodiscard]] auto confirm() -> bool;
 };
 
 auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
@@ -100,7 +113,20 @@ auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
 	std::println("{}", m_storage.manifest.serialize_to_table());
 
 	std::println("{} entries to rename, {} collision(s)", m_storage.manifest.entries.size(), m_storage.manifest.collision_count);
-	if (!should_continue()) { return {}; }
+
+	return std::make_unique<StateTransform>(std::move(m_storage));
+}
+
+auto StateTransform::execute() -> std::unique_ptr<MachineState> {
+	if (m_storage.manifest.collision_count > 0) {
+		auto const options = std::array{
+			prompt::Option{.text = "overwrite existing", .callback = [this] { m_storage.overwrite = true; }},
+			prompt::Option{.text = "skip existing", .callback = [this] { m_storage.overwrite = false; }},
+		};
+		if (!should_continue(options)) { return {}; }
+	} else {
+		if (!should_continue()) { return {}; }
+	}
 
 	m_log.debug("TODO");
 	return {};

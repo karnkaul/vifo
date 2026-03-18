@@ -3,8 +3,11 @@
 // #include <regex>
 #include "vifo/util/util.hpp"
 #include "log.hpp"
+#include "vifo/operation.hpp"
+#include "vifo/path/transformer.hpp"
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <string_view>
 
 namespace vifo {
@@ -78,6 +81,32 @@ auto util::prefix_parent(fs::path const& parent_source, fs::path const& target) 
 auto util::concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::path {
 	if (prefix.empty()) { return subpath; }
 	return prefix / subpath;
+}
+
+auto util::transform(Manifest const& manifest, Operation const operation, bool const overwrite) -> std::vector<Record> {
+	auto ret = std::vector<Record>{};
+	auto const transformer = path::Transformer{.overwrite = overwrite};
+	ret.reserve(manifest.entries.size());
+	for (auto const& entry : manifest.entries) { ret.push_back(transformer.transform(entry.source, entry.destination, operation)); }
+	return ret;
+}
+
+auto util::undo(std::span<Record const> records) -> std::vector<Record> {
+	auto ret = std::vector<Record>{};
+	ret.reserve(records.size());
+	auto const transformer = path::Transformer{};
+	for (auto const& record : records) {
+		auto operation = std::optional<Operation>{};
+		switch (record.operation) {
+		case Operation::Copy: operation = Operation::Delete; break;
+		case Operation::Rename: operation = Operation::Rename; break;
+		case Operation::Delete: break;
+		}
+		if (!operation) { continue; }
+
+		ret.push_back(transformer.transform(record.destination, record.source, *operation));
+	}
+	return ret;
 }
 
 auto util::to_int(std::string_view const text, int const fallback) -> int {
