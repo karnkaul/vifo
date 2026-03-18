@@ -10,12 +10,14 @@
 #include "vifo/types.hpp"
 #include "vifo/util/prompt.hpp"
 #include "vifo/util/util.hpp"
+#include <algorithm>
 #include <filesystem>
 #include <print>
 
 namespace vifo::cli::command {
 namespace {
 struct Storage {
+	int max_depth{};
 	std::string input_format{};
 	std::string output_format{};
 	fs::path root_path{};
@@ -83,6 +85,7 @@ class StateScanPaths : public State, public path::Scanner {
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
 
+	[[nodiscard]] auto should_iterate(fs::path const& directory) const -> bool final;
 	[[nodiscard]] auto should_store(fs::path const& path) const -> bool final { return fs::is_directory(path); }
 };
 
@@ -113,6 +116,8 @@ auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
 }
 
 auto StateScanPaths::execute() -> std::unique_ptr<MachineState> {
+	max_depth = std::max(0, m_storage.max_depth);
+	m_log.debug("max depth: {}", max_depth);
 	m_storage.path_list = scan_paths(m_storage.root_path);
 	if (m_storage.path_list.paths.empty()) {
 		std::println("no paths scanned");
@@ -120,6 +125,11 @@ auto StateScanPaths::execute() -> std::unique_ptr<MachineState> {
 	}
 
 	return std::make_unique<StateBuildManifest>(std::move(m_storage));
+}
+
+auto StateScanPaths::should_iterate(fs::path const& directory) const -> bool {
+	auto const filename = directory.filename().string();
+	return !filename.starts_with('.');
 }
 
 auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
@@ -174,6 +184,7 @@ auto StateTransform::confirm_rename() -> bool {
 
 void RenameDirs::populate_args() {
 	m_args = {
+		klib::args::named_option(m_max_depth, "d,depth", "max subdirectory depth"),
 		klib::args::positional_required(m_input_format, "INPUT_FMT", "input dirname format string"),
 		klib::args::positional_required(m_output_format, "OUTPUT_FMT", "output dirname format string"),
 		klib::args::positional_optional(m_root, "ROOT", "root directory"),
@@ -188,6 +199,7 @@ auto RenameDirs::execute() -> ExitCode {
 	}
 
 	auto storage = Storage{
+		.max_depth = m_max_depth,
 		.input_format = std::move(m_input_format),
 		.output_format = std::move(m_output_format),
 		.root_path = fs::canonical(root),

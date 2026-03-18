@@ -1,7 +1,6 @@
 #pragma once
 #include "vifo/path/list.hpp"
 #include <cstdint>
-#include <span>
 #include <vector>
 
 namespace vifo {

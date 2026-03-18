@@ -1,5 +1,6 @@
 #include "vifo/path/scanner.hpp"
 #include "klib/assert.hpp"
+#include <system_error>
 
 namespace vifo::path {
 auto Scanner::scan_paths(fs::path path) -> List {
@@ -9,12 +10,15 @@ auto Scanner::scan_paths(fs::path path) -> List {
 	if (fs::is_directory(path)) { iterate(path, 0); }
 	store(path);
 
+	m_ret.scan_path = std::move(path);
 	return std::move(m_ret);
 }
 
 void Scanner::iterate(fs::path const& directory, int const current_depth) {
 	KLIB_ASSERT(fs::is_directory(directory));
-	for (auto const& it : fs::directory_iterator{directory}) {
+	auto err = std::error_code{};
+	for (auto const& it : fs::directory_iterator{directory, err}) {
+		if (it.is_symlink()) { continue; }
 		if (!it.is_directory() && !it.is_regular_file()) { continue; }
 
 		if (it.is_directory()) {

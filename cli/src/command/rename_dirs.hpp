@@ -14,6 +14,7 @@ class RenameDirs : public Command {
 
 	[[nodiscard]] auto execute() -> ExitCode final;
 
+	int m_max_depth{10};
 	std::string m_input_format{};
 	std::string m_output_format{};
 	std::string m_root{"."};

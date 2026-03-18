@@ -9,19 +9,18 @@
 
 namespace vifo {
 auto Manifest::build(IFormatter& formatter, path::List path_list) -> Manifest {
-	auto ret = Manifest{};
+	auto ret = Manifest{.parent = std::move(path_list.scan_path)};
 	for (auto& source : path_list.paths) {
+		if (source.empty()) { continue; }
+
 		auto const src_filename = source.filename().string();
 		auto const dst_filename = formatter.format(src_filename);
 		if (dst_filename.empty()) { continue; }
 
 		auto destination = util::prefix_parent(source, dst_filename);
 		if (fs::exists(destination)) { ++ret.collision_count; }
+		if (source == ret.parent) { ret.parent = ret.parent.parent_path(); }
 		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination)});
-	}
-	if (!ret.entries.empty()) {
-		// last entry is assumed to be in outermost directory.
-		ret.parent = ret.entries.back().source.parent_path();
 	}
 	return ret;
 }
