@@ -1,5 +1,5 @@
 #include "vifo/transaction.hpp"
-#include "klib/text_table.hpp"
+#include "klib/cli/text_table.hpp"
 #include "vifo/util/util.hpp"
 #include <filesystem>
 #include <ranges>

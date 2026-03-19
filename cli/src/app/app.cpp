@@ -4,12 +4,12 @@
 #include "klib/args/arg.hpp"
 #include "klib/args/parse.hpp"
 #include "klib/args/parse_info.hpp"
-#include "klib/c_string.hpp"
+#include "klib/env.hpp"
+#include "klib/string/c_string.hpp"
 #include "log.hpp"
 #include "vifo/build_version.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/panic.hpp"
-#include "vifo/util/util.hpp"
 #include <cstdlib>
 #include <string>
 #include <string_view>
@@ -60,7 +60,7 @@ void App::set_omdb_token() {
 	if (!m_omdb_token.empty()) { return; }
 
 	log.debug("reading omdb API token from env:{}", env_omdb_token_key_v.as_view());
-	auto const omdb_token = util::get_env_var(env_omdb_token_key_v);
+	auto const omdb_token = klib::env::get_var(env_omdb_token_key_v);
 	if (omdb_token.as_view().empty()) { throw Panic{"invalid (empty) ombd API token"}; }
 	m_omdb_token = omdb_token.as_view();
 }

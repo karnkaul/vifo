@@ -2,7 +2,7 @@
 #include "djson/json.hpp"
 #include "kcurl/http.hpp"
 #include "klib/base_types.hpp"
-#include "klib/enum_name.hpp"
+#include "klib/enum/name.hpp"
 #include <cstdint>
 #include <functional>
 #include <optional>

@@ -1,5 +1,4 @@
 #pragma once
-#include "klib/c_string.hpp"
 #include <span>
 // #include "vifo/types.hpp"
 // #include <optional>
@@ -15,8 +14,6 @@
 
 namespace vifo::util {
 namespace fs = std::filesystem;
-
-[[nodiscard]] auto get_env_var(klib::CString key) -> klib::CString;
 
 [[nodiscard]] auto to_int(std::string_view text, int fallback = 0) -> int;
 

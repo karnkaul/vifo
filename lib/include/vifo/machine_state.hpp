@@ -1,13 +1,15 @@
 #pragma once
 #include "klib/base_types.hpp"
+#include "klib/cli/prompt.hpp"
 #include "klib/log.hpp"
 #include "vifo/types.hpp"
-#include "vifo/util/prompt.hpp"
 #include <memory>
 #include <string_view>
 #include <variant>
 
 namespace vifo {
+namespace prompt = klib::prompt;
+
 class MachineState : public klib::Polymorphic {
   public:
 	explicit MachineState(std::string_view const name) : m_log(name) {}

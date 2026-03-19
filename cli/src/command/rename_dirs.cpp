@@ -1,6 +1,6 @@
 #include "command/rename_dirs.hpp"
 #include "klib/args/arg.hpp"
-#include "klib/assert.hpp"
+#include "klib/debug/assert.hpp"
 #include "vifo/formatter.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
@@ -8,7 +8,6 @@
 #include "vifo/path/scanner.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
-#include "vifo/util/prompt.hpp"
 #include "vifo/util/util.hpp"
 #include <algorithm>
 #include <filesystem>

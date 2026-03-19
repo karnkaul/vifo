@@ -1,5 +1,5 @@
 #include "vifo/path/scanner.hpp"
-#include "klib/assert.hpp"
+#include "klib/debug/assert.hpp"
 #include <system_error>
 
 namespace vifo::path {

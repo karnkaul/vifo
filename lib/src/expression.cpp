@@ -1,6 +1,6 @@
 #include "vifo/expression.hpp"
 #include "detail/common.hpp"
-#include "klib/assert.hpp"
+#include "klib/debug/assert.hpp"
 #include "klib/ptr.hpp"
 #include "vifo/util/util.hpp"
 #include <cstddef>

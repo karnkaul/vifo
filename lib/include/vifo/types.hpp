@@ -1,5 +1,5 @@
 #pragma once
-#include "klib/enum_name.hpp"
+#include "klib/enum/name.hpp"
 #include <cstdint>
 #include <string>
 

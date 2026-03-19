@@ -30,12 +30,6 @@ namespace {
 } // namespace
 } // namespace util
 
-auto util::get_env_var(klib::CString const key) -> klib::CString {
-	if (key.as_view().empty()) { return {}; }
-	// NOLINTNEXTLINE(concurrency-mt-unsafe)
-	return std::getenv(key.c_str());
-}
-
 auto util::path_if_exists(std::string_view const path) -> fs::path {
 	if (path.empty()) {
 		log.error("empty path");

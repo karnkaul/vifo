@@ -1,6 +1,5 @@
 #include "vifo/machine_state.hpp"
 #include "vifo/types.hpp"
-#include "vifo/util/prompt.hpp"
 #include <print>
 
 namespace vifo {
@@ -30,17 +29,17 @@ auto MachineState::should_continue(Selection const selection) -> bool {
 }
 
 auto MachineState::should_continue(std::string_view const message) -> bool {
-	auto const selection = util::prompt_confirm(message);
+	auto const selection = prompt::confirm(message);
 	return should_continue(selection);
 }
 
 auto MachineState::should_continue(std::span<Option const> options) -> bool {
-	auto selection = util::prompt_options(options, true);
+	auto selection = prompt::options(options, true);
 	return should_continue(selection);
 }
 
 auto MachineState::should_continue(std::string_view const message, std::string& out_line) -> bool {
-	auto const selection = util::prompt_line(message, [&](std::string ret) {
+	auto const selection = prompt::line(message, [&](std::string ret) {
 		if (ret.empty()) { return false; }
 		out_line = std::move(ret);
 		return true;

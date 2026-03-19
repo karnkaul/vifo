@@ -1,5 +1,5 @@
 #include "vifo/manifest.hpp"
-#include "klib/text_table.hpp"
+#include "klib/cli/text_table.hpp"
 #include "vifo/formatter.hpp"
 #include "vifo/path/list.hpp"
 #include "vifo/util/util.hpp"
