@@ -2,6 +2,7 @@
 #include "klib/args/arg.hpp"
 #include "klib/debug/assert.hpp"
 #include "klib/enum/bitops.hpp"
+#include "log.hpp"
 #include "vifo/formatter.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
@@ -31,8 +32,7 @@ auto const type_name_map = klib::EnumNameMap<Type>{
 
 struct Storage {
 	int max_depth{};
-	std::string input_format{};
-	std::string output_format{};
+	InterpolateFormat format{};
 	fs::path root_path{};
 	Type type{};
 
@@ -118,7 +118,7 @@ class StateTransform : public State {
 };
 
 auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
-	auto interpolator = create_interpolator(std::move(m_storage.input_format), std::move(m_storage.output_format));
+	auto interpolator = create_interpolator(std::move(m_storage.format));
 	if (!interpolator) { return handle_error(interpolator.error()); }
 
 	m_storage.formatter = std::move(*interpolator);
@@ -208,8 +208,9 @@ void Rename::populate_args() {
 	m_args = {
 		klib::args::named_option(m_type, "t,type", "entry type (dir|file|any)"),
 		klib::args::named_option(m_max_depth, "d,depth", "max subdirectory depth"),
-		klib::args::positional_required(m_input_format, "INPUT_FMT", "input dirname format string"),
-		klib::args::positional_required(m_output_format, "OUTPUT_FMT", "output dirname format string"),
+		klib::args::named_option(m_format_json, "f,format-json", "path to json specifying InterpolateFormat"),
+		klib::args::named_option(m_input_format, "i,input", "input dirname format string"),
+		klib::args::named_option(m_output_format, "o,output", "output dirname format string"),
 		klib::args::positional_optional(m_root, "ROOT", "root directory"),
 	};
 }
@@ -221,10 +222,27 @@ auto Rename::execute() -> ExitCode {
 		return ExitCode::InvalidArgument;
 	}
 
+	auto format = InterpolateFormat{};
+	if (!m_format_json.empty()) {
+		auto fmt = InterpolateFormat::from_file(m_format_json);
+		if (!fmt) {
+			std::println(stderr, "failed to read format json: '{}'", m_format_json);
+			return ExitCode::IoError;
+		}
+		format = std::move(*fmt);
+		log.debug("InterpolateFormat extracted from '{}'", m_format_json);
+		log.debug("i: {}, o: {}", format.input, format.output);
+	} else {
+		if (m_input_format.empty() || m_output_format.empty()) {
+			std::println(stderr, "either format json or input and output formats are required");
+			return ExitCode::InvalidArgument;
+		}
+		format = InterpolateFormat{.input = std::move(m_input_format), .output = std::move(m_output_format)};
+	}
+
 	auto storage = Storage{
 		.max_depth = m_max_depth,
-		.input_format = std::move(m_input_format),
-		.output_format = std::move(m_output_format),
+		.format = std::move(format),
 		.root_path = fs::canonical(root),
 		.type = type_name_map.to_enum(m_type).value_or(Type::Dir),
 	};

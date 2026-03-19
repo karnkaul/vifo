@@ -17,6 +17,7 @@ class Rename : public Command {
 
 	std::string_view m_type{};
 	int m_max_depth{10};
+	std::string_view m_format_json{};
 	std::string m_input_format{};
 	std::string m_output_format{};
 	std::string m_root{"."};

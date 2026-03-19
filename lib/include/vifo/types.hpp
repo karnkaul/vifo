@@ -22,6 +22,7 @@ enum class ExitCode : std::int8_t {
 
 	SyntaxError = 10,
 	FormatError = 11,
+	IoError = 15,
 
 	InvalidArgument = 20,
 	ForcedHalt = 21,

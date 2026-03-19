@@ -2,6 +2,7 @@
 #include "klib/base_types.hpp"
 #include "vifo/result.hpp"
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -12,5 +13,12 @@ class IFormatter : public klib::Polymorphic {
 	[[nodiscard]] virtual auto format(std::string_view input) -> std::string = 0;
 };
 
-[[nodiscard]] auto create_interpolator(std::string input_format, std::string output_format) -> Result<std::unique_ptr<IFormatter>>;
+struct InterpolateFormat {
+	[[nodiscard]] static auto from_file(std::string_view path) -> std::optional<InterpolateFormat>;
+
+	std::string input{};
+	std::string output{};
+};
+
+[[nodiscard]] auto create_interpolator(InterpolateFormat format) -> Result<std::unique_ptr<IFormatter>>;
 } // namespace vifo

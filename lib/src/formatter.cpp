@@ -1,5 +1,6 @@
 #include "vifo/formatter.hpp"
 #include "detail/common.hpp"
+#include "djson/json.hpp"
 #include "klib/ptr.hpp"
 #include "vifo/expression.hpp"
 #include "vifo/result.hpp"
@@ -143,9 +144,9 @@ class BindingBuilder {
 
 class Interpolator : public IFormatter {
   public:
-	[[nodiscard]] auto initialize(std::string input_format, std::string output_format) -> Result<void> {
-		m_context.source.format = std::move(input_format);
-		m_context.transform.format = std::move(output_format);
+	[[nodiscard]] auto initialize(InterpolateFormat format) -> Result<void> {
+		m_context.source.format = std::move(format.input);
+		m_context.transform.format = std::move(format.output);
 
 		auto input_expression = Expression{};
 		auto output_expression = Expression{};
@@ -231,9 +232,22 @@ class Interpolator : public IFormatter {
 	Context m_context{};
 };
 } // namespace
+
+auto InterpolateFormat::from_file(std::string_view const path) -> std::optional<InterpolateFormat> {
+	auto const result = dj::Json::from_file(path);
+	if (!result) { return {}; }
+
+	auto const& json = *result;
+	auto ret = InterpolateFormat{};
+	from_json(json["input"], ret.input);
+	from_json(json["output"], ret.output);
+	if (ret.input.empty() || ret.output.empty()) { return {}; }
+
+	return ret;
+}
 } // namespace vifo
 
-auto vifo::create_interpolator(std::string input_format, std::string output_format) -> Result<std::unique_ptr<IFormatter>> {
+auto vifo::create_interpolator(InterpolateFormat format) -> Result<std::unique_ptr<IFormatter>> {
 	auto ret = std::make_unique<Interpolator>();
-	return ret->initialize(std::move(input_format), std::move(output_format)).transform([&] { return std::move(ret); });
+	return ret->initialize(std::move(format)).transform([&] { return std::move(ret); });
 }
