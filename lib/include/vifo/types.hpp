@@ -26,7 +26,8 @@ enum class ExitCode : std::int8_t {
 	InvalidArgument = 20,
 	ForcedHalt = 21,
 
-	TransformFailure = 30,
+	DuplicateDestinations = 30,
+	TransformFailure = 31,
 };
 
 enum class Operation : std::int8_t { Rename, Copy, Delete };

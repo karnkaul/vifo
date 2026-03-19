@@ -60,11 +60,7 @@ class State : public MachineState {
 	explicit State(Storage storage, std::string_view name) : MachineState(name), m_storage(std::move(storage)) {}
 
   protected:
-	[[nodiscard]] auto handle_error(Error const& error) -> std::unique_ptr<State> {
-		std::println(stderr, "{}", error.message);
-		m_exit_code = to_exit_code(error.type);
-		return {};
-	}
+	[[nodiscard]] auto handle_error(Error const& error) -> std::unique_ptr<MachineState> { return set_error(to_exit_code(error.type), error.message); }
 
 	Storage m_storage{};
 };
@@ -142,7 +138,11 @@ auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
 	std::println("parent: {}", m_storage.manifest.parent.generic_string());
 	std::println("{}", m_storage.manifest.format_table());
 
-	std::println("{} entries to rename, {} collision(s)", m_storage.manifest.entries.size(), m_storage.manifest.collision_count);
+	if (m_storage.manifest.metrics.duplicates > 0) {
+		return set_error(ExitCode::DuplicateDestinations, std::format("{} duplicate destinations! aborting", m_storage.manifest.metrics.duplicates + 1));
+	}
+
+	std::println("{} entries to rename, {} existing", m_storage.manifest.entries.size(), m_storage.manifest.metrics.existing);
 
 	return std::make_unique<StateTransform>(std::move(m_storage));
 }
@@ -153,7 +153,7 @@ auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 	m_storage.transaction = util::transform(m_storage.manifest, Operation::Rename, m_storage.overwrite);
 	print_transaction(m_storage.transaction);
 
-	if (m_storage.transaction.success.empty()) { return {}; }
+	if (m_storage.transaction.success.empty()) { return set_error(ExitCode::TransformFailure); }
 
 	if (!should_continue("rollback?")) {
 		if (!m_storage.transaction.failure.empty()) { m_exit_code = ExitCode::TransformFailure; }
@@ -170,7 +170,7 @@ auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 }
 
 auto StateTransform::confirm_rename() -> bool {
-	if (m_storage.manifest.collision_count == 0) { return should_continue("rename?"); }
+	if (m_storage.manifest.metrics.existing == 0) { return should_continue("rename?"); }
 
 	std::println("rename:");
 	auto const options = std::array{

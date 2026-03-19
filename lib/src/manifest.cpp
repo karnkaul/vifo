@@ -6,9 +6,11 @@
 #include <filesystem>
 #include <ranges>
 #include <string_view>
+#include <unordered_set>
 
 namespace vifo {
 auto Manifest::build(IFormatter& formatter, path::List path_list) -> Manifest {
+	auto destinations = std::unordered_set<fs::path>{};
 	auto ret = Manifest{.parent = std::move(path_list.scan_path)};
 	for (auto& source : path_list.paths) {
 		if (source.empty()) { continue; }
@@ -18,10 +20,13 @@ auto Manifest::build(IFormatter& formatter, path::List path_list) -> Manifest {
 		if (dst_filename.empty()) { continue; }
 
 		auto destination = util::prefix_parent(source, dst_filename);
-		if (fs::exists(destination)) { ++ret.collision_count; }
+		if (fs::exists(destination)) { ++ret.metrics.existing; }
+		destinations.insert(destination);
+
 		if (source == ret.parent) { ret.parent = ret.parent.parent_path(); }
 		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination)});
 	}
+	ret.metrics.duplicates = std::int64_t(ret.entries.size() - destinations.size());
 	return ret;
 }
 
