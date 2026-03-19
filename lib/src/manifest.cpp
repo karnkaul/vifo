@@ -15,9 +15,10 @@ auto Manifest::build(IFormatter& formatter, path::List path_list) -> Manifest {
 	for (auto& source : path_list.paths) {
 		if (source.empty()) { continue; }
 
-		auto const src_filename = source.filename().string();
-		auto const dst_filename = formatter.format(src_filename);
+		auto const src_stem = source.stem().string();
+		auto dst_filename = formatter.format(src_stem);
 		if (dst_filename.empty()) { continue; }
+		dst_filename += source.extension();
 
 		auto destination = util::prefix_parent(source, dst_filename);
 		if (fs::exists(destination)) { ++ret.metrics.existing; }
