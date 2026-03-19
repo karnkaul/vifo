@@ -1,5 +1,7 @@
 #include "vifo/transaction.hpp"
+#include "detail/common.hpp"
 #include "klib/cli/text_table.hpp"
+#include "vifo/path/transformer.hpp"
 #include "vifo/util/util.hpp"
 #include <filesystem>
 #include <ranges>
@@ -26,5 +28,23 @@ void Transaction::triage_record(Record record, Outcome const outcome) {
 	default:
 	case Outcome::Pass: pass.push_back(std::move(record)); break;
 	}
+}
+
+auto Transaction::rollback() const -> Transaction {
+	auto ret = Transaction{.parent = parent};
+	auto const transformer = path::Transformer{};
+	for (auto const& record : std::views::reverse(success)) {
+		auto operation = std::optional<Operation>{};
+		switch (record.operation) {
+		case Operation::Copy: operation = Operation::Delete; break;
+		case Operation::Rename: operation = Operation::Rename; break;
+		case Operation::Delete: break;
+		}
+		if (!operation) { continue; }
+
+		auto const outcome = transformer.transform(record.destination, record.source, *operation);
+		ret.triage_record(detail::to_record(record.destination, record.source, *operation), outcome);
+	}
+	return ret;
 }
 } // namespace vifo

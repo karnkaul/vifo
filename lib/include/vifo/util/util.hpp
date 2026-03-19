@@ -2,8 +2,6 @@
 #include <span>
 // #include "vifo/types.hpp"
 // #include <optional>
-#include "vifo/manifest.hpp"
-#include "vifo/transaction.hpp"
 #include <algorithm>
 #include <array>
 #include <filesystem>
@@ -30,9 +28,6 @@ auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwr
 
 [[nodiscard]] auto identify_title(fs::path const& path) -> std::string;
 [[nodiscard]] auto trim_identified_title(std::string_view& out_text) -> std::string;
-
-[[nodiscard]] auto transform(Manifest const& manifest, Operation operation, bool overwrite = false) -> Transaction;
-[[nodiscard]] auto rollback(Transaction const& transaction) -> Transaction;
 
 constexpr auto video_extensions_v = std::array{
 	".mp4", ".mkv", ".avi", ".m4v", ".webm",

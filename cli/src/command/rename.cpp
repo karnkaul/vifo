@@ -173,7 +173,7 @@ auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
 auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 	if (!confirm_rename()) { return {}; }
 
-	m_storage.transaction = util::transform(m_storage.manifest, Operation::Rename, m_storage.overwrite);
+	m_storage.transaction = m_storage.manifest.transform(Operation::Rename, m_storage.overwrite);
 	print_transaction(m_storage.transaction);
 
 	if (m_storage.transaction.success.empty()) { return set_error(ExitCode::TransformFailure); }
@@ -183,7 +183,7 @@ auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 		return {};
 	}
 
-	m_storage.transaction = util::rollback(m_storage.transaction);
+	m_storage.transaction = m_storage.transaction.rollback();
 	if (!m_storage.transaction.failure.empty()) { m_exit_code = ExitCode::TransformFailure; }
 	print_transaction(m_storage.transaction);
 

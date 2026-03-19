@@ -1,7 +1,9 @@
 #include "vifo/manifest.hpp"
+#include "detail/common.hpp"
 #include "klib/cli/text_table.hpp"
 #include "vifo/formatter.hpp"
 #include "vifo/path/list.hpp"
+#include "vifo/path/transformer.hpp"
 #include "vifo/util/util.hpp"
 #include <filesystem>
 #include <ranges>
@@ -28,6 +30,17 @@ auto Manifest::build(IFormatter& formatter, path::List path_list) -> Manifest {
 		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination)});
 	}
 	ret.metrics.duplicates = std::int64_t(ret.entries.size() - destinations.size());
+	return ret;
+}
+
+auto Manifest::transform(Operation const operation, bool const overwrite) const -> Transaction {
+	auto ret = Transaction{.parent = parent};
+	auto const transformer = path::Transformer{.overwrite = overwrite};
+	for (auto const& entry : entries) {
+		auto const outcome = transformer.transform(entry.source, entry.destination, operation);
+		auto record = detail::to_record(entry.source, entry.destination, operation);
+		ret.triage_record(std::move(record), outcome);
+	}
 	return ret;
 }
 

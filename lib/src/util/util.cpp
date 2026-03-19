@@ -3,12 +3,8 @@
 #include "vifo/util/util.hpp"
 #include "detail/title_parser.hpp"
 #include "log.hpp"
-#include "vifo/path/transformer.hpp"
-#include "vifo/transaction.hpp"
-#include "vifo/types.hpp"
 #include <filesystem>
 #include <fstream>
-#include <optional>
 #include <string_view>
 
 namespace vifo {
@@ -18,14 +14,6 @@ namespace {
 	if (path.empty()) { return true; }
 	if (fs::exists(path)) { return fs::is_directory(path); }
 	return fs::create_directories(path);
-}
-
-[[nodiscard]] auto to_record(fs::path source, fs::path destination, Operation const operation) -> Record {
-	return Record{
-		.source = std::move(source),
-		.destination = std::move(destination),
-		.operation = operation,
-	};
 }
 } // namespace
 } // namespace util
@@ -98,35 +86,6 @@ auto util::identify_title(fs::path const& path) -> std::string {
 }
 
 auto util::trim_identified_title(std::string_view& out_text) -> std::string { return detail::TitleParser{}.parse_and_trim(out_text); }
-
-auto util::transform(Manifest const& manifest, Operation const operation, bool const overwrite) -> Transaction {
-	auto ret = Transaction{.parent = manifest.parent};
-	auto const transformer = path::Transformer{.overwrite = overwrite};
-	for (auto const& entry : manifest.entries) {
-		auto const outcome = transformer.transform(entry.source, entry.destination, operation);
-		auto record = to_record(entry.source, entry.destination, operation);
-		ret.triage_record(std::move(record), outcome);
-	}
-	return ret;
-}
-
-auto util::rollback(Transaction const& transaction) -> Transaction {
-	auto ret = Transaction{.parent = transaction.parent};
-	auto const transformer = path::Transformer{};
-	for (auto const& record : std::views::reverse(transaction.success)) {
-		auto operation = std::optional<Operation>{};
-		switch (record.operation) {
-		case Operation::Copy: operation = Operation::Delete; break;
-		case Operation::Rename: operation = Operation::Rename; break;
-		case Operation::Delete: break;
-		}
-		if (!operation) { continue; }
-
-		auto const outcome = transformer.transform(record.destination, record.source, *operation);
-		ret.triage_record(to_record(record.destination, record.source, *operation), outcome);
-	}
-	return ret;
-}
 
 auto util::to_int(std::string_view const text, int const fallback) -> int {
 	if (text.empty()) { return fallback; }

@@ -1,5 +1,7 @@
 #pragma once
 #include "vifo/path/list.hpp"
+#include "vifo/transaction.hpp"
+#include "vifo/types.hpp"
 #include <cstdint>
 #include <vector>
 
@@ -21,6 +23,7 @@ struct Manifest {
 
 	[[nodiscard]] static auto build(IFormatter& formatter, path::List path_list) -> Manifest;
 
+	[[nodiscard]] auto transform(Operation operation, bool overwrite = false) const -> Transaction;
 	[[nodiscard]] auto format_table() const -> std::string;
 
 	fs::path parent{};
