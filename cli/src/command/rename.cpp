@@ -1,6 +1,7 @@
-#include "command/rename_dirs.hpp"
+#include "command/rename.hpp"
 #include "klib/args/arg.hpp"
 #include "klib/debug/assert.hpp"
+#include "klib/enum/bitops.hpp"
 #include "vifo/formatter.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
@@ -15,11 +16,25 @@
 
 namespace vifo::cli::command {
 namespace {
+enum class Type : std::uint8_t {
+	Dir = 1 << 0,
+	File = 1 << 1,
+	Any = Dir | File,
+};
+[[nodiscard]] constexpr auto enable_enum_bitops(Type /*unused*/) { return true; }
+
+auto const type_name_map = klib::EnumNameMap<Type>{
+	{Type::Dir, "dir"},
+	{Type::File, "file"},
+	{Type::Any, "any"},
+};
+
 struct Storage {
 	int max_depth{};
 	std::string input_format{};
 	std::string output_format{};
 	fs::path root_path{};
+	Type type{};
 
 	std::unique_ptr<IFormatter> formatter{};
 	path::List path_list{};
@@ -81,7 +96,7 @@ class StateScanPaths : public State, public path::Scanner {
 	auto execute() -> std::unique_ptr<MachineState> final;
 
 	[[nodiscard]] auto should_iterate(fs::path const& directory) const -> bool final;
-	[[nodiscard]] auto should_store(fs::path const& path) const -> bool final { return fs::is_directory(path); }
+	[[nodiscard]] auto should_store(fs::path const& path) const -> bool final;
 };
 
 class StateBuildManifest : public State {
@@ -110,7 +125,20 @@ auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
 	return std::make_unique<StateScanPaths>(std::move(m_storage));
 }
 
+auto StateScanPaths::should_iterate(fs::path const& directory) const -> bool {
+	auto const filename = directory.filename().string();
+	return !filename.starts_with('.');
+}
+
+auto StateScanPaths::should_store(fs::path const& path) const -> bool {
+	auto ret = false;
+	if ((m_storage.type & Type::Dir) == Type::Dir) { ret |= fs::is_directory(path); }
+	if ((m_storage.type & Type::File) == Type::File) { ret |= fs::is_regular_file(path); }
+	return ret;
+}
+
 auto StateScanPaths::execute() -> std::unique_ptr<MachineState> {
+	m_log.info("filtering by entry type: {}", type_name_map.to_name(m_storage.type));
 	max_depth = std::max(0, m_storage.max_depth);
 	m_log.debug("max depth: {}", max_depth);
 	m_storage.path_list = scan_paths(m_storage.root_path);
@@ -120,11 +148,6 @@ auto StateScanPaths::execute() -> std::unique_ptr<MachineState> {
 	}
 
 	return std::make_unique<StateBuildManifest>(std::move(m_storage));
-}
-
-auto StateScanPaths::should_iterate(fs::path const& directory) const -> bool {
-	auto const filename = directory.filename().string();
-	return !filename.starts_with('.');
 }
 
 auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
@@ -181,8 +204,9 @@ auto StateTransform::confirm_rename() -> bool {
 }
 } // namespace
 
-void RenameDirs::populate_args() {
+void Rename::populate_args() {
 	m_args = {
+		klib::args::named_option(m_type, "t,type", "entry type (dir|file|any)"),
 		klib::args::named_option(m_max_depth, "d,depth", "max subdirectory depth"),
 		klib::args::positional_required(m_input_format, "INPUT_FMT", "input dirname format string"),
 		klib::args::positional_required(m_output_format, "OUTPUT_FMT", "output dirname format string"),
@@ -190,7 +214,7 @@ void RenameDirs::populate_args() {
 	};
 }
 
-auto RenameDirs::execute() -> ExitCode {
+auto Rename::execute() -> ExitCode {
 	auto const root = fs::path{m_root};
 	if (!fs::exists(root)) {
 		std::println(stderr, "invalid path: '{}'", m_root);
@@ -202,6 +226,7 @@ auto RenameDirs::execute() -> ExitCode {
 		.input_format = std::move(m_input_format),
 		.output_format = std::move(m_output_format),
 		.root_path = fs::canonical(root),
+		.type = type_name_map.to_enum(m_type).value_or(Type::Dir),
 	};
 	return execute_state_machine(std::make_unique<StateCreateInterpolator>(std::move(storage)));
 }
