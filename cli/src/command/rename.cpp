@@ -83,7 +83,7 @@ class State : public MachineState {
 
 class StateCreateInterpolator : public State {
   public:
-	explicit StateCreateInterpolator(Storage state) : State(std::move(state), "CreateInterpolator") {}
+	explicit StateCreateInterpolator(Storage storage) : State(std::move(storage), "CreateInterpolator") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
@@ -91,7 +91,7 @@ class StateCreateInterpolator : public State {
 
 class StateScanPaths : public State, path::Scanner {
   public:
-	explicit StateScanPaths(Storage state) : State(std::move(state), "ScanPaths") {}
+	explicit StateScanPaths(Storage storage) : State(std::move(storage), "ScanPaths") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
@@ -102,7 +102,7 @@ class StateScanPaths : public State, path::Scanner {
 
 class StateBuildManifest : public State {
   public:
-	explicit StateBuildManifest(Storage state) : State(std::move(state), "BuildManifest") {}
+	explicit StateBuildManifest(Storage storage) : State(std::move(storage), "BuildManifest") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
@@ -110,7 +110,7 @@ class StateBuildManifest : public State {
 
 class StateTransform : public State, Manifest::Transformer {
   public:
-	explicit StateTransform(Storage state) : State(std::move(state), "BuildManifest") {}
+	explicit StateTransform(Storage storage) : State(std::move(storage), "BuildManifest") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
