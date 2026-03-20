@@ -1,24 +1,22 @@
 #include "vifo/transaction.hpp"
 #include "detail/common.hpp"
-#include "klib/cli/text_table.hpp"
 #include "vifo/path/transformer.hpp"
 #include "vifo/util/util.hpp"
+#include <array>
 #include <filesystem>
 #include <ranges>
 
 namespace vifo {
 auto Transaction::format_table(fs::path const& parent, std::span<Record const> records) -> std::string {
-	auto table = klib::TextTable::Builder{}.add_column("#", klib::TextTable::Align::Right).add_column("destination").add_column("source").build();
-
-	auto row = std::vector<std::string>{};
-	for (auto const [index, record] : std::views::enumerate(records)) {
-		row.reserve(3);
-		row.push_back(std::format("{}", index + 1));
+	static constexpr auto headers_v = std::array{
+		"destination",
+		"source",
+	};
+	auto const per_record = [&parent](std::vector<std::string>& row, Record const& record) {
 		row.push_back(util::to_relative(parent, record.destination).generic_string());
 		row.push_back(util::to_relative(parent, record.source).generic_string());
-		table.push_row(std::move(row));
-	}
-	return table.serialize();
+	};
+	return util::format_enumerated_table(headers_v, records, per_record);
 }
 
 void Transaction::triage_record(Record record, Outcome const outcome) {

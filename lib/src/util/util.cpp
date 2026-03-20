@@ -56,10 +56,19 @@ auto util::ghost_copy(fs::path const& source, fs::path const& destination, bool 
 
 	auto ret = std::int64_t{};
 	for (auto const& it : fs::recursive_directory_iterator{source}) {
-		if (!it.is_regular_file()) { continue; }
-
 		auto const relative = fs::relative(it.path(), source);
 		auto const path = root / relative;
+
+		if (fs::exists(path) && !overwrite) { return -1; }
+
+		if (it.is_directory()) {
+			if (!mkdir(it.path())) { return -1; }
+			++ret;
+			continue;
+		}
+
+		if (!it.is_regular_file()) { continue; }
+
 		if (fs::exists(path) && !overwrite) { return -1; }
 		if (!mkdir(path.parent_path())) { return -1; }
 		auto file = std::ofstream{path, std::ios::out};

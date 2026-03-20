@@ -1,13 +1,11 @@
 #include "vifo/manifest.hpp"
 #include "detail/common.hpp"
-#include "klib/cli/text_table.hpp"
 #include "vifo/formatter.hpp"
 #include "vifo/path/list.hpp"
 #include "vifo/path/transformer.hpp"
 #include "vifo/util/util.hpp"
+#include <array>
 #include <filesystem>
-#include <ranges>
-#include <string_view>
 #include <unordered_set>
 
 namespace vifo {
@@ -34,20 +32,15 @@ auto Manifest::build(IFormatter& formatter, path::List path_list) -> Manifest {
 }
 
 auto Manifest::format_table() const -> std::string {
-	if (entries.empty()) { return {}; }
-
-	auto table = klib::TextTable::Builder{}.add_column("#", klib::TextTable::Align::Right).add_column("destination").add_column("source").build();
-	auto row = std::vector<std::string>{};
-	for (auto const [index, entry] : std::views::enumerate(entries)) {
-		row.reserve(3);
-		std::string_view const prefix = fs::exists(entry.destination) ? "*" : "";
-		row.push_back(std::format("{}{}", prefix, index + 1));
+	static constexpr auto headers_v = std::array{
+		"destination",
+		"source",
+	};
+	auto const per_entry = [this](std::vector<std::string>& row, Entry const& entry) {
 		row.push_back(util::to_relative(parent, entry.destination).generic_string());
 		row.push_back(util::to_relative(parent, entry.source).generic_string());
-		table.push_row(std::move(row));
-	}
-
-	return table.serialize();
+	};
+	return util::format_enumerated_table(headers_v, entries, per_entry);
 }
 
 auto Manifest::Transformer::transform_manifest(Manifest const& manifest, Operation const operation, bool const overwrite) const -> Transaction {
