@@ -63,7 +63,7 @@ class Year : public Binding {
 	[[nodiscard]] auto parse_value(std::string_view& out_input) -> bool final {
 		if (out_input.size() < 4) { return false; }
 
-		static auto const s_regex = std::regex{R"([1-9][0-9]{3}[ _.].*)"};
+		static auto const s_regex = std::regex{R"([1-9]\d{3}(?!\d).*)"};
 		char const* end = out_input.data() + out_input.size();
 		if (!std::regex_match(out_input.data(), end, s_regex)) { return false; }
 
