@@ -30,15 +30,20 @@ auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwr
 [[nodiscard]] auto identify_title(fs::path const& path) -> std::string;
 [[nodiscard]] auto trim_identified_title(std::string_view& out_text) -> std::string;
 
+template <typename ContainerT, std::equality_comparable Type>
+constexpr auto match_any(ContainerT const& container, Type const& t) {
+	return std::ranges::find(container, t) != std::end(container);
+}
+
 constexpr auto video_extensions_v = std::array{
 	".mp4", ".mkv", ".avi", ".m4v", ".webm",
 };
-constexpr auto is_video_file(std::string_view const extension) { return std::ranges::find(video_extensions_v, extension) != video_extensions_v.end(); }
+constexpr auto is_video_file(std::string_view const extension) { return match_any(video_extensions_v, extension); }
 
 constexpr auto subtitle_extensions_v = std::array{
 	".srt",
 };
-constexpr auto is_subtitle_file(std::string_view const extension) { return std::ranges::find(subtitle_extensions_v, extension) != subtitle_extensions_v.end(); }
+constexpr auto is_subtitle_file(std::string_view const extension) { return match_any(subtitle_extensions_v, extension); }
 
 // [[nodiscard]] auto is_year(std::string_view word) -> bool;
 
