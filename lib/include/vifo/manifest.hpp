@@ -1,4 +1,5 @@
 #pragma once
+#include "klib/base_types.hpp"
 #include "vifo/path/list.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
@@ -21,13 +22,22 @@ struct Manifest {
 		fs::path destination{};
 	};
 
+	class Transformer;
+
 	[[nodiscard]] static auto build(IFormatter& formatter, path::List path_list) -> Manifest;
 
-	[[nodiscard]] auto transform(Operation operation, bool overwrite = false) const -> Transaction;
 	[[nodiscard]] auto format_table() const -> std::string;
 
 	fs::path parent{};
 	std::vector<Entry> entries{};
 	Metrics metrics{};
+};
+
+class Manifest::Transformer : public klib::Polymorphic {
+  public:
+	[[nodiscard]] auto transform_manifest(Manifest const& manifest, Operation operation, bool overwrite) const -> Transaction;
+
+  protected:
+	virtual void on_transformed([[maybe_unused]] Record const& record, [[maybe_unused]] Outcome outcome) const {}
 };
 } // namespace vifo

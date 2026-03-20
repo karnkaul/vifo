@@ -10,9 +10,10 @@
 #include "vifo/path/scanner.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
-#include "vifo/util/util.hpp"
+#include "vifo/util/progress.hpp"
 #include <algorithm>
 #include <filesystem>
+#include <optional>
 #include <print>
 
 namespace vifo::cli::command {
@@ -88,7 +89,7 @@ class StateCreateInterpolator : public State {
 	auto execute() -> std::unique_ptr<MachineState> final;
 };
 
-class StateScanPaths : public State, public path::Scanner {
+class StateScanPaths : public State, path::Scanner {
   public:
 	explicit StateScanPaths(Storage state) : State(std::move(state), "ScanPaths") {}
 
@@ -107,14 +108,17 @@ class StateBuildManifest : public State {
 	auto execute() -> std::unique_ptr<MachineState> final;
 };
 
-class StateTransform : public State {
+class StateTransform : public State, Manifest::Transformer {
   public:
 	explicit StateTransform(Storage state) : State(std::move(state), "BuildManifest") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
+	void on_transformed(Record const& record, Outcome outcome) const final;
 
 	[[nodiscard]] auto confirm_rename() -> bool;
+
+	std::unique_ptr<util::Progress> m_progress{};
 };
 
 auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
@@ -173,7 +177,9 @@ auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
 auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 	if (!confirm_rename()) { return {}; }
 
-	m_storage.transaction = m_storage.manifest.transform(Operation::Rename, m_storage.overwrite);
+	m_progress = std::make_unique<util::Progress>(std::int64_t(m_storage.manifest.entries.size()));
+	m_storage.transaction = transform_manifest(m_storage.manifest, Operation::Rename, m_storage.overwrite);
+	m_progress->finish();
 	print_transaction(m_storage.transaction);
 
 	if (m_storage.transaction.success.empty()) { return set_error(ExitCode::TransformFailure); }
@@ -191,6 +197,8 @@ auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 
 	return {};
 }
+
+void StateTransform::on_transformed(Record const& /*record*/, Outcome const /*outcome*/) const { m_progress->increment_completed(); }
 
 auto StateTransform::confirm_rename() -> bool {
 	if (m_storage.manifest.metrics.existing == 0) { return should_continue("rename?"); }

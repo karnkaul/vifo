@@ -33,17 +33,6 @@ auto Manifest::build(IFormatter& formatter, path::List path_list) -> Manifest {
 	return ret;
 }
 
-auto Manifest::transform(Operation const operation, bool const overwrite) const -> Transaction {
-	auto ret = Transaction{.parent = parent};
-	auto const transformer = path::Transformer{.overwrite = overwrite};
-	for (auto const& entry : entries) {
-		auto const outcome = transformer.transform(entry.source, entry.destination, operation);
-		auto record = detail::to_record(entry.source, entry.destination, operation);
-		ret.triage_record(std::move(record), outcome);
-	}
-	return ret;
-}
-
 auto Manifest::format_table() const -> std::string {
 	if (entries.empty()) { return {}; }
 
@@ -59,5 +48,17 @@ auto Manifest::format_table() const -> std::string {
 	}
 
 	return table.serialize();
+}
+
+auto Manifest::Transformer::transform_manifest(Manifest const& manifest, Operation const operation, bool const overwrite) const -> Transaction {
+	auto ret = Transaction{.parent = manifest.parent};
+	auto const transformer = path::Transformer{.overwrite = overwrite};
+	for (auto const& entry : manifest.entries) {
+		auto const outcome = transformer.transform(entry.source, entry.destination, operation);
+		auto record = detail::to_record(entry.source, entry.destination, operation);
+		on_transformed(record, outcome);
+		ret.triage_record(std::move(record), outcome);
+	}
+	return ret;
 }
 } // namespace vifo
