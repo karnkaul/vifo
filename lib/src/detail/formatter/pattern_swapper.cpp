@@ -1,6 +1,7 @@
 #include "detail/formatter/pattern_swapper.hpp"
 #include "detail/common.hpp"
 #include "klib/ptr.hpp"
+#include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
 #include "vifo/util/util.hpp"
 #include <algorithm>
@@ -15,20 +16,11 @@ using expression::Term;
 using expression::Token;
 
 namespace {
-class Binding : public klib::Polymorphic {
+class Binding : public Symbol {
   public:
-	explicit Binding(std::string name) : m_name(std::move(name)) {}
+	explicit Binding(std::string name) : Symbol(std::move(name)) {}
 
 	virtual auto parse_value(std::string_view& out_input) -> bool = 0;
-
-	[[nodiscard]] auto get_name() const -> std::string_view { return m_name; }
-	[[nodiscard]] auto get_value() const -> std::string_view { return m_value; }
-
-  protected:
-	std::string m_value{};
-
-  private:
-	std::string m_name{};
 };
 
 class Variable : public Binding {
@@ -42,7 +34,7 @@ class Variable : public Binding {
 			return std::min(m_max_length, out_text.length());
 		}();
 
-		m_value = out_text.substr(0, length);
+		value = out_text.substr(0, length);
 		out_text.remove_prefix(length);
 		return true;
 	}
@@ -64,8 +56,8 @@ class Year : public Binding {
 		char const* end = out_input.data() + out_input.size();
 		if (!std::regex_match(out_input.data(), end, s_regex)) { return false; }
 
-		m_value = out_input.substr(0, 4);
-		out_input.remove_prefix(m_value.size());
+		value = out_input.substr(0, 4);
+		out_input.remove_prefix(value.size());
 		return true;
 	}
 };
@@ -78,27 +70,22 @@ class Title : public Binding {
 
   private:
 	[[nodiscard]] auto parse_value(std::string_view& out_input) -> bool final {
-		m_value = util::trim_identified_title(out_input);
-		return !m_value.empty();
+		value = util::trim_identified_title(out_input);
+		return !value.empty();
 	}
 };
 } // namespace
 
 struct PatternSwapContext {
 	[[nodiscard]] auto find_binding(std::string_view const name) const -> klib::Ptr<Binding> {
-		auto const it = std::ranges::find_if(bindings, [name](auto const& b) { return b->get_name() == name; });
-		if (it == bindings.end()) { return nullptr; }
-		return it->get();
+		return dynamic_cast<Binding*>(environment.find_symbol(name).get());
 	}
 
-	[[nodiscard]] auto get_value(std::string_view const name) const -> std::string_view {
-		if (auto const binding = find_binding(name)) { return binding->get_value(); }
-		return {};
-	}
+	[[nodiscard]] auto get_value(std::string_view const name) const -> std::string_view { return environment.get_value(name); }
 
 	Term source{};
 	Term transform{};
-	std::vector<std::unique_ptr<Binding>> bindings{};
+	Environment environment{};
 };
 
 namespace {
@@ -114,7 +101,9 @@ class BindingBuilder {
 
 	[[nodiscard]] auto create(Token const& token, Identifier const& identifier) -> Result<void> {
 		return verify_unique(token, identifier).and_then([&] {
-			return create_binding(token, identifier).transform([&](std::unique_ptr<Binding> binding) { m_context.bindings.push_back(std::move(binding)); });
+			return create_binding(token, identifier).transform([&](std::unique_ptr<Binding> binding) {
+				m_context.environment.symbols.push_back(std::move(binding));
+			});
 		});
 	}
 

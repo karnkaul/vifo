@@ -1,11 +1,7 @@
 #pragma once
+#include "vifo/expression.hpp"
 #include "vifo/formatter.hpp"
 #include <memory>
-
-namespace vifo::expression {
-struct Atom;
-struct Expression;
-} // namespace vifo::expression
 
 namespace vifo::detail {
 struct PatternSwapContext;
