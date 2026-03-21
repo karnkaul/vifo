@@ -1,16 +1,26 @@
 #pragma once
 #include "vifo/expression.hpp"
-#include "vifo/formatter.hpp"
+#include "vifo/formatter/formatter.hpp"
+#include "vifo/result.hpp"
 #include <memory>
 
-namespace vifo::detail {
+namespace vifo {
 struct PatternSwapContext;
 
-class PatternSwapper : public IFormatter {
-  public:
-	explicit PatternSwapper();
+struct PatternSwapFormat {
+	[[nodiscard]] static auto from_file(std::string_view path) -> std::optional<PatternSwapFormat>;
 
-	[[nodiscard]] auto initialize(PatternSwapFormat format) -> Result<void>;
+	std::string input{};
+	std::string output{};
+};
+
+class PatternSwapper : public Formatter {
+  public:
+	using Format = PatternSwapFormat;
+
+	[[nodiscard]] static auto create(Format format) -> Result<PatternSwapper>;
+
+	[[nodiscard]] auto format_string(std::string_view input) -> std::string override;
 
   private:
 	using Context = PatternSwapContext;
@@ -20,8 +30,6 @@ class PatternSwapper : public IFormatter {
 		void operator()(Context* ptr) const noexcept;
 	};
 
-	[[nodiscard]] auto format_string(std::string_view input) -> std::string final;
-
 	[[nodiscard]] auto build_source(Expression expression) -> Result<void>;
 	[[nodiscard]] auto build_transform(Expression transform) -> Result<void>;
 	[[nodiscard]] auto extract_values(std::string_view input) -> bool;
@@ -29,4 +37,4 @@ class PatternSwapper : public IFormatter {
 
 	std::unique_ptr<Context, Deleter> m_context{};
 };
-} // namespace vifo::detail
+} // namespace vifo

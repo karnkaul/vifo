@@ -23,6 +23,8 @@ struct Environment {
 	[[nodiscard]] auto find_symbol(std::string_view name) const -> klib::Ptr<Symbol>;
 	[[nodiscard]] auto get_value(std::string_view name) const -> std::string_view;
 
+	void set_symbol(std::string_view name, std::string value);
+
 	std::vector<std::unique_ptr<Symbol>> symbols{};
 };
 } // namespace vifo

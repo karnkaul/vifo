@@ -3,7 +3,7 @@
 #include "klib/debug/assert.hpp"
 #include "klib/enum/bitops.hpp"
 #include "log.hpp"
-#include "vifo/formatter.hpp"
+#include "vifo/formatter/pattern_swapper.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/path/list.hpp"
@@ -37,7 +37,7 @@ struct Storage {
 	fs::path root_path{};
 	Type type{};
 
-	std::unique_ptr<IFormatter> formatter{};
+	std::optional<PatternSwapper> formatter{};
 	path::List path_list{};
 	Manifest manifest{};
 
@@ -122,7 +122,7 @@ class StateTransform : public State, Manifest::Transformer {
 };
 
 auto StateCreateFormatter::execute() -> std::unique_ptr<MachineState> {
-	auto pattern_swapper = create_pattern_swapper(std::move(m_storage.format));
+	auto pattern_swapper = PatternSwapper::create(std::move(m_storage.format));
 	if (!pattern_swapper) { return handle_error(pattern_swapper.error()); }
 
 	m_storage.formatter = std::move(*pattern_swapper);

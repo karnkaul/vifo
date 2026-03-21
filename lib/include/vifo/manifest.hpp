@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace vifo {
-class IFormatter;
+class Formatter;
 
 namespace fs = std::filesystem;
 
@@ -24,7 +24,7 @@ struct Manifest {
 
 	class Transformer;
 
-	[[nodiscard]] static auto build(IFormatter& formatter, path::List path_list) -> Manifest;
+	[[nodiscard]] static auto build(Formatter& formatter, path::List path_list) -> Manifest;
 
 	[[nodiscard]] auto format_table() const -> std::string;
 

@@ -1,6 +1,6 @@
 #include "vifo/manifest.hpp"
 #include "detail/common.hpp"
-#include "vifo/formatter.hpp"
+#include "vifo/formatter/formatter.hpp"
 #include "vifo/path/list.hpp"
 #include "vifo/path/transformer.hpp"
 #include "vifo/util/util.hpp"
@@ -9,7 +9,7 @@
 #include <unordered_set>
 
 namespace vifo {
-auto Manifest::build(IFormatter& formatter, path::List path_list) -> Manifest {
+auto Manifest::build(Formatter& formatter, path::List path_list) -> Manifest {
 	auto destinations = std::unordered_set<fs::path>{};
 	auto ret = Manifest{.parent = std::move(path_list.scan_path)};
 	for (auto& source : path_list.paths) {

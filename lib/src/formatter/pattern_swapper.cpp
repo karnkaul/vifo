@@ -1,14 +1,15 @@
-#include "detail/formatter/pattern_swapper.hpp"
+#include "vifo/formatter/pattern_swapper.hpp"
 #include "detail/common.hpp"
 #include "klib/ptr.hpp"
 #include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
 #include "vifo/util/util.hpp"
+#include <djson/json.hpp>
 #include <algorithm>
 #include <regex>
 #include <string_view>
 
-namespace vifo::detail {
+namespace vifo {
 using expression::Expression;
 using expression::Identifier;
 using expression::Substring;
@@ -78,21 +79,21 @@ class Title : public Binding {
 
 struct PatternSwapContext {
 	[[nodiscard]] auto find_binding(std::string_view const name) const -> klib::Ptr<Binding> {
-		return dynamic_cast<Binding*>(environment.find_symbol(name).get());
+		return dynamic_cast<Binding*>(environment->find_symbol(name).get());
 	}
 
-	[[nodiscard]] auto get_value(std::string_view const name) const -> std::string_view { return environment.get_value(name); }
+	[[nodiscard]] auto get_value(std::string_view const name) const -> std::string_view { return environment->get_value(name); }
 
 	Term source{};
 	Term transform{};
-	Environment environment{};
+	klib::Ptr<Environment> environment{};
 };
 
 namespace {
 using Context = PatternSwapContext;
 
 [[nodiscard]] auto format_error(Token const& token, std::string_view const format, std::string_view const msg) {
-	return to_error(Error::Type::Format, token, format, msg);
+	return detail::to_error(Error::Type::Format, token, format, msg);
 }
 
 class BindingBuilder {
@@ -102,7 +103,7 @@ class BindingBuilder {
 	[[nodiscard]] auto create(Token const& token, Identifier const& identifier) -> Result<void> {
 		return verify_unique(token, identifier).and_then([&] {
 			return create_binding(token, identifier).transform([&](std::unique_ptr<Binding> binding) {
-				m_context.environment.symbols.push_back(std::move(binding));
+				m_context.environment->symbols.push_back(std::move(binding));
 			});
 		});
 	}
@@ -133,32 +134,46 @@ class BindingBuilder {
 };
 } // namespace
 
+auto PatternSwapFormat::from_file(std::string_view const path) -> std::optional<PatternSwapFormat> {
+	auto const result = dj::Json::from_file(path);
+	if (!result) { return {}; }
+
+	auto const& json = *result;
+	auto ret = PatternSwapFormat{};
+	from_json(json["input"], ret.input);
+	from_json(json["output"], ret.output);
+	if (ret.input.empty() || ret.output.empty()) { return {}; }
+
+	return ret;
+}
+
 void PatternSwapper::Deleter::operator()(Context* ptr) const noexcept { std::default_delete<Context>{}(ptr); }
 
-PatternSwapper::PatternSwapper() : m_context(new Context{}) {}
-
-auto PatternSwapper::initialize(PatternSwapFormat format) -> Result<void> {
-	m_context->source.format = std::move(format.input);
-	m_context->transform.format = std::move(format.output);
+auto PatternSwapper::create(Format format) -> Result<PatternSwapper> {
+	auto ret = PatternSwapper{};
+	ret.m_context.reset(new Context); // NOLINT(cppcoreguidelines-owning-memory)
+	ret.m_context->environment = ret.m_environment.get();
+	ret.m_context->source.format = std::move(format.input);
+	ret.m_context->transform.format = std::move(format.output);
 
 	auto input_expression = Expression{};
 	auto output_expression = Expression{};
-	return expression::parse(m_context->source.format)
+	return expression::parse(ret.m_context->source.format)
 		.and_then([&](Expression ie) {
 			input_expression = std::move(ie);
-			return expression::parse(m_context->transform.format);
+			return expression::parse(ret.m_context->transform.format);
 		})
 		.and_then([&](Expression oe) {
 			output_expression = std::move(oe);
-			return build_source(std::move(input_expression));
+			return ret.build_source(std::move(input_expression));
 		})
-		.and_then([&] { return build_transform(std::move(output_expression)); });
+		.and_then([&] { return ret.build_transform(std::move(output_expression)); })
+		.transform([&] { return std::move(ret); });
 }
 
 auto PatternSwapper::format_string(std::string_view const input) -> std::string {
 	if (!extract_values(input)) { return {}; }
-	auto const get_value = [this](Identifier const& identifier) { return m_context->get_value(identifier.name); };
-	return m_context->transform.expression.interpolate(get_value);
+	return interpolate(m_context->transform.expression);
 }
 
 auto PatternSwapper::build_source(Expression expression) -> Result<void> {
@@ -190,6 +205,7 @@ auto PatternSwapper::build_transform(Expression transform) -> Result<void> {
 }
 
 auto PatternSwapper::extract_values(std::string_view input) -> bool {
+	if (!m_context) { return false; }
 	for (auto const& atom : m_context->source.expression.atoms) {
 		if (!match_symbol(input, atom)) { return false; }
 	}
@@ -204,4 +220,4 @@ auto PatternSwapper::match_symbol(std::string_view& out_input, expression::Atom 
 	KLIB_ASSERT(binding);
 	return binding->parse_value(out_input);
 }
-} // namespace vifo::detail
+} // namespace vifo

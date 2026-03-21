@@ -12,4 +12,13 @@ auto Environment::get_value(std::string_view const name) const -> std::string_vi
 	if (auto const symbol = find_symbol(name)) { return symbol->value; }
 	return {};
 }
+
+void Environment::set_symbol(std::string_view const name, std::string value) {
+	auto symbol = find_symbol(name);
+	if (!symbol) {
+		symbols.push_back(std::make_unique<Symbol>(std::string{name}));
+		symbol = symbols.back().get();
+	}
+	symbol->value = std::move(value);
+}
 } // namespace vifo

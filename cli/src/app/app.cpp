@@ -9,6 +9,7 @@
 #include "klib/string/c_string.hpp"
 #include "log.hpp"
 #include "vifo/build_version.hpp"
+#include "vifo/formatter/formatter.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/panic.hpp"
 #include <cstdlib>
