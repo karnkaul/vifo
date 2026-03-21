@@ -44,5 +44,10 @@ struct Expression {
 	std::vector<Atom> atoms{};
 };
 
+struct Term {
+	std::string format{};
+	Expression expression{};
+};
+
 [[nodiscard]] auto parse(std::string_view input) -> Result<Expression>;
 } // namespace vifo::expression
