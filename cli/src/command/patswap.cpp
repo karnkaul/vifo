@@ -81,9 +81,9 @@ class State : public MachineState {
 	Storage m_storage{};
 };
 
-class StateCreateInterpolator : public State {
+class StateCreateFormatter : public State {
   public:
-	explicit StateCreateInterpolator(Storage storage) : State(std::move(storage), "CreateInterpolator") {}
+	explicit StateCreateFormatter(Storage storage) : State(std::move(storage), "CreateFormatter") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
@@ -121,7 +121,7 @@ class StateTransform : public State, Manifest::Transformer {
 	std::unique_ptr<util::Progress> m_progress{};
 };
 
-auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
+auto StateCreateFormatter::execute() -> std::unique_ptr<MachineState> {
 	auto pattern_swapper = create_pattern_swapper(std::move(m_storage.format));
 	if (!pattern_swapper) { return handle_error(pattern_swapper.error()); }
 
@@ -254,6 +254,6 @@ auto Patswap::execute() -> ExitCode {
 		.root_path = fs::canonical(root),
 		.type = type_name_map.to_enum(m_type).value_or(Type::Dir),
 	};
-	return execute_state_machine(std::make_unique<StateCreateInterpolator>(std::move(storage)));
+	return execute_state_machine(std::make_unique<StateCreateFormatter>(std::move(storage)));
 }
 } // namespace vifo::cli::command

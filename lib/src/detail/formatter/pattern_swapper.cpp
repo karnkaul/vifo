@@ -5,6 +5,7 @@
 #include "vifo/util/util.hpp"
 #include <algorithm>
 #include <regex>
+#include <string_view>
 
 namespace vifo::detail {
 using expression::Expression;
@@ -90,6 +91,11 @@ struct PatternSwapContext {
 		return it->get();
 	}
 
+	[[nodiscard]] auto get_value(std::string_view const name) const -> std::string_view {
+		if (auto const binding = find_binding(name)) { return binding->get_value(); }
+		return {};
+	}
+
 	Term source{};
 	Term transform{};
 	std::vector<std::unique_ptr<Binding>> bindings{};
@@ -160,6 +166,12 @@ auto PatternSwapper::initialize(PatternSwapFormat format) -> Result<void> {
 		.and_then([&] { return build_transform(std::move(output_expression)); });
 }
 
+auto PatternSwapper::format(std::string_view const input) -> std::string {
+	if (!extract_values(input)) { return {}; }
+	auto const get_value = [this](Identifier const& identifier) { return m_context->get_value(identifier.name); };
+	return m_context->transform.expression.interpolate(get_value);
+}
+
 auto PatternSwapper::build_source(Expression expression) -> Result<void> {
 	m_context->source.expression = std::move(expression);
 	auto binding_builder = BindingBuilder{*m_context};
@@ -202,22 +214,5 @@ auto PatternSwapper::match_symbol(std::string_view& out_input, expression::Atom 
 	auto binding = m_context->find_binding(identifier.name);
 	KLIB_ASSERT(binding);
 	return binding->parse_value(out_input);
-}
-
-auto PatternSwapper::interpolate() const -> std::string {
-	auto ret = std::string{};
-	for (auto const& atom : m_context->transform.expression.atoms) {
-		if (auto const* substring = std::get_if<Substring>(&atom.value)) {
-			ret += substring->text;
-			continue;
-		}
-
-		auto const& identifer = std::get<Identifier>(atom.value);
-		auto const binding = m_context->find_binding(identifer.name);
-		if (!binding) { return {}; }
-		ret += binding->get_value();
-	}
-
-	return ret;
 }
 } // namespace vifo::detail
