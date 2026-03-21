@@ -166,7 +166,7 @@ auto PatternSwapper::initialize(PatternSwapFormat format) -> Result<void> {
 		.and_then([&] { return build_transform(std::move(output_expression)); });
 }
 
-auto PatternSwapper::format(std::string_view const input) -> std::string {
+auto PatternSwapper::format_string(std::string_view const input) -> std::string {
 	if (!extract_values(input)) { return {}; }
 	auto const get_value = [this](Identifier const& identifier) { return m_context->get_value(identifier.name); };
 	return m_context->transform.expression.interpolate(get_value);

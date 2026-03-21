@@ -24,7 +24,7 @@ class PatternSwapper : public IFormatter {
 		void operator()(Context* ptr) const noexcept;
 	};
 
-	[[nodiscard]] auto format(std::string_view input) -> std::string final;
+	[[nodiscard]] auto format_string(std::string_view input) -> std::string final;
 
 	[[nodiscard]] auto build_source(Expression expression) -> Result<void>;
 	[[nodiscard]] auto build_transform(Expression transform) -> Result<void>;
