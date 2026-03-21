@@ -1,4 +1,4 @@
-#include "detail/formatter/interpolator.hpp"
+#include "detail/formatter/pattern_swapper.hpp"
 #include "detail/common.hpp"
 #include "klib/ptr.hpp"
 #include "vifo/expression.hpp"
@@ -83,7 +83,7 @@ class Title : public Binding {
 };
 } // namespace
 
-struct InterpolateContext {
+struct PatternSwapContext {
 	[[nodiscard]] auto find_binding(std::string_view const name) const -> klib::Ptr<Binding> {
 		auto const it = std::ranges::find_if(bindings, [name](auto const& b) { return b->get_name() == name; });
 		if (it == bindings.end()) { return nullptr; }
@@ -96,7 +96,7 @@ struct InterpolateContext {
 };
 
 namespace {
-using Context = InterpolateContext;
+using Context = PatternSwapContext;
 
 [[nodiscard]] auto format_error(Token const& token, std::string_view const format, std::string_view const msg) {
 	return to_error(Error::Type::Format, token, format, msg);
@@ -138,11 +138,11 @@ class BindingBuilder {
 };
 } // namespace
 
-void Interpolator::Deleter::operator()(Context* ptr) const noexcept { std::default_delete<Context>{}(ptr); }
+void PatternSwapper::Deleter::operator()(Context* ptr) const noexcept { std::default_delete<Context>{}(ptr); }
 
-Interpolator::Interpolator() : m_context(new Context{}) {}
+PatternSwapper::PatternSwapper() : m_context(new Context{}) {}
 
-auto Interpolator::initialize(InterpolateFormat format) -> Result<void> {
+auto PatternSwapper::initialize(PatternSwapFormat format) -> Result<void> {
 	m_context->source.format = std::move(format.input);
 	m_context->transform.format = std::move(format.output);
 
@@ -160,7 +160,7 @@ auto Interpolator::initialize(InterpolateFormat format) -> Result<void> {
 		.and_then([&] { return build_transform(std::move(output_expression)); });
 }
 
-auto Interpolator::build_source(Expression expression) -> Result<void> {
+auto PatternSwapper::build_source(Expression expression) -> Result<void> {
 	m_context->source.expression = std::move(expression);
 	auto binding_builder = BindingBuilder{*m_context};
 	for (auto& atom : m_context->source.expression.atoms) {
@@ -174,7 +174,7 @@ auto Interpolator::build_source(Expression expression) -> Result<void> {
 	return {};
 }
 
-auto Interpolator::build_transform(Expression transform) -> Result<void> {
+auto PatternSwapper::build_transform(Expression transform) -> Result<void> {
 	for (auto const& atom : transform.atoms) {
 		auto const* identifier = std::get_if<Identifier>(&atom.value);
 		if (!identifier) { continue; }
@@ -188,14 +188,14 @@ auto Interpolator::build_transform(Expression transform) -> Result<void> {
 	return {};
 }
 
-auto Interpolator::extract_values(std::string_view input) -> bool {
+auto PatternSwapper::extract_values(std::string_view input) -> bool {
 	for (auto const& atom : m_context->source.expression.atoms) {
 		if (!match_symbol(input, atom)) { return false; }
 	}
 	return true;
 }
 
-auto Interpolator::match_symbol(std::string_view& out_input, expression::Atom const& atom) -> bool {
+auto PatternSwapper::match_symbol(std::string_view& out_input, expression::Atom const& atom) -> bool {
 	if (auto const* substring = std::get_if<Substring>(&atom.value)) { return substring->consume(out_input); }
 
 	auto const& identifier = std::get<Identifier>(atom.value);
@@ -204,7 +204,7 @@ auto Interpolator::match_symbol(std::string_view& out_input, expression::Atom co
 	return binding->parse_value(out_input);
 }
 
-auto Interpolator::interpolate() const -> std::string {
+auto PatternSwapper::interpolate() const -> std::string {
 	auto ret = std::string{};
 	for (auto const& atom : m_context->transform.expression.atoms) {
 		if (auto const* substring = std::get_if<Substring>(&atom.value)) {

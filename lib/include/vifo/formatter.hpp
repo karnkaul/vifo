@@ -13,12 +13,12 @@ class IFormatter : public klib::Polymorphic {
 	[[nodiscard]] virtual auto format(std::string_view input) -> std::string = 0;
 };
 
-struct InterpolateFormat {
-	[[nodiscard]] static auto from_file(std::string_view path) -> std::optional<InterpolateFormat>;
+struct PatternSwapFormat {
+	[[nodiscard]] static auto from_file(std::string_view path) -> std::optional<PatternSwapFormat>;
 
 	std::string input{};
 	std::string output{};
 };
 
-[[nodiscard]] auto create_interpolator(InterpolateFormat format) -> Result<std::unique_ptr<IFormatter>>;
+[[nodiscard]] auto create_pattern_swapper(PatternSwapFormat format) -> Result<std::unique_ptr<IFormatter>>;
 } // namespace vifo

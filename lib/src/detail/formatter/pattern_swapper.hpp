@@ -8,16 +8,16 @@ struct Expression;
 } // namespace vifo::expression
 
 namespace vifo::detail {
-struct InterpolateContext;
+struct PatternSwapContext;
 
-class Interpolator : public IFormatter {
+class PatternSwapper : public IFormatter {
   public:
-	explicit Interpolator();
+	explicit PatternSwapper();
 
-	[[nodiscard]] auto initialize(InterpolateFormat format) -> Result<void>;
+	[[nodiscard]] auto initialize(PatternSwapFormat format) -> Result<void>;
 
   private:
-	using Context = InterpolateContext;
+	using Context = PatternSwapContext;
 	using Expression = expression::Expression;
 
 	struct Deleter {

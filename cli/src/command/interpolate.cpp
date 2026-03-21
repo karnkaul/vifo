@@ -33,7 +33,7 @@ auto const type_name_map = klib::EnumNameMap<Type>{
 
 struct Storage {
 	int max_depth{};
-	InterpolateFormat format{};
+	PatternSwapFormat format{};
 	fs::path root_path{};
 	Type type{};
 
@@ -122,10 +122,10 @@ class StateTransform : public State, Manifest::Transformer {
 };
 
 auto StateCreateInterpolator::execute() -> std::unique_ptr<MachineState> {
-	auto interpolator = create_interpolator(std::move(m_storage.format));
-	if (!interpolator) { return handle_error(interpolator.error()); }
+	auto pattern_swapper = create_pattern_swapper(std::move(m_storage.format));
+	if (!pattern_swapper) { return handle_error(pattern_swapper.error()); }
 
-	m_storage.formatter = std::move(*interpolator);
+	m_storage.formatter = std::move(*pattern_swapper);
 	return std::make_unique<StateScanPaths>(std::move(m_storage));
 }
 
@@ -230,9 +230,9 @@ auto Interpolate::execute() -> ExitCode {
 		return ExitCode::InvalidArgument;
 	}
 
-	auto format = InterpolateFormat{};
+	auto format = PatternSwapFormat{};
 	if (!m_format_json.empty()) {
-		auto fmt = InterpolateFormat::from_file(m_format_json);
+		auto fmt = PatternSwapFormat::from_file(m_format_json);
 		if (!fmt) {
 			std::println(stderr, "failed to read format json: '{}'", m_format_json);
 			return ExitCode::IoError;
@@ -245,7 +245,7 @@ auto Interpolate::execute() -> ExitCode {
 			std::println(stderr, "either format json or input and output formats are required");
 			return ExitCode::InvalidArgument;
 		}
-		format = InterpolateFormat{.input = std::move(m_input_format), .output = std::move(m_output_format)};
+		format = PatternSwapFormat{.input = std::move(m_input_format), .output = std::move(m_output_format)};
 	}
 
 	auto storage = Storage{
