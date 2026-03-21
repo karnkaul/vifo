@@ -204,7 +204,7 @@ auto Interpolator::match_symbol(std::string_view& out_input, expression::Atom co
 	return binding->parse_value(out_input);
 }
 
-auto Interpolator::interpolate() -> std::string {
+auto Interpolator::interpolate() const -> std::string {
 	auto ret = std::string{};
 	for (auto const& atom : m_context->transform.expression.atoms) {
 		if (auto const* substring = std::get_if<Substring>(&atom.value)) {

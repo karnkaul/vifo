@@ -34,7 +34,7 @@ class Interpolator : public IFormatter {
 	[[nodiscard]] auto extract_values(std::string_view input) -> bool;
 	[[nodiscard]] auto match_symbol(std::string_view& out_input, expression::Atom const& atom) -> bool;
 
-	[[nodiscard]] auto interpolate() -> std::string;
+	[[nodiscard]] auto interpolate() const -> std::string;
 
 	std::unique_ptr<Context, Deleter> m_context{};
 };
