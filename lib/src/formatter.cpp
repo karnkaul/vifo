@@ -1,10 +1,20 @@
 #include "vifo/formatter.hpp"
 #include "detail/formatter/pattern_swapper.hpp"
+#include "detail/formatter/subtitle_formatter.hpp"
 #include "vifo/util/util.hpp"
 #include <djson/json.hpp>
 #include <filesystem>
 
 namespace vifo {
+namespace {
+template <typename T, typename... Args>
+	requires requires(T& t, Args&&... args) { t.initialize(std::forward<Args>(args)...); }
+[[nodiscard]] auto create_formatter(Args&&... args) -> Result<std::unique_ptr<T>> {
+	auto ret = std::make_unique<T>();
+	return ret->initialize(std::forward<Args>(args)...).transform([&] { return std::move(ret); });
+}
+} // namespace
+
 auto IFormatter::format_path(fs::path const& path) -> fs::path {
 	auto const stem = format_string(path.stem().generic_string());
 	if (stem.empty()) { return {}; }
@@ -28,6 +38,9 @@ auto PatternSwapFormat::from_file(std::string_view const path) -> std::optional<
 } // namespace vifo
 
 auto vifo::create_pattern_swapper(PatternSwapFormat format) -> Result<std::unique_ptr<IFormatter>> {
-	auto ret = std::make_unique<detail::PatternSwapper>();
-	return ret->initialize(std::move(format)).transform([&] { return std::move(ret); });
+	return create_formatter<detail::PatternSwapper>(std::move(format));
+}
+
+auto vifo::create_subtitle_formatter(SubtitleFormat format) -> Result<std::unique_ptr<ISubtitleFormatter>> {
+	return create_formatter<detail::SubtitleFormatter>(std::move(format));
 }

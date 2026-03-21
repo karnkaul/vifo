@@ -17,6 +17,16 @@ class IFormatter : public klib::Polymorphic {
 	[[nodiscard]] auto format_path(fs::path const& path) -> fs::path;
 };
 
+class ISubtitleFormatter : public IFormatter {
+  public:
+	static constexpr std::string_view title_identifier_v{"title"};
+	static constexpr std::string_view number_identifier_v{"number"};
+
+	virtual void set_title(std::string title) = 0;
+	virtual void set_number(int number) = 0;
+	void reset_number() { set_number(0); }
+};
+
 struct PatternSwapFormat {
 	[[nodiscard]] static auto from_file(std::string_view path) -> std::optional<PatternSwapFormat>;
 
@@ -24,5 +34,11 @@ struct PatternSwapFormat {
 	std::string output{};
 };
 
+struct SubtitleFormat {
+	std::string primary{"{title}.en.default"};
+	std::string secondary{"{title}.en.sub_{number}"};
+};
+
 [[nodiscard]] auto create_pattern_swapper(PatternSwapFormat format) -> Result<std::unique_ptr<IFormatter>>;
+[[nodiscard]] auto create_subtitle_formatter(SubtitleFormat format = {}) -> Result<std::unique_ptr<ISubtitleFormatter>>;
 } // namespace vifo
