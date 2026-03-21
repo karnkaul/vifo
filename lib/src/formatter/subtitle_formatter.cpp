@@ -39,8 +39,7 @@ auto SubtitleFormatter::create(Format format) -> Result<SubtitleFormatter> {
 		});
 }
 
-auto SubtitleFormatter::format_string(std::string_view const input) -> std::string {
-	if (input.empty()) { return {}; }
+auto SubtitleFormatter::format_string(std::string_view const /*ignored*/) -> std::string {
 	auto ret = [&] {
 		if (m_number == 0) { return interpolate(m_primary); }
 		return interpolate(m_secondary);

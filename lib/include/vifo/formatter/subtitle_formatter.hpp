@@ -18,7 +18,8 @@ class SubtitleFormatter : public Formatter {
 
 	[[nodiscard]] static auto create(Format format = {}) -> Result<SubtitleFormatter>;
 
-	[[nodiscard]] auto format_string(std::string_view input) -> std::string final;
+	/// \returns Next subtitle file stem.
+	[[nodiscard]] auto format_string(std::string_view /*ignored*/) -> std::string final;
 
 	void set_number(int number);
 	void set_title(std::string title);

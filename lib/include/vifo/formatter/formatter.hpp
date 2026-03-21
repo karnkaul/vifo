@@ -12,11 +12,11 @@ namespace fs = std::filesystem;
 
 class Formatter : public klib::Polymorphic {
   public:
-	/// \returns Transformed string on match, otherwise empty string.
+	/// \returns Transformed string.
 	[[nodiscard]] virtual auto format_string(std::string_view input) -> std::string = 0;
 
-	/// \returns Path with transformed stem on match, otherwise empty path.
-	[[nodiscard]] auto format_path(fs::path const& path) -> fs::path;
+	/// \returns Transformed path.
+	[[nodiscard]] virtual auto format_path(fs::path const& path) -> fs::path;
 
   protected:
 	[[nodiscard]] auto interpolate(expression::Expression const& expression) const -> std::string;

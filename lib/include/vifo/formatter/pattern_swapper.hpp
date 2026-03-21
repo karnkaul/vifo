@@ -20,6 +20,7 @@ class PatternSwapper : public Formatter {
 
 	[[nodiscard]] static auto create(Format format) -> Result<PatternSwapper>;
 
+	/// \returns Transformed string on match, otherwise empty string.
 	[[nodiscard]] auto format_string(std::string_view input) -> std::string override;
 
   private:
@@ -31,7 +32,7 @@ class PatternSwapper : public Formatter {
 	};
 
 	[[nodiscard]] auto build_source(Expression expression) -> Result<void>;
-	[[nodiscard]] auto build_transform(Expression transform) -> Result<void>;
+	[[nodiscard]] auto build_destination(Expression destination) -> Result<void>;
 	[[nodiscard]] auto extract_values(std::string_view input) -> bool;
 	[[nodiscard]] auto match_symbol(std::string_view& out_input, expression::Atom const& atom) -> bool;
 

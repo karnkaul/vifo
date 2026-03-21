@@ -85,7 +85,7 @@ struct PatternSwapContext {
 	[[nodiscard]] auto get_value(std::string_view const name) const -> std::string_view { return environment->get_value(name); }
 
 	Term source{};
-	Term transform{};
+	Term destination{};
 	klib::Ptr<Environment> environment{};
 };
 
@@ -154,26 +154,26 @@ auto PatternSwapper::create(Format format) -> Result<PatternSwapper> {
 	ret.m_context.reset(new Context); // NOLINT(cppcoreguidelines-owning-memory)
 	ret.m_context->environment = ret.m_environment.get();
 	ret.m_context->source.format = std::move(format.input);
-	ret.m_context->transform.format = std::move(format.output);
+	ret.m_context->destination.format = std::move(format.output);
 
 	auto input_expression = Expression{};
 	auto output_expression = Expression{};
 	return expression::parse(ret.m_context->source.format)
 		.and_then([&](Expression ie) {
 			input_expression = std::move(ie);
-			return expression::parse(ret.m_context->transform.format);
+			return expression::parse(ret.m_context->destination.format);
 		})
 		.and_then([&](Expression oe) {
 			output_expression = std::move(oe);
 			return ret.build_source(std::move(input_expression));
 		})
-		.and_then([&] { return ret.build_transform(std::move(output_expression)); })
+		.and_then([&] { return ret.build_destination(std::move(output_expression)); })
 		.transform([&] { return std::move(ret); });
 }
 
 auto PatternSwapper::format_string(std::string_view const input) -> std::string {
 	if (!extract_values(input)) { return {}; }
-	return interpolate(m_context->transform.expression);
+	return interpolate(m_context->destination.expression);
 }
 
 auto PatternSwapper::build_source(Expression expression) -> Result<void> {
@@ -190,17 +190,17 @@ auto PatternSwapper::build_source(Expression expression) -> Result<void> {
 	return {};
 }
 
-auto PatternSwapper::build_transform(Expression transform) -> Result<void> {
-	for (auto const& atom : transform.atoms) {
+auto PatternSwapper::build_destination(Expression destination) -> Result<void> {
+	for (auto const& atom : destination.atoms) {
 		auto const* identifier = std::get_if<Identifier>(&atom.value);
 		if (!identifier) { continue; }
 
 		if (!m_context->find_binding(identifier->name)) {
-			return format_error(atom.token, m_context->transform.format, std::format("undefined identifier in output expression: '{}'", identifier->name));
+			return format_error(atom.token, m_context->destination.format, std::format("undefined identifier in output expression: '{}'", identifier->name));
 		}
 	}
 
-	m_context->transform.expression = std::move(transform);
+	m_context->destination.expression = std::move(destination);
 	return {};
 }
 
