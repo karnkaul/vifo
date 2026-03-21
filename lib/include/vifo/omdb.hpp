@@ -2,13 +2,10 @@
 #include "djson/json.hpp"
 #include "kcurl/http.hpp"
 #include "klib/base_types.hpp"
-#include "klib/enum/name.hpp"
 #include <cstdint>
 #include <functional>
-#include <optional>
 #include <string>
 #include <string_view>
-#include <variant>
 #include <vector>
 
 namespace vifo {
@@ -17,13 +14,6 @@ using kcurl::http::Result;
 } // namespace http
 
 namespace omdb {
-enum class Type : std::int8_t { Movie, Series, Episode, COUNT_ };
-auto const type_map = klib::EnumNameMap<Type>{
-	{Type::Movie, "movie"},
-	{Type::Series, "series"},
-	{Type::Episode, "episode"},
-};
-
 struct Movie {
 	void serialize_to(std::string& out) const;
 
@@ -60,8 +50,6 @@ struct Series {
 	int total_seasons{};
 };
 
-using Payload = std::variant<Movie, Episode, Season, Series, dj::Json>;
-
 enum class Curl : std::int8_t {
 	/// \brief IService owns curl initialization/shutdown.
 	Internal,
@@ -71,19 +59,15 @@ enum class Curl : std::int8_t {
 
 using GetApiToken = std::move_only_function<std::string_view()>;
 
-struct Query {
-	std::string_view title{};
-	int season{};
-	int episode{};
-};
-
 class IService : public klib::Polymorphic {
   public:
 	[[nodiscard]] static auto create(GetApiToken get_api_token, Curl curl = Curl::Internal) -> std::unique_ptr<IService>;
 
-	[[nodiscard]] virtual auto search(Query const& query, std::optional<Type> type = {}) const -> http::Result<Payload> = 0;
+	[[nodiscard]] virtual auto search_generic(std::string_view title) const -> http::Result<dj::Json> = 0;
+	[[nodiscard]] virtual auto search_movie(std::string_view title) const -> http::Result<Movie> = 0;
+	[[nodiscard]] virtual auto search_episode(std::string_view series_title, int season, int episode) const -> http::Result<Episode> = 0;
+	[[nodiscard]] virtual auto search_season(std::string_view title, int season) const -> http::Result<Season> = 0;
+	[[nodiscard]] virtual auto search_series(std::string_view title) const -> http::Result<Series> = 0;
 };
-
-[[nodiscard]] auto serialize(Payload const& payload) -> std::string;
 } // namespace omdb
 } // namespace vifo
