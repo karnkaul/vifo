@@ -44,4 +44,10 @@ inline auto const outcome_name_map = klib::EnumNameMap<Outcome>{
 	{Outcome::Failure, "Failure"},
 	{Outcome::Pass, "Pass"},
 };
+
+enum class MediaFileType : std::int8_t { Video, Subtitle };
+inline auto const media_file_type_name_map = klib::EnumNameMap<MediaFileType>{
+	{MediaFileType::Video, "Video"},
+	{MediaFileType::Subtitle, "Subtitle"},
+};
 } // namespace vifo

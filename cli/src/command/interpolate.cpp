@@ -1,4 +1,4 @@
-#include "command/rename.hpp"
+#include "command/interpolate.hpp"
 #include "klib/args/arg.hpp"
 #include "klib/debug/assert.hpp"
 #include "klib/enum/bitops.hpp"
@@ -89,7 +89,7 @@ class StateCreateInterpolator : public State {
 	auto execute() -> std::unique_ptr<MachineState> final;
 };
 
-class StateScanPaths : public State, path::Scanner {
+class StateScanPaths : public State, path::ListScanner {
   public:
 	explicit StateScanPaths(Storage storage) : State(std::move(storage), "ScanPaths") {}
 
@@ -212,7 +212,7 @@ auto StateTransform::confirm_rename() -> bool {
 }
 } // namespace
 
-void Rename::populate_args() {
+void Interpolate::populate_args() {
 	m_args = {
 		klib::args::named_option(m_type, "t,type", "entry type (dir|file|any)"),
 		klib::args::named_option(m_max_depth, "d,depth", "max subdirectory depth"),
@@ -223,7 +223,7 @@ void Rename::populate_args() {
 	};
 }
 
-auto Rename::execute() -> ExitCode {
+auto Interpolate::execute() -> ExitCode {
 	auto const root = fs::path{m_root};
 	if (!fs::exists(root)) {
 		std::println(stderr, "invalid path: '{}'", m_root);

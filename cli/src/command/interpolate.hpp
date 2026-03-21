@@ -4,8 +4,8 @@
 #include <string_view>
 
 namespace vifo::cli::command {
-class Rename : public Command {
-	static constexpr std::string_view name_v{"rename"};
+class Interpolate : public Command {
+	static constexpr std::string_view name_v{"interpolate"};
 	static constexpr std::string_view help_v{"rename matching files/directories via interpolation"};
 
 	[[nodiscard]] auto get_name() const -> std::string_view final { return name_v; }

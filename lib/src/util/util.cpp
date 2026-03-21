@@ -3,6 +3,7 @@
 #include "vifo/util/util.hpp"
 #include "detail/title_parser.hpp"
 #include "log.hpp"
+#include "vifo/types.hpp"
 #include <filesystem>
 #include <fstream>
 #include <string_view>
@@ -17,6 +18,27 @@ namespace {
 }
 } // namespace
 } // namespace util
+
+auto util::to_int(std::string_view const text, int const fallback) -> int {
+	if (text.empty()) { return fallback; }
+	auto ret = int{};
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+	auto const* end = text.data() + text.size();
+	auto const [_, ec] = std::from_chars(text.data(), end, ret);
+	if (ec != std::errc{}) { return fallback; }
+	return ret;
+}
+
+void util::join_to(std::string& out, std::string_view const item, std::string_view const delim) {
+	if (!out.empty()) { out += delim; }
+	out += item;
+}
+
+auto util::join(std::span<std::string_view const> items, std::string_view const delim) -> std::string {
+	auto ret = std::string{};
+	for (auto const item : items) { join_to(ret, item, delim); }
+	return ret;
+}
 
 auto util::path_if_exists(std::string_view const path) -> fs::path {
 	if (path.empty()) {
@@ -96,25 +118,21 @@ auto util::identify_title(fs::path const& path) -> std::string {
 
 auto util::trim_identified_title(std::string_view& out_text) -> std::string { return detail::TitleParser{}.parse_and_trim(out_text); }
 
-auto util::to_int(std::string_view const text, int const fallback) -> int {
-	if (text.empty()) { return fallback; }
-	auto ret = int{};
-	// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-	auto const* end = text.data() + text.size();
-	auto const [_, ec] = std::from_chars(text.data(), end, ret);
-	if (ec != std::errc{}) { return fallback; }
-	return ret;
-}
+auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileType> {
+	struct MFTExtension {
+		MediaFileType type{};
+		std::vector<std::string_view> extensions{};
+	};
+	static auto const s_mft_extensions = std::array{
+		MFTExtension{.type = MediaFileType::Video, .extensions = {".mp4", ".mkv", ".avi", ".m4v", ".webm"}},
+		MFTExtension{.type = MediaFileType::Subtitle, .extensions = {".srt"}},
+	};
 
-void util::join_to(std::string& out, std::string_view const item, std::string_view const delim) {
-	if (!out.empty()) { out += delim; }
-	out += item;
-}
-
-auto util::join(std::span<std::string_view const> items, std::string_view const delim) -> std::string {
-	auto ret = std::string{};
-	for (auto const item : items) { join_to(ret, item, delim); }
-	return ret;
+	auto const extension = file.extension().string();
+	for (auto const& mfte : s_mft_extensions) {
+		if (match_any(mfte.extensions, extension)) { return mfte.type; }
+	}
+	return {};
 }
 
 // auto util::is_year(std::string_view const word) -> bool {

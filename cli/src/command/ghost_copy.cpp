@@ -32,7 +32,7 @@ class State : public MachineState {
 	Storage m_storage{};
 };
 
-class StateScanSources : public State, path::Scanner {
+class StateScanSources : public State, path::ListScanner {
   public:
 	explicit StateScanSources(Storage storage) : State(std::move(storage), "ScanSources") { max_depth = storage.max_depth; }
 
