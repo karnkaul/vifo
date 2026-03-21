@@ -1,4 +1,4 @@
-#include "command/interpolate.hpp"
+#include "command/patswap.hpp"
 #include "klib/args/arg.hpp"
 #include "klib/debug/assert.hpp"
 #include "klib/enum/bitops.hpp"
@@ -212,7 +212,7 @@ auto StateTransform::confirm_rename() -> bool {
 }
 } // namespace
 
-void Interpolate::populate_args() {
+void Patswap::populate_args() {
 	m_args = {
 		klib::args::named_option(m_type, "t,type", "entry type (dir|file|any)"),
 		klib::args::named_option(m_max_depth, "d,depth", "max subdirectory depth"),
@@ -223,7 +223,7 @@ void Interpolate::populate_args() {
 	};
 }
 
-auto Interpolate::execute() -> ExitCode {
+auto Patswap::execute() -> ExitCode {
 	auto const root = fs::path{m_root};
 	if (!fs::exists(root)) {
 		std::println(stderr, "invalid path: '{}'", m_root);

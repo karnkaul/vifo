@@ -4,7 +4,7 @@
 #include <string_view>
 
 namespace vifo::cli::command {
-class Interpolate : public Command {
+class Patswap : public Command {
 	static constexpr std::string_view name_v{"interpolate"};
 	static constexpr std::string_view help_v{"rename matching files/directories via interpolation"};
 
