@@ -1,4 +1,4 @@
-#include "vifo/formatter/pattern_swapper.hpp"
+#include "vifo/formatter/pattern_swap_formatter.hpp"
 #include "detail/common.hpp"
 #include "klib/ptr.hpp"
 #include "vifo/environment.hpp"
@@ -147,10 +147,10 @@ auto PatternSwapFormat::from_file(std::string_view const path) -> std::optional<
 	return ret;
 }
 
-void PatternSwapper::Deleter::operator()(Context* ptr) const noexcept { std::default_delete<Context>{}(ptr); }
+void PatternSwapFormatter::Deleter::operator()(Context* ptr) const noexcept { std::default_delete<Context>{}(ptr); }
 
-auto PatternSwapper::create(Format format) -> Result<PatternSwapper> {
-	auto ret = PatternSwapper{};
+auto PatternSwapFormatter::create(Format format) -> Result<PatternSwapFormatter> {
+	auto ret = PatternSwapFormatter{};
 	ret.m_context.reset(new Context); // NOLINT(cppcoreguidelines-owning-memory)
 	ret.m_context->environment = ret.m_environment.get();
 	ret.m_context->source.format = std::move(format.input);
@@ -171,12 +171,12 @@ auto PatternSwapper::create(Format format) -> Result<PatternSwapper> {
 		.transform([&] { return std::move(ret); });
 }
 
-auto PatternSwapper::format_string(std::string_view const input) -> std::string {
+auto PatternSwapFormatter::format_string(std::string_view const input) -> std::string {
 	if (!extract_values(input)) { return {}; }
 	return interpolate(m_context->destination.expression);
 }
 
-auto PatternSwapper::build_source(Expression expression) -> Result<void> {
+auto PatternSwapFormatter::build_source(Expression expression) -> Result<void> {
 	m_context->source.expression = std::move(expression);
 	auto binding_builder = BindingBuilder{*m_context};
 	for (auto& atom : m_context->source.expression.atoms) {
@@ -190,7 +190,7 @@ auto PatternSwapper::build_source(Expression expression) -> Result<void> {
 	return {};
 }
 
-auto PatternSwapper::build_destination(Expression destination) -> Result<void> {
+auto PatternSwapFormatter::build_destination(Expression destination) -> Result<void> {
 	for (auto const& atom : destination.atoms) {
 		auto const* identifier = std::get_if<Identifier>(&atom.value);
 		if (!identifier) { continue; }
@@ -204,7 +204,7 @@ auto PatternSwapper::build_destination(Expression destination) -> Result<void> {
 	return {};
 }
 
-auto PatternSwapper::extract_values(std::string_view input) -> bool {
+auto PatternSwapFormatter::extract_values(std::string_view input) -> bool {
 	if (!m_context) { return false; }
 	for (auto const& atom : m_context->source.expression.atoms) {
 		if (!match_symbol(input, atom)) { return false; }
@@ -212,7 +212,7 @@ auto PatternSwapper::extract_values(std::string_view input) -> bool {
 	return true;
 }
 
-auto PatternSwapper::match_symbol(std::string_view& out_input, expression::Atom const& atom) -> bool {
+auto PatternSwapFormatter::match_symbol(std::string_view& out_input, expression::Atom const& atom) -> bool {
 	if (auto const* substring = std::get_if<Substring>(&atom.value)) { return substring->consume(out_input); }
 
 	auto const& identifier = std::get<Identifier>(atom.value);

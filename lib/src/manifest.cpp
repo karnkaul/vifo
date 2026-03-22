@@ -1,33 +1,11 @@
 #include "vifo/manifest.hpp"
 #include "detail/common.hpp"
-#include "vifo/formatter/formatter.hpp"
-#include "vifo/path/list.hpp"
 #include "vifo/path/transformer.hpp"
 #include "vifo/util/util.hpp"
 #include <array>
 #include <filesystem>
-#include <unordered_set>
 
 namespace vifo {
-auto Manifest::build(Formatter& formatter, path::List path_list) -> Manifest {
-	auto destinations = std::unordered_set<fs::path>{};
-	auto ret = Manifest{.parent = std::move(path_list.scan_path)};
-	for (auto& source : path_list.paths) {
-		if (source.empty()) { continue; }
-
-		auto destination = formatter.format_path(source);
-		if (destination.empty()) { continue; }
-
-		if (fs::exists(destination)) { ++ret.metrics.existing; }
-		destinations.insert(destination);
-
-		if (source == ret.parent) { ret.parent = ret.parent.parent_path(); }
-		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination)});
-	}
-	ret.metrics.duplicates = std::int64_t(ret.entries.size() - destinations.size());
-	return ret;
-}
-
 auto Manifest::format_table() const -> std::string {
 	static constexpr auto headers_v = std::array{
 		"destination",

@@ -1,17 +1,14 @@
 #include "command/patswap.hpp"
 #include "klib/args/arg.hpp"
-#include "klib/debug/assert.hpp"
+#include "klib/cli/prompt.hpp"
 #include "klib/enum/bitops.hpp"
 #include "log.hpp"
-#include "vifo/formatter/pattern_swapper.hpp"
+#include "vifo/generator/pattern_swap_generator.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
-#include "vifo/path/list.hpp"
-#include "vifo/path/scanner.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/progress.hpp"
-#include <algorithm>
 #include <filesystem>
 #include <optional>
 #include <print>
@@ -37,8 +34,7 @@ struct Storage {
 	fs::path root_path{};
 	Type type{};
 
-	std::optional<PatternSwapper> formatter{};
-	path::List path_list{};
+	PatternSwapGenerator generator{};
 	Manifest manifest{};
 
 	bool overwrite{};
@@ -81,23 +77,12 @@ class State : public MachineState {
 	Storage m_storage{};
 };
 
-class StateCreateFormatter : public State {
+class StateCreateGenerator : public State {
   public:
-	explicit StateCreateFormatter(Storage storage) : State(std::move(storage), "CreateFormatter") {}
+	explicit StateCreateGenerator(Storage storage) : State(std::move(storage), "CreateGenerator") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
-};
-
-class StateScanPaths : public State, path::ListScanner {
-  public:
-	explicit StateScanPaths(Storage storage) : State(std::move(storage), "ScanPaths") {}
-
-  private:
-	auto execute() -> std::unique_ptr<MachineState> final;
-
-	[[nodiscard]] auto should_iterate(fs::path const& directory) const -> bool final;
-	[[nodiscard]] auto should_store(fs::path const& path) const -> bool final;
 };
 
 class StateBuildManifest : public State {
@@ -110,7 +95,7 @@ class StateBuildManifest : public State {
 
 class StateTransform : public State, Manifest::Transformer {
   public:
-	explicit StateTransform(Storage storage) : State(std::move(storage), "BuildManifest") {}
+	explicit StateTransform(Storage storage) : State(std::move(storage), "Transform") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
@@ -121,42 +106,16 @@ class StateTransform : public State, Manifest::Transformer {
 	std::unique_ptr<util::Progress> m_progress{};
 };
 
-auto StateCreateFormatter::execute() -> std::unique_ptr<MachineState> {
-	auto pattern_swapper = PatternSwapper::create(std::move(m_storage.format));
-	if (!pattern_swapper) { return handle_error(pattern_swapper.error()); }
+auto StateCreateGenerator::execute() -> std::unique_ptr<MachineState> {
+	auto generator = PatternSwapGenerator::create(std::move(m_storage.format));
+	if (!generator) { return handle_error(generator.error()); }
 
-	m_storage.formatter = std::move(*pattern_swapper);
-	return std::make_unique<StateScanPaths>(std::move(m_storage));
-}
-
-auto StateScanPaths::should_iterate(fs::path const& directory) const -> bool {
-	auto const filename = directory.filename().string();
-	return !filename.starts_with('.');
-}
-
-auto StateScanPaths::should_store(fs::path const& path) const -> bool {
-	auto ret = false;
-	if ((m_storage.type & Type::Dir) == Type::Dir) { ret |= fs::is_directory(path); }
-	if ((m_storage.type & Type::File) == Type::File) { ret |= fs::is_regular_file(path); }
-	return ret;
-}
-
-auto StateScanPaths::execute() -> std::unique_ptr<MachineState> {
-	m_log.info("filtering by entry type: {}", type_name_map.to_name(m_storage.type));
-	max_depth = std::max(0, m_storage.max_depth);
-	m_log.debug("max depth: {}", max_depth);
-	m_storage.path_list = scan_paths(m_storage.root_path);
-	if (m_storage.path_list.paths.empty()) {
-		std::println("no paths scanned");
-		return {};
-	}
-
+	m_storage.generator = std::move(*generator);
 	return std::make_unique<StateBuildManifest>(std::move(m_storage));
 }
 
 auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
-	KLIB_ASSERT(m_storage.formatter);
-	m_storage.manifest = Manifest::build(*m_storage.formatter, m_storage.path_list);
+	m_storage.manifest = m_storage.generator.generate_manifest(m_storage.root_path);
 	if (m_storage.manifest.entries.empty()) {
 		std::println("nothing to rename");
 		return {};
@@ -254,6 +213,6 @@ auto Patswap::execute() -> ExitCode {
 		.root_path = fs::canonical(root),
 		.type = type_name_map.to_enum(m_type).value_or(Type::Dir),
 	};
-	return execute_state_machine(std::make_unique<StateCreateFormatter>(std::move(storage)));
+	return execute_state_machine(std::make_unique<StateCreateGenerator>(std::move(storage)));
 }
 } // namespace vifo::cli::command

@@ -1,14 +1,11 @@
 #pragma once
 #include "klib/base_types.hpp"
-#include "vifo/path/list.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
 #include <cstdint>
 #include <vector>
 
 namespace vifo {
-class Formatter;
-
 namespace fs = std::filesystem;
 
 struct Manifest {
@@ -23,8 +20,6 @@ struct Manifest {
 	};
 
 	class Transformer;
-
-	[[nodiscard]] static auto build(Formatter& formatter, path::List path_list) -> Manifest;
 
 	[[nodiscard]] auto format_table() const -> std::string;
 

@@ -14,11 +14,11 @@ struct PatternSwapFormat {
 	std::string output{};
 };
 
-class PatternSwapper : public Formatter {
+class PatternSwapFormatter : public Formatter {
   public:
 	using Format = PatternSwapFormat;
 
-	[[nodiscard]] static auto create(Format format) -> Result<PatternSwapper>;
+	[[nodiscard]] static auto create(Format format) -> Result<PatternSwapFormatter>;
 
 	/// \returns Transformed string on match, otherwise empty string.
 	[[nodiscard]] auto format_string(std::string_view input) -> std::string override;
