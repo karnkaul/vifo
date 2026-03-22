@@ -10,7 +10,7 @@ class PatternSwapGenerator : public IGenerator {
 
 	[[nodiscard]] static auto create(Format directory, std::optional<Format> file = {}) -> Result<PatternSwapGenerator>;
 
-	[[nodiscard]] auto generate_manifest(fs::path const& directory) -> Manifest final;
+	[[nodiscard]] auto generate_manifest(fs::path const& directory) -> Result<Manifest> final;
 
   private:
 	[[nodiscard]] auto create_directory(Format format) -> Result<void>;

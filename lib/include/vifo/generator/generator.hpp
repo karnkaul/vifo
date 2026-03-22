@@ -1,6 +1,7 @@
 #pragma once
 #include "klib/base_types.hpp"
 #include "vifo/manifest.hpp"
+#include "vifo/result.hpp"
 #include <filesystem>
 #include <vector>
 
@@ -18,6 +19,6 @@ struct Movie {
 
 class IGenerator : public klib::Polymorphic {
   public:
-	[[nodiscard]] virtual auto generate_manifest(fs::path const& directory) -> Manifest = 0;
+	[[nodiscard]] virtual auto generate_manifest(fs::path const& directory) -> Result<Manifest> = 0;
 };
 } // namespace vifo

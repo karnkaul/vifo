@@ -44,8 +44,11 @@ struct Storage {
 
 [[nodiscard]] constexpr auto to_exit_code(Error::Type const type) {
 	switch (type) {
+	case Error::Type::Argument: return ExitCode::InvalidArgument;
 	case Error::Type::Syntax: return ExitCode::SyntaxError;
 	case Error::Type::Format: return ExitCode::FormatError;
+	case Error::Type::Identify: return ExitCode::IdentifyError;
+	case Error::Type::Http: return ExitCode::HttpError;
 	default: return ExitCode::Failure;
 	}
 }
@@ -116,7 +119,13 @@ auto StateCreateGenerator::execute() -> std::unique_ptr<MachineState> {
 }
 
 auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
-	m_storage.manifest = m_storage.generator.generate_manifest(m_storage.root_path);
+	auto manifest = m_storage.generator.generate_manifest(m_storage.root_path);
+	if (!manifest) {
+		// TODO: override title
+		return handle_error(manifest.error());
+	}
+
+	m_storage.manifest = std::move(*manifest);
 	if (m_storage.manifest.entries.empty()) {
 		std::println("nothing to rename");
 		return {};

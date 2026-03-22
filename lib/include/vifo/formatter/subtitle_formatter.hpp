@@ -2,8 +2,12 @@
 #include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
 #include "vifo/result.hpp"
+#include <filesystem>
+#include <string_view>
 
 namespace vifo {
+namespace fs = std::filesystem;
+
 struct SubtitleFormat {
 	std::string_view primary{"{title}.en.default"};
 	std::string_view secondary{"{title}.en.sub_{number}"};
@@ -23,6 +27,7 @@ class SubtitleFormatter {
 
 	/// \returns Next subtitle file stem.
 	[[nodiscard]] auto format_stem() -> std::string;
+	[[nodiscard]] auto format_path(fs::path const& parent, std::string_view extension) -> fs::path;
 
   private:
 	using Expression = expression::Expression;

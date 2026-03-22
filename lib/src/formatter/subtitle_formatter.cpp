@@ -1,6 +1,7 @@
 #include "vifo/formatter/subtitle_formatter.hpp"
 #include "detail/common.hpp"
 #include "vifo/expression.hpp"
+#include <filesystem>
 #include <format>
 #include <string_view>
 
@@ -51,6 +52,12 @@ auto SubtitleFormatter::format_stem() -> std::string {
 		return m_environment.interpolate(m_secondary);
 	}();
 	set_number(m_number + 1);
+	return ret;
+}
+
+auto SubtitleFormatter::format_path(fs::path const& parent, std::string_view const extension) -> fs::path {
+	auto ret = parent / format_stem();
+	ret += extension;
 	return ret;
 }
 } // namespace vifo

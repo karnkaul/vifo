@@ -5,11 +5,17 @@
 
 namespace vifo {
 struct Error {
-	enum class Type : std::int8_t { Syntax, Format };
+	enum class Type : std::int8_t {
+		Argument,
+		Syntax,
+		Format,
+		Identify,
+		Http,
+	};
 
 	inline static auto const type_name_map = klib::EnumNameMap<Type>{
-		{Type::Syntax, "SyntaxError"},
-		{Type::Format, "FormatError"},
+		{Type::Syntax, "ArgumentError"},   {Type::Syntax, "SyntaxError"}, {Type::Format, "FormatError"},
+		{Type::Identify, "IdentifyError"}, {Type::Http, "HttpError"},
 	};
 
 	Type type{};
@@ -20,11 +26,13 @@ enum class ExitCode : std::int8_t {
 	Success = EXIT_SUCCESS,
 	Failure = EXIT_FAILURE,
 
-	SyntaxError = 10,
-	FormatError = 11,
-	IoError = 15,
+	InvalidArgument = 10,
+	SyntaxError = 11,
+	FormatError = 12,
+	IdentifyError = 13,
+	HttpError = 14,
 
-	InvalidArgument = 20,
+	IoError = 20,
 	ForcedHalt = 21,
 
 	DuplicateDestinations = 30,

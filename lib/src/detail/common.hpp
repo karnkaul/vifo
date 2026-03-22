@@ -7,6 +7,7 @@
 
 namespace vifo::detail {
 [[nodiscard]] auto to_error(Error::Type type, expression::Token token, std::string_view input, std::string_view msg) -> std::unexpected<Error>;
+[[nodiscard]] auto to_error(Error::Type type, std::string_view msg) -> std::unexpected<Error>;
 
 [[nodiscard]] inline auto to_record(fs::path source, fs::path destination, Operation const operation) -> Record {
 	return Record{

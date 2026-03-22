@@ -1,4 +1,5 @@
 #include "vifo/generator/pattern_swap_generator.hpp"
+#include "detail/common.hpp"
 #include "vifo/formatter/pattern_swap_formatter.hpp"
 #include "vifo/path/scanner.hpp"
 #include "vifo/util/util.hpp"
@@ -28,12 +29,14 @@ auto PatternSwapGenerator::create(Format directory, std::optional<Format> file) 
 	return ret.create_directory(std::move(directory)).and_then([&] { return ret.create_file(std::move(file)); }).transform([&] { return std::move(ret); });
 }
 
-auto PatternSwapGenerator::generate_manifest(fs::path const& directory) -> Manifest {
-	if (!fs::is_directory(directory)) { return {}; }
+auto PatternSwapGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
+	if (!fs::is_directory(directory)) { return detail::to_error(Error::Type::Argument, std::format("not a directory: '{}'", directory.generic_string())); }
 
 	auto scanner = Scanner{};
 	scanner.list_files = m_file.has_value();
 	auto path_list = scanner.scan_paths(directory);
+
+	if (path_list.paths.empty()) { return detail::to_error(Error::Type::Identify, std::format("no entries found in: '{}'", directory.generic_string())); }
 
 	auto ret = Manifest{.parent = std::move(path_list.scan_path)};
 	for (auto& source : path_list.paths) {
