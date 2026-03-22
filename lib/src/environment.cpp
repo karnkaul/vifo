@@ -21,4 +21,9 @@ void Environment::set_symbol(std::string_view const name, std::string value) {
 	}
 	symbol->value = std::move(value);
 }
+
+auto Environment::interpolate(expression::Expression const& expression) const -> std::string {
+	auto const callback = [this](expression::Identifier const& identifier) { return get_value(identifier.name); };
+	return expression.interpolate(callback);
+}
 } // namespace vifo

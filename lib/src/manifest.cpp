@@ -4,8 +4,21 @@
 #include "vifo/util/util.hpp"
 #include <array>
 #include <filesystem>
+#include <unordered_set>
 
 namespace vifo {
+auto Manifest::compute_metrics() const -> Metrics {
+	auto ret = Metrics{};
+	auto paths_set = std::unordered_set<fs::path>{};
+	for (auto const& entry : entries) {
+		if (entry.destination.empty()) { continue; }
+		if (fs::exists(entry.destination)) { ++ret.existing; }
+		if (paths_set.contains(entry.destination)) { ++ret.duplicates; }
+		paths_set.insert(entry.destination);
+	}
+	return ret;
+}
+
 auto Manifest::format_table() const -> std::string {
 	static constexpr auto headers_v = std::array{
 		"destination",

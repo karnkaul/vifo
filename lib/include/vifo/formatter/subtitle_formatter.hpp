@@ -1,38 +1,36 @@
 #pragma once
+#include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
-#include "vifo/formatter/formatter.hpp"
 #include "vifo/result.hpp"
 
 namespace vifo {
 struct SubtitleFormat {
-	std::string primary{"{title}.en.default"};
-	std::string secondary{"{title}.en.sub_{number}"};
+	std::string_view primary{"{title}.en.default"};
+	std::string_view secondary{"{title}.en.sub_{number}"};
 };
 
-class SubtitleFormatter : public Formatter {
+class SubtitleFormatter {
   public:
 	static constexpr std::string_view title_identifier_v{"title"};
 	static constexpr std::string_view number_identifier_v{"number"};
 
 	using Format = SubtitleFormat;
 
-	[[nodiscard]] static auto create(Format format = {}) -> Result<SubtitleFormatter>;
-
-	/// \returns Next subtitle file stem.
-	[[nodiscard]] auto format_string(std::string_view /*ignored*/) -> std::string final;
+	[[nodiscard]] static auto create(Format const& format = {}) -> Result<SubtitleFormatter>;
 
 	void set_number(int number);
 	void set_title(std::string title);
 
+	/// \returns Next subtitle file stem.
+	[[nodiscard]] auto format_stem() -> std::string;
+
   private:
 	using Expression = expression::Expression;
 
-	[[nodiscard]] auto format_number() -> std::string;
-
-	Format m_format{};
 	Expression m_primary{};
 	Expression m_secondary{};
 
+	Environment m_environment{};
 	int m_number{};
 };
 } // namespace vifo

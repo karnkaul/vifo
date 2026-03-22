@@ -1,8 +1,6 @@
 #pragma once
 #include "klib/base_types.hpp"
 #include "vifo/environment.hpp"
-#include "vifo/expression.hpp"
-#include <memory>
 #include <string>
 #include <string_view>
 
@@ -13,8 +11,6 @@ class Formatter : public klib::Polymorphic {
 	[[nodiscard]] virtual auto format_string(std::string_view input) -> std::string = 0;
 
   protected:
-	[[nodiscard]] auto interpolate(expression::Expression const& expression) const -> std::string;
-
-	std::unique_ptr<Environment> m_environment{std::make_unique<Environment>()};
+	Environment m_environment{};
 };
 } // namespace vifo

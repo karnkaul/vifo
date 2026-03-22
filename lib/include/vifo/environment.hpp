@@ -1,6 +1,7 @@
 #pragma once
 #include "klib/base_types.hpp"
 #include "klib/ptr.hpp"
+#include "vifo/expression.hpp"
 #include <memory>
 #include <string>
 #include <string_view>
@@ -24,6 +25,8 @@ struct Environment {
 	[[nodiscard]] auto get_value(std::string_view name) const -> std::string_view;
 
 	void set_symbol(std::string_view name, std::string value);
+
+	[[nodiscard]] auto interpolate(expression::Expression const& expression) const -> std::string;
 
 	std::vector<std::unique_ptr<Symbol>> symbols{};
 };

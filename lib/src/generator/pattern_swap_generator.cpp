@@ -1,8 +1,8 @@
 #include "vifo/generator/pattern_swap_generator.hpp"
+#include "vifo/formatter/pattern_swap_formatter.hpp"
 #include "vifo/path/scanner.hpp"
 #include "vifo/util/util.hpp"
 #include <filesystem>
-#include <unordered_set>
 
 namespace vifo {
 namespace {
@@ -12,7 +12,7 @@ struct Scanner : path::ListScanner {
 	bool list_files{};
 };
 
-[[nodiscard]] auto format_path(Formatter& formatter, fs::path const& source) -> fs::path {
+[[nodiscard]] auto format_path(PatternSwapFormatter& formatter, fs::path const& source) -> fs::path {
 	auto const source_stem = source.stem().string();
 	auto const destination_stem = formatter.format_string(source_stem);
 	if (destination_stem.empty()) { return {}; }
@@ -35,7 +35,6 @@ auto PatternSwapGenerator::generate_manifest(fs::path const& directory) -> Manif
 	scanner.list_files = m_file.has_value();
 	auto path_list = scanner.scan_paths(directory);
 
-	auto destinations = std::unordered_set<fs::path>{};
 	auto ret = Manifest{.parent = std::move(path_list.scan_path)};
 	for (auto& source : path_list.paths) {
 		if (source.empty()) { continue; }
@@ -46,13 +45,9 @@ auto PatternSwapGenerator::generate_manifest(fs::path const& directory) -> Manif
 		}();
 		if (destination.empty()) { continue; }
 
-		if (fs::exists(destination)) { ++ret.metrics.existing; }
-		destinations.insert(destination);
-
 		if (source == ret.parent) { ret.parent = ret.parent.parent_path(); }
 		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination)});
 	}
-	ret.metrics.duplicates = std::int64_t(ret.entries.size() - destinations.size());
 	return ret;
 }
 

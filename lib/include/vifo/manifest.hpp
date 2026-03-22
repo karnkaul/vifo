@@ -21,11 +21,11 @@ struct Manifest {
 
 	class Transformer;
 
+	[[nodiscard]] auto compute_metrics() const -> Metrics;
 	[[nodiscard]] auto format_table() const -> std::string;
 
 	fs::path parent{};
 	std::vector<Entry> entries{};
-	Metrics metrics{};
 };
 
 class Manifest::Transformer : public klib::Polymorphic {

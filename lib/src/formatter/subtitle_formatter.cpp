@@ -22,38 +22,35 @@ using expression::Identifier;
 }
 } // namespace
 
-auto SubtitleFormatter::create(Format format) -> Result<SubtitleFormatter> {
+auto SubtitleFormatter::create(Format const& format) -> Result<SubtitleFormatter> {
 	auto ret = SubtitleFormatter{};
-	ret.m_format = std::move(format);
 
-	return expression::parse(ret.m_format.primary)
-		.and_then([&](Expression in) { return verify_identifiers(ret.m_format.primary, std::move(in)); })
+	return expression::parse(format.primary)
+		.and_then([&](Expression in) { return verify_identifiers(format.primary, std::move(in)); })
 		.and_then([&](Expression verified) {
 			ret.m_primary = std::move(verified);
-			return expression::parse(ret.m_format.secondary);
+			return expression::parse(format.secondary);
 		})
-		.and_then([&](Expression in) { return verify_identifiers(ret.m_format.secondary, std::move(in)); })
+		.and_then([&](Expression in) { return verify_identifiers(format.secondary, std::move(in)); })
 		.transform([&](Expression verified) {
 			ret.m_secondary = std::move(verified);
 			return std::move(ret);
 		});
 }
 
-auto SubtitleFormatter::format_string(std::string_view const /*ignored*/) -> std::string {
+void SubtitleFormatter::set_number(int const number) {
+	m_number = number;
+	m_environment.set_symbol(number_identifier_v, std::format("{:02}", m_number));
+}
+
+void SubtitleFormatter::set_title(std::string title) { m_environment.set_symbol(title_identifier_v, std::move(title)); }
+
+auto SubtitleFormatter::format_stem() -> std::string {
 	auto ret = [&] {
-		if (m_number == 0) { return interpolate(m_primary); }
-		return interpolate(m_secondary);
+		if (m_number == 0) { return m_environment.interpolate(m_primary); }
+		return m_environment.interpolate(m_secondary);
 	}();
 	set_number(m_number + 1);
 	return ret;
 }
-
-void SubtitleFormatter::set_number(int const number) {
-	m_number = number;
-	m_environment->set_symbol(number_identifier_v, std::format("{:02}", m_number));
-}
-
-void SubtitleFormatter::set_title(std::string title) { m_environment->set_symbol(title_identifier_v, std::move(title)); }
-
-auto SubtitleFormatter::format_number() -> std::string { return std::format("{:02}", m_number++); }
 } // namespace vifo

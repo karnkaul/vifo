@@ -36,6 +36,7 @@ struct Storage {
 
 	PatternSwapGenerator generator{};
 	Manifest manifest{};
+	Manifest::Metrics metrics{};
 
 	bool overwrite{};
 	Transaction transaction{};
@@ -124,11 +125,12 @@ auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
 	std::println("parent: {}", m_storage.manifest.parent.generic_string());
 	std::println("{}", m_storage.manifest.format_table());
 
-	if (m_storage.manifest.metrics.duplicates > 0) {
-		return set_error(ExitCode::DuplicateDestinations, std::format("{} duplicate destinations! aborting", m_storage.manifest.metrics.duplicates + 1));
+	m_storage.metrics = m_storage.manifest.compute_metrics();
+	if (m_storage.metrics.duplicates > 0) {
+		return set_error(ExitCode::DuplicateDestinations, std::format("{} duplicate destinations! aborting", m_storage.metrics.duplicates + 1));
 	}
 
-	std::println("{} entries to rename, {} existing", m_storage.manifest.entries.size(), m_storage.manifest.metrics.existing);
+	std::println("{} entries to rename, {} existing", m_storage.manifest.entries.size(), m_storage.metrics.existing);
 
 	return std::make_unique<StateTransform>(std::move(m_storage));
 }
@@ -160,7 +162,7 @@ auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 void StateTransform::on_transformed(Record const& /*record*/, Outcome const /*outcome*/) const { m_progress->increment_completed(); }
 
 auto StateTransform::confirm_rename() -> bool {
-	if (m_storage.manifest.metrics.existing == 0) { return should_continue("rename?"); }
+	if (m_storage.metrics.existing == 0) { return should_continue("rename?"); }
 
 	std::println("rename:");
 	auto const options = std::array{
