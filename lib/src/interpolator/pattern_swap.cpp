@@ -1,4 +1,4 @@
-#include "vifo/formatter/pattern_swap_formatter.hpp"
+#include "vifo/interpolator/pattern_swap.hpp"
 #include "detail/common.hpp"
 #include "klib/ptr.hpp"
 #include "vifo/environment.hpp"
@@ -8,7 +8,7 @@
 #include <regex>
 #include <string_view>
 
-namespace vifo {
+namespace vifo::interpolator {
 using expression::Expression;
 using expression::Identifier;
 using expression::Substring;
@@ -117,8 +117,8 @@ class BindingBuilder {
 };
 } // namespace
 
-auto PatternSwapFormatter::create(Format const& format) -> Result<PatternSwapFormatter> {
-	auto ret = PatternSwapFormatter{};
+auto PatternSwap::create(Format const& format) -> Result<PatternSwap> {
+	auto ret = PatternSwap{};
 
 	auto input_expression = Expression{};
 	auto output_expression = Expression{};
@@ -135,12 +135,12 @@ auto PatternSwapFormatter::create(Format const& format) -> Result<PatternSwapFor
 		.transform([&] { return std::move(ret); });
 }
 
-auto PatternSwapFormatter::format_string(std::string_view const input) -> std::string {
+auto PatternSwap::interpolate(std::string_view const input) -> std::string {
 	if (!extract_values(input)) { return {}; }
 	return m_environment.interpolate(m_destination);
 }
 
-auto PatternSwapFormatter::build_source(std::string_view const format, Expression expression) -> Result<void> {
+auto PatternSwap::build_source(std::string_view const format, Expression expression) -> Result<void> {
 	m_source = std::move(expression);
 	auto binding_builder = BindingBuilder{m_environment, format};
 	for (auto& atom : m_source.atoms) {
@@ -154,7 +154,7 @@ auto PatternSwapFormatter::build_source(std::string_view const format, Expressio
 	return {};
 }
 
-auto PatternSwapFormatter::build_destination(std::string_view const format, Expression expression) -> Result<void> {
+auto PatternSwap::build_destination(std::string_view const format, Expression expression) -> Result<void> {
 	for (auto const& atom : expression.atoms) {
 		auto const* identifier = std::get_if<Identifier>(&atom.value);
 		if (!identifier) { continue; }
@@ -168,14 +168,14 @@ auto PatternSwapFormatter::build_destination(std::string_view const format, Expr
 	return {};
 }
 
-auto PatternSwapFormatter::extract_values(std::string_view input) -> bool {
+auto PatternSwap::extract_values(std::string_view input) -> bool {
 	for (auto const& atom : m_source.atoms) {
 		if (!match_symbol(input, atom)) { return false; }
 	}
 	return true;
 }
 
-auto PatternSwapFormatter::match_symbol(std::string_view& out_input, expression::Atom const& atom) -> bool {
+auto PatternSwap::match_symbol(std::string_view& out_input, expression::Atom const& atom) -> bool {
 	if (auto const* substring = std::get_if<Substring>(&atom.value)) { return substring->consume(out_input); }
 
 	auto const& identifier = std::get<Identifier>(atom.value);
@@ -183,4 +183,4 @@ auto PatternSwapFormatter::match_symbol(std::string_view& out_input, expression:
 	KLIB_ASSERT(binding);
 	return binding->parse_value(out_input);
 }
-} // namespace vifo
+} // namespace vifo::interpolator

@@ -1,7 +1,7 @@
-#include "vifo/generator/season_generator.hpp"
+#include "vifo/formatter/season.hpp"
 #include "detail/common.hpp"
 #include "detail/media_directory.hpp"
-#include "vifo/formatter/subtitle_formatter.hpp"
+#include "vifo/interpolator/subtitle.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/media_file.hpp"
 #include "vifo/omdb.hpp"
@@ -10,7 +10,7 @@
 #include <expected>
 #include <filesystem>
 
-namespace vifo {
+namespace vifo::formatter {
 namespace {
 struct SeasonDirectory {
 	struct Episode {
@@ -57,20 +57,20 @@ struct SeasonDirectory {
 }
 } // namespace
 
-auto SeasonGenerator::create(omdb::IService const& omdb_service, Format const& format) -> Result<SeasonGenerator> {
-	auto ret = SeasonGenerator{omdb_service};
-	return SeasonFormatter::create(format.season)
-		.and_then([&](SeasonFormatter formatter) {
-			ret.m_season_formatter = std::move(formatter);
-			return SubtitleFormatter::create(format.subtitle);
+auto Season::create(omdb::IService const& omdb_service, Format const& format) -> Result<Season> {
+	auto ret = Season{omdb_service};
+	return interpolator::Season::create(format.season)
+		.and_then([&](interpolator::Season season) {
+			ret.m_season = std::move(season);
+			return interpolator::Subtitle::create(format.subtitle);
 		})
-		.transform([&](SubtitleFormatter formatter) {
-			ret.m_subtitle_formatter = std::move(formatter);
+		.transform([&](interpolator::Subtitle subtitle) {
+			ret.m_subtitle = std::move(subtitle);
 			return std::move(ret);
 		});
 }
 
-auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
+auto Season::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
@@ -96,11 +96,11 @@ auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Man
 	}
 
 	series_title = omdb_season->payload.title;
-	m_season_formatter.set_season(std::move(omdb_season->payload));
+	m_season.set_season(std::move(omdb_season->payload));
 
-	auto builder = create_builder(m_season_formatter, path->parent_path());
+	auto builder = create_builder(m_season, path->parent_path());
 	for (auto& episode : season_directory.episodes) { builder.process_video(std::move(episode.video), episode.subtitles); }
 
 	return std::move(builder.manifest);
 }
-} // namespace vifo
+} // namespace vifo::formatter

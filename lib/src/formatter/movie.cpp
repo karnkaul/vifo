@@ -1,14 +1,14 @@
-#include "vifo/generator/movie_generator.hpp"
+#include "vifo/formatter/movie.hpp"
 #include "detail/common.hpp"
 #include "detail/media_directory.hpp"
-#include "vifo/formatter/subtitle_formatter.hpp"
+#include "vifo/interpolator/subtitle.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
 #include <algorithm>
 #include <filesystem>
 
-namespace vifo {
+namespace vifo::formatter {
 namespace {
 struct MovieDirectory {
 	MediaFile video{};
@@ -34,20 +34,20 @@ struct MovieDirectory {
 }
 } // namespace
 
-auto MovieGenerator::create(omdb::IService const& omdb_service, Format const& format) -> Result<MovieGenerator> {
-	auto ret = MovieGenerator{omdb_service};
-	return TitleFormatter::create(format.movie)
-		.and_then([&](TitleFormatter formatter) {
-			ret.m_movie_formatter = std::move(formatter);
-			return SubtitleFormatter::create(format.subtitle);
+auto Movie::create(omdb::IService const& omdb_service, Format const& format) -> Result<Movie> {
+	auto ret = Movie{omdb_service};
+	return interpolator::Title::create(format.movie)
+		.and_then([&](interpolator::Title title) {
+			ret.m_movie = std::move(title);
+			return interpolator::Subtitle::create(format.subtitle);
 		})
-		.transform([&](SubtitleFormatter formatter) {
-			ret.m_subtitle_formatter = std::move(formatter);
+		.transform([&](interpolator::Subtitle subtitle) {
+			ret.m_subtitle = std::move(subtitle);
 			return std::move(ret);
 		});
 }
 
-auto MovieGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
+auto Movie::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
@@ -68,12 +68,12 @@ auto MovieGenerator::generate_manifest(fs::path const& directory) -> Result<Mani
 		return detail::to_error(Error::Type::Identify, std::format("failed to identify title for: '{}'", movie_directory.video.path.generic_string()));
 	}
 
-	m_movie_formatter.set_title(std::move(omdb_movie->payload.title));
-	m_movie_formatter.set_year(omdb_movie->payload.year);
+	m_movie.set_title(std::move(omdb_movie->payload.title));
+	m_movie.set_year(omdb_movie->payload.year);
 
-	auto builder = create_builder(m_movie_formatter, path->parent_path());
+	auto builder = create_builder(m_movie, path->parent_path());
 	builder.process_video(std::move(movie_directory.video), movie_directory.subtitles);
 
 	return std::move(builder.manifest);
 }
-} // namespace vifo
+} // namespace vifo::formatter

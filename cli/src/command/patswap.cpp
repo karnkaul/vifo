@@ -3,8 +3,7 @@
 #include "klib/args/arg.hpp"
 #include "klib/cli/prompt.hpp"
 #include "log.hpp"
-#include "vifo/formatter/pattern_swap_formatter.hpp"
-#include "vifo/generator/pattern_swap_generator.hpp"
+#include "vifo/formatter/pattern_swap.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/transaction.hpp"
@@ -17,11 +16,11 @@
 
 namespace vifo::cli::command {
 namespace {
-[[nodiscard]] auto format_from_json(dj::Json& out, std::string_view const path) -> std::optional<PatternSwapFormat> {
+[[nodiscard]] auto format_from_json(dj::Json& out, std::string_view const path) -> std::optional<interpolator::PatternSwapFormat> {
 	auto json = dj::Json::from_file(path);
 	if (!json) { return {}; }
 	out = std::move(*json);
-	auto ret = PatternSwapFormat{};
+	auto ret = interpolator::PatternSwapFormat{};
 	from_json(out["input"], ret.input);
 	from_json(out["output"], ret.output);
 	if (ret.input.empty() || ret.output.empty()) { return {}; }
@@ -30,11 +29,11 @@ namespace {
 
 struct Storage {
 	int max_depth{};
-	PatternSwapFormat format{};
+	interpolator::PatternSwapFormat format{};
 	fs::path root_path{};
 	bool scan_files{};
 
-	PatternSwapGenerator generator{};
+	formatter::PatternSwap formatter{};
 	Manifest manifest{};
 	Manifest::Metrics metrics{};
 
@@ -81,9 +80,9 @@ class State : public MachineState {
 	Storage m_storage{};
 };
 
-class StateCreateGenerator : public State {
+class StateCreateFormatter : public State {
   public:
-	explicit StateCreateGenerator(Storage storage) : State(std::move(storage), "CreateGenerator") {}
+	explicit StateCreateFormatter(Storage storage) : State(std::move(storage), "CreateFormatter") {}
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
@@ -110,18 +109,18 @@ class StateTransform : public State, Manifest::Transformer {
 	std::unique_ptr<util::Progress> m_progress{};
 };
 
-auto StateCreateGenerator::execute() -> std::unique_ptr<MachineState> {
-	auto file_format = std::optional<PatternSwapFormat>{};
+auto StateCreateFormatter::execute() -> std::unique_ptr<MachineState> {
+	auto file_format = std::optional<interpolator::PatternSwapFormat>{};
 	if (m_storage.scan_files) { file_format = m_storage.format; }
-	auto generator = PatternSwapGenerator::create(m_storage.format, file_format);
-	if (!generator) { return handle_error(generator.error()); }
+	auto formatter = formatter::PatternSwap::create(m_storage.format, file_format);
+	if (!formatter) { return handle_error(formatter.error()); }
 
-	m_storage.generator = std::move(*generator);
+	m_storage.formatter = std::move(*formatter);
 	return std::make_unique<StateBuildManifest>(std::move(m_storage));
 }
 
 auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
-	auto manifest = m_storage.generator.generate_manifest(m_storage.root_path);
+	auto manifest = m_storage.formatter.generate_manifest(m_storage.root_path);
 	if (!manifest) {
 		// TODO: override title
 		return handle_error(manifest.error());
@@ -202,7 +201,7 @@ auto Patswap::execute() -> ExitCode {
 		return ExitCode::InvalidArgument;
 	}
 
-	auto format = PatternSwapFormat{};
+	auto format = interpolator::PatternSwapFormat{};
 	if (!m_format_json.empty()) {
 		auto fmt = format_from_json(m_json, m_format_json);
 		if (!fmt) {
@@ -217,7 +216,7 @@ auto Patswap::execute() -> ExitCode {
 			std::println(stderr, "either format json or input and output formats are required");
 			return ExitCode::InvalidArgument;
 		}
-		format = PatternSwapFormat{.input = m_input_format, .output = m_output_format};
+		format = interpolator::PatternSwapFormat{.input = m_input_format, .output = m_output_format};
 	}
 
 	auto storage = Storage{
@@ -226,6 +225,6 @@ auto Patswap::execute() -> ExitCode {
 		.root_path = fs::canonical(root),
 		.scan_files = m_scan_files,
 	};
-	return execute_state_machine(std::make_unique<StateCreateGenerator>(std::move(storage)));
+	return execute_state_machine(std::make_unique<StateCreateFormatter>(std::move(storage)));
 }
 } // namespace vifo::cli::command

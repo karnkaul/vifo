@@ -1,12 +1,12 @@
-#include "vifo/formatter/season_formatter.hpp"
+#include "vifo/interpolator/season.hpp"
 #include "vifo/expression.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/util/util.hpp"
 #include <algorithm>
 
-namespace vifo {
-auto SeasonFormatter::create(SeasonFormat const& format) -> Result<SeasonFormatter> {
-	auto ret = SeasonFormatter{};
+namespace vifo::interpolator {
+auto Season::create(SeasonFormat const& format) -> Result<Season> {
+	auto ret = Season{};
 	return expression::parse(format.video)
 		.and_then([&](expression::Expression video) {
 			ret.m_video = std::move(video);
@@ -18,13 +18,13 @@ auto SeasonFormatter::create(SeasonFormat const& format) -> Result<SeasonFormatt
 		});
 }
 
-void SeasonFormatter::set_season(omdb::Season season) {
+void Season::set_season(omdb::Season season) {
 	m_season = std::move(season);
 	m_environment.set_symbol(series_title_identifier_v, m_season.title);
 	m_environment.set_symbol(season_id_identifier_v, SeasonId{.number = m_season.number}.format());
 }
 
-auto SeasonFormatter::format_video(fs::path const& video) -> fs::path {
+auto Season::interpolate_video(fs::path const& video) -> fs::path {
 	auto const episode_id = util::extract_episode_id(video.stem().string());
 	if (!episode_id) { return {}; }
 
@@ -43,4 +43,4 @@ auto SeasonFormatter::format_video(fs::path const& video) -> fs::path {
 	season_directory.replace_filename(m_environment.interpolate(m_directory));
 	return season_directory / ret;
 }
-} // namespace vifo
+} // namespace vifo::interpolator

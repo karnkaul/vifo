@@ -1,11 +1,11 @@
-#include "vifo/formatter/subtitle_formatter.hpp"
+#include "vifo/interpolator/subtitle.hpp"
 #include "detail/common.hpp"
 #include "vifo/expression.hpp"
 #include <filesystem>
 #include <format>
 #include <string_view>
 
-namespace vifo {
+namespace vifo::interpolator {
 namespace {
 using expression::Expression;
 using expression::Identifier;
@@ -15,7 +15,7 @@ using expression::Identifier;
 		auto const* identifier = std::get_if<Identifier>(&atom.value);
 		if (!identifier) { continue; }
 
-		if (identifier->name != SubtitleFormatter::number_identifier_v && identifier->name != SubtitleFormatter::title_identifier_v) {
+		if (identifier->name != Subtitle::number_identifier_v && identifier->name != Subtitle::title_identifier_v) {
 			return detail::to_error(Error::Type::Format, atom.token, format, std::format("unrecognized identifier: '{}'", identifier->name));
 		}
 	}
@@ -23,8 +23,8 @@ using expression::Identifier;
 }
 } // namespace
 
-auto SubtitleFormatter::create(Format const& format) -> Result<SubtitleFormatter> {
-	auto ret = SubtitleFormatter{};
+auto Subtitle::create(Format const& format) -> Result<Subtitle> {
+	auto ret = Subtitle{};
 
 	return expression::parse(format.output)
 		.and_then([&](Expression in) { return verify_identifiers(format.output, std::move(in)); })
@@ -34,24 +34,24 @@ auto SubtitleFormatter::create(Format const& format) -> Result<SubtitleFormatter
 		});
 }
 
-void SubtitleFormatter::set_number(int const number) {
+void Subtitle::set_number(int const number) {
 	m_number = number;
 	m_environment.set_symbol(number_identifier_v, std::format("{:02}", m_number));
 }
 
-void SubtitleFormatter::set_title(std::string title) {
+void Subtitle::set_title(std::string title) {
 	m_environment.set_symbol(title_identifier_v, std::move(title));
 	set_number(0);
 }
 
-auto SubtitleFormatter::format_stem() -> std::string {
+auto Subtitle::interpolate_stem() -> std::string {
 	set_number(m_number + 1);
 	return m_environment.interpolate(m_output);
 }
 
-auto SubtitleFormatter::format_path(fs::path const& parent, std::string_view const extension) -> fs::path {
-	auto ret = parent / format_stem();
+auto Subtitle::interpolate_path(fs::path const& parent, std::string_view const extension) -> fs::path {
+	auto ret = parent / interpolate_stem();
 	ret += extension;
 	return ret;
 }
-} // namespace vifo
+} // namespace vifo::interpolator

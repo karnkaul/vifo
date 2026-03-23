@@ -1,12 +1,11 @@
-#include "vifo/generator/pattern_swap_generator.hpp"
+#include "vifo/formatter/pattern_swap.hpp"
 #include "detail/common.hpp"
-#include "vifo/formatter/pattern_swap_formatter.hpp"
 #include "vifo/path/scanner.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
 #include <filesystem>
 
-namespace vifo {
+namespace vifo::formatter {
 namespace {
 struct Scanner : path::ListScanner {
 	[[nodiscard]] auto should_store([[maybe_unused]] fs::path const& path) const -> bool final { return list_files || fs::is_directory(path); }
@@ -14,9 +13,9 @@ struct Scanner : path::ListScanner {
 	bool list_files{};
 };
 
-[[nodiscard]] auto format_path(PatternSwapFormatter& formatter, fs::path const& source) -> fs::path {
+[[nodiscard]] auto format_path(interpolator::PatternSwap& interpolator, fs::path const& source) -> fs::path {
 	auto const source_stem = source.stem().string();
-	auto const destination_stem = formatter.format_string(source_stem);
+	auto const destination_stem = interpolator.interpolate(source_stem);
 	if (destination_stem.empty()) { return {}; }
 
 	auto ret = util::prefix_parent(source, destination_stem);
@@ -25,12 +24,12 @@ struct Scanner : path::ListScanner {
 }
 } // namespace
 
-auto PatternSwapGenerator::create(Format const& directory, std::optional<Format> file) -> Result<PatternSwapGenerator> {
-	auto ret = PatternSwapGenerator{};
+auto PatternSwap::create(Format const& directory, std::optional<Format> file) -> Result<PatternSwap> {
+	auto ret = PatternSwap{};
 	return ret.create_directory(directory).and_then([&] { return ret.create_file(file); }).transform([&] { return std::move(ret); });
 }
 
-auto PatternSwapGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
+auto PatternSwap::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	if (!fs::is_directory(directory)) { return detail::to_error(Error::Type::Argument, std::format("not a directory: '{}'", directory.generic_string())); }
 
 	auto scanner = Scanner{};
@@ -59,12 +58,12 @@ auto PatternSwapGenerator::generate_manifest(fs::path const& directory) -> Resul
 	return ret;
 }
 
-auto PatternSwapGenerator::create_directory(Format const& format) -> Result<void> {
-	return PatternSwapFormatter::create(format).transform([&](PatternSwapFormatter swapper) { m_directory = std::move(swapper); });
+auto PatternSwap::create_directory(Format const& format) -> Result<void> {
+	return interpolator::PatternSwap::create(format).transform([&](interpolator::PatternSwap swapper) { m_directory = std::move(swapper); });
 }
 
-auto PatternSwapGenerator::create_file(std::optional<Format> const& format) -> Result<void> {
+auto PatternSwap::create_file(std::optional<Format> const& format) -> Result<void> {
 	if (!format) { return {}; }
-	return PatternSwapFormatter::create(*format).transform([&](PatternSwapFormatter swapper) { m_file = std::move(swapper); });
+	return interpolator::PatternSwap::create(*format).transform([&](interpolator::PatternSwap swapper) { m_file = std::move(swapper); });
 }
-} // namespace vifo
+} // namespace vifo::formatter
