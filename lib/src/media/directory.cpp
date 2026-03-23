@@ -32,7 +32,7 @@ auto MediaDirectory::format_table() const -> std::string {
 
 	static constexpr auto headers_v = std::array{"path", "type"};
 	auto const per_entry = [&](std::vector<std::string>& row, MediaFile const& file) {
-		row.push_back(util::to_relative(path, file.path));
+		row.push_back(util::to_relative(path, file.path).generic_string());
 		row.emplace_back(media_file_type_name_map.to_name(file.type));
 	};
 	return util::format_enumerated_table(headers_v, files, per_entry);

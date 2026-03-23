@@ -1,4 +1,5 @@
 #include "vifo/environment.hpp"
+#include "klib/visitor.hpp"
 #include <algorithm>
 
 namespace vifo {
@@ -23,7 +24,12 @@ void Environment::set_symbol(std::string_view const name, std::string value) {
 }
 
 auto Environment::interpolate(expression::Expression const& expression) const -> std::string {
-	auto const callback = [this](expression::Identifier const& identifier) { return get_value(identifier.name); };
-	return expression.interpolate(callback);
+	auto ret = std::string{};
+	auto const visitor = klib::Visitor{
+		[&](expression::Substring const& substring) { ret += substring.text; },
+		[&](expression::Identifier const& identifier) { ret += get_value(identifier.name); },
+	};
+	for (auto const& atom : expression.atoms) { std::visit(visitor, atom.value); }
+	return ret;
 }
 } // namespace vifo

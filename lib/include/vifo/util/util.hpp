@@ -66,12 +66,6 @@ constexpr auto is_subtitle_file(std::string_view const extension) { return match
 
 [[nodiscard]] auto get_media_file_type(fs::path const& file) -> std::optional<MediaFileType>;
 
-// [[nodiscard]] auto is_year(std::string_view word) -> bool;
-
-// [[nodiscard]] auto is_season_directory(fs::path const& path) -> bool;
-// [[nodiscard]] auto is_subtitle_directory(fs::path const& path) -> bool;
-// [[nodiscard]] auto is_episode(fs::path const& path) -> bool;
-
 [[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
 [[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
 } // namespace vifo::util

@@ -15,7 +15,7 @@ class Patswap : public Command {
 
 	[[nodiscard]] auto execute() -> ExitCode final;
 
-	std::string_view m_type{};
+	bool m_scan_files{};
 	int m_max_depth{10};
 	std::string_view m_format_json{};
 	dj::Json m_json{};

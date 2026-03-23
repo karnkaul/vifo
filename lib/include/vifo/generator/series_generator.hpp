@@ -8,9 +8,9 @@ struct SeriesGeneratorFormat {
 	TitleFormat directory{};
 };
 
-class SeriesGenerator : public IOmdbGenerator {
+class SeriesGenerator : public OmdbGenerator {
   public:
-	using IOmdbGenerator::IOmdbGenerator;
+	using OmdbGenerator::OmdbGenerator;
 
 	using Format = SeriesGeneratorFormat;
 

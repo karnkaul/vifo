@@ -2,7 +2,6 @@
 #include "detail/common.hpp"
 #include "klib/debug/assert.hpp"
 #include "klib/ptr.hpp"
-#include "klib/visitor.hpp"
 #include "vifo/util/util.hpp"
 #include <cstddef>
 #include <string>
@@ -159,17 +158,6 @@ auto Substring::consume(std::string_view& out_input) const -> bool {
 	if (!out_input.starts_with(text)) { return false; }
 	out_input.remove_prefix(text.size());
 	return true;
-}
-
-auto Expression::interpolate(GetValue get_value) const -> std::string {
-	if (!get_value) { return {}; }
-	auto ret = std::string{};
-	auto const visitor = klib::Visitor{
-		[&](Substring const& substring) { ret += substring.text; },
-		[&](Identifier const& identifier) { ret += get_value(identifier); },
-	};
-	for (auto const& atom : atoms) { std::visit(visitor, atom.value); }
-	return ret;
 }
 } // namespace expression
 

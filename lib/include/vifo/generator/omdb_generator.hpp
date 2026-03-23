@@ -5,9 +5,9 @@
 #include "vifo/omdb.hpp"
 
 namespace vifo {
-class IOmdbGenerator : public IGenerator {
+class OmdbGenerator : public IGenerator {
   public:
-	explicit IOmdbGenerator(omdb::IService const& omdb_service) : m_omdb_service(&omdb_service) {}
+	explicit OmdbGenerator(omdb::IService const& omdb_service) : m_omdb_service(&omdb_service) {}
 
   protected:
 	klib::Ptr<omdb::IService const> m_omdb_service{};

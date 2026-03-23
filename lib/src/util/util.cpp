@@ -135,38 +135,6 @@ auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileT
 	return {};
 }
 
-// auto util::is_year(std::string_view const word) -> bool {
-// 	static auto const s_regex = std::regex{R"([1-3][0-9]{3})"};
-// 	// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-// 	return std::regex_match(word.data(), word.data() + word.size(), s_regex);
-// }
-
-// auto util::is_season_directory(fs::path const& path) -> bool {
-// 	if (!fs::is_directory(path)) { return {}; }
-// 	static auto const s_regex_1 = std::regex{R"(.*Season.[0-9]{2}.*)"};
-// 	static auto const s_regex_2 = std::regex{R"(.*S[0-9]{2}.*)"};
-// 	auto const filename = fs::canonical(path).stem().string();
-// 	return std::regex_match(filename, s_regex_1) || std::regex_match(filename, s_regex_2);
-// }
-
-// auto util::is_subtitle_directory(fs::path const& path) -> bool {
-// 	if (!fs::is_directory(path)) { return false; }
-// 	auto const filename = path.filename().string();
-// 	static constexpr auto subtitle_directories_v = std::array{
-// 		"subs",
-// 		"subtitles",
-// 		"Subs",
-// 		"Subtitles",
-// 	};
-// 	return std::ranges::find(subtitle_directories_v, filename) != subtitle_directories_v.end();
-// }
-
-// auto util::is_episode(fs::path const& path) -> bool {
-// 	if (!fs::exists(path)) { return {}; }
-// 	static auto const s_regex = std::regex{R"(.*S[0-9]{2}E[0-9]{2}.*)"};
-// 	return std::regex_match(fs::canonical(path).string(), s_regex);
-// }
-
 auto util::extract_season_id(std::string const& name) -> std::optional<SeasonId> {
 	if (name.empty()) { return {}; }
 

@@ -62,10 +62,14 @@ inline auto const media_file_type_name_map = klib::EnumNameMap<MediaFileType>{
 };
 
 struct SeasonId {
+	[[nodiscard]] auto format() const -> std::string;
+
 	int number{};
 };
 
 struct EpisodeId {
+	[[nodiscard]] auto format() const -> std::string;
+
 	int season{};
 	int number{};
 };

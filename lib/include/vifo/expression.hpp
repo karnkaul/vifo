@@ -3,7 +3,6 @@
 #include "vifo/result.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -42,10 +41,6 @@ struct Atom {
 };
 
 struct Expression {
-	using GetValue = std::move_only_function<std::string_view(Identifier const&)>;
-
-	[[nodiscard]] auto interpolate(GetValue get_value) const -> std::string;
-
 	std::vector<Atom> atoms{};
 };
 

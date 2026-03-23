@@ -5,9 +5,9 @@
 #include "vifo/media/file.hpp"
 
 namespace vifo {
-class VideoGenerator : public IOmdbGenerator {
+class VideoGenerator : public OmdbGenerator {
   public:
-	using IOmdbGenerator::IOmdbGenerator;
+	using OmdbGenerator::OmdbGenerator;
 
 	[[nodiscard]] auto get_subtitles_dir_for(fs::path const& media_file) const -> fs::path;
 

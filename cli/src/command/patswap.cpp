@@ -2,7 +2,6 @@
 #include "djson/json.hpp"
 #include "klib/args/arg.hpp"
 #include "klib/cli/prompt.hpp"
-#include "klib/enum/bitops.hpp"
 #include "log.hpp"
 #include "vifo/formatter/pattern_swap_formatter.hpp"
 #include "vifo/generator/pattern_swap_generator.hpp"
@@ -18,19 +17,6 @@
 
 namespace vifo::cli::command {
 namespace {
-enum class Type : std::uint8_t {
-	Dir = 1 << 0,
-	File = 1 << 1,
-	Any = Dir | File,
-};
-[[nodiscard]] constexpr auto enable_enum_bitops(Type /*unused*/) { return true; }
-
-auto const type_name_map = klib::EnumNameMap<Type>{
-	{Type::Dir, "dir"},
-	{Type::File, "file"},
-	{Type::Any, "any"},
-};
-
 [[nodiscard]] auto format_from_json(dj::Json& out, std::string_view const path) -> std::optional<PatternSwapFormat> {
 	auto json = dj::Json::from_file(path);
 	if (!json) { return {}; }
@@ -46,7 +32,7 @@ struct Storage {
 	int max_depth{};
 	PatternSwapFormat format{};
 	fs::path root_path{};
-	Type type{};
+	bool scan_files{};
 
 	PatternSwapGenerator generator{};
 	Manifest manifest{};
@@ -125,7 +111,9 @@ class StateTransform : public State, Manifest::Transformer {
 };
 
 auto StateCreateGenerator::execute() -> std::unique_ptr<MachineState> {
-	auto generator = PatternSwapGenerator::create(std::move(m_storage.format));
+	auto file_format = std::optional<PatternSwapFormat>{};
+	if (m_storage.scan_files) { file_format = m_storage.format; }
+	auto generator = PatternSwapGenerator::create(m_storage.format, file_format);
 	if (!generator) { return handle_error(generator.error()); }
 
 	m_storage.generator = std::move(*generator);
@@ -198,7 +186,7 @@ auto StateTransform::confirm_rename() -> bool {
 
 void Patswap::populate_args() {
 	m_args = {
-		klib::args::named_option(m_type, "t,type", "entry type (dir|file|any)"),
+		klib::args::named_flag(m_scan_files, "s,scan-files", "scan both directories and files"),
 		klib::args::named_option(m_max_depth, "d,depth", "max subdirectory depth"),
 		klib::args::named_option(m_format_json, "f,format-json", "path to json specifying InterpolateFormat"),
 		klib::args::named_option(m_input_format, "i,input", "input dirname format string"),
@@ -236,7 +224,7 @@ auto Patswap::execute() -> ExitCode {
 		.max_depth = m_max_depth,
 		.format = format,
 		.root_path = fs::canonical(root),
-		.type = type_name_map.to_enum(m_type).value_or(Type::Dir),
+		.scan_files = m_scan_files,
 	};
 	return execute_state_machine(std::make_unique<StateCreateGenerator>(std::move(storage)));
 }

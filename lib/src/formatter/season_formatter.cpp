@@ -21,7 +21,7 @@ auto SeasonFormatter::create(SeasonFormat const& format) -> Result<SeasonFormatt
 void SeasonFormatter::set_season(omdb::Season season) {
 	m_season = std::move(season);
 	m_environment.set_symbol(series_title_identifier_v, m_season.title);
-	m_environment.set_symbol(season_id_identifier_v, std::format("S{:02}", m_season.number));
+	m_environment.set_symbol(season_id_identifier_v, SeasonId{.number = m_season.number}.format());
 }
 
 auto SeasonFormatter::format_video(fs::path const& video) -> fs::path {
@@ -32,7 +32,7 @@ auto SeasonFormatter::format_video(fs::path const& video) -> fs::path {
 	if (it == m_season.episodes.end()) { return {}; }
 
 	auto const& episode = *it;
-	m_environment.set_symbol(episode_id_identifier_v, std::format("S{:02}E{:02}", m_season.number, episode.number));
+	m_environment.set_symbol(episode_id_identifier_v, episode_id->format());
 	m_environment.set_symbol(episode_title_identifier_v, episode.title);
 
 	auto ret = fs::path{m_environment.interpolate(m_video)};
