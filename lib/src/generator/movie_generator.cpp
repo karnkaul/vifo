@@ -2,7 +2,7 @@
 #include "detail/common.hpp"
 #include "vifo/formatter/subtitle_formatter.hpp"
 #include "vifo/manifest.hpp"
-#include "vifo/media_directory.hpp"
+#include "vifo/media/directory.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
 #include <algorithm>

@@ -1,4 +1,4 @@
-#include "vifo/media_directory.hpp"
+#include "vifo/media/directory.hpp"
 #include "vifo/path/scanner.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
