@@ -1,5 +1,6 @@
 #include "vifo/environment.hpp"
 #include "klib/visitor.hpp"
+#include "vifo/util/util.hpp"
 #include <algorithm>
 
 namespace vifo {
@@ -30,6 +31,7 @@ auto Environment::interpolate(expression::Expression const& expression) const ->
 		[&](expression::Identifier const& identifier) { ret += get_value(identifier.name); },
 	};
 	for (auto const& atom : expression.atoms) { std::visit(visitor, atom.value); }
+	util::sanitize_for_path(ret);
 	return ret;
 }
 } // namespace vifo

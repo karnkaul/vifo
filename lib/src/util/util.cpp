@@ -2,6 +2,7 @@
 #include "detail/title_parser.hpp"
 #include "log.hpp"
 #include "vifo/types.hpp"
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -70,6 +71,13 @@ auto util::path_if_directory(std::string_view const path) -> fs::path {
 auto util::to_relative(fs::path const& parent, fs::path const& target) -> fs::path {
 	if (parent.empty()) { return target; }
 	return fs::relative(target, parent);
+}
+
+void util::sanitize_for_path(std::string& out, char const replace) {
+	static constexpr auto forbidden_v = std::array{'<', '>', ':', '\"', '|', '?', '*'};
+	for (char& c : out) {
+		if (match_any(forbidden_v, c)) { c = replace; }
+	}
 }
 
 auto util::ghost_copy(fs::path const& source, fs::path const& destination, bool const overwrite) -> std::int64_t {
