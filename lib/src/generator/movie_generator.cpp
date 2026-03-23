@@ -1,8 +1,8 @@
 #include "vifo/generator/movie_generator.hpp"
 #include "detail/common.hpp"
+#include "detail/media_directory.hpp"
 #include "vifo/formatter/subtitle_formatter.hpp"
 #include "vifo/manifest.hpp"
-#include "vifo/media/directory.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
 #include <algorithm>
@@ -16,7 +16,7 @@ struct MovieDirectory {
 };
 
 [[nodiscard]] auto build_movie_directory(fs::path const& directory) -> MovieDirectory {
-	auto source = MediaDirectory::scan_directory(directory);
+	auto source = detail::MediaDirectory::scan_directory(directory);
 	auto videos = std::vector<MediaFile>{};
 	auto subtitles = std::vector<MediaFile>{};
 	for (auto& file : source.files) {

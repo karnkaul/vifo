@@ -1,10 +1,10 @@
 #pragma once
-#include "vifo/media/file.hpp"
+#include "vifo/media_file.hpp"
 #include <filesystem>
 #include <string>
 #include <vector>
 
-namespace vifo {
+namespace vifo::detail {
 struct MediaDirectory {
 	[[nodiscard]] static auto scan_directory(fs::path path) -> MediaDirectory;
 
@@ -13,4 +13,4 @@ struct MediaDirectory {
 	fs::path path{};
 	std::vector<MediaFile> files{};
 };
-} // namespace vifo
+} // namespace vifo::detail

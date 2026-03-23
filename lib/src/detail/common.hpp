@@ -1,7 +1,7 @@
 #pragma once
 #include "vifo/expression.hpp"
 #include "vifo/manifest.hpp"
-#include "vifo/media/file.hpp"
+#include "vifo/media_file.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
 #include <expected>

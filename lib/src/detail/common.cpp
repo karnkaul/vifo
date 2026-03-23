@@ -1,5 +1,5 @@
 #include "detail/common.hpp"
-#include "vifo/media/file.hpp"
+#include "vifo/media_file.hpp"
 #include "vifo/util/word_scanner.hpp"
 #include <format>
 #include <string_view>

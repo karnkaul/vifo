@@ -1,11 +1,11 @@
-#include "vifo/media/directory.hpp"
+#include "detail/media_directory.hpp"
 #include "vifo/path/scanner.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
 #include <array>
 #include <filesystem>
 
-namespace vifo {
+namespace vifo::detail {
 auto MediaDirectory::scan_directory(fs::path path) -> MediaDirectory {
 	struct Scanner : path::Visitor {
 		void accept_directory(fs::path const& /*path*/) final {}
@@ -37,4 +37,4 @@ auto MediaDirectory::format_table() const -> std::string {
 	};
 	return util::format_enumerated_table(headers_v, files, per_entry);
 }
-} // namespace vifo
+} // namespace vifo::detail

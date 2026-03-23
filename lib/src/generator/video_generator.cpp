@@ -1,6 +1,6 @@
 #include "vifo/generator/video_generator.hpp"
 #include "detail/common.hpp"
-#include "vifo/media/file.hpp"
+#include "vifo/media_file.hpp"
 #include "vifo/util/util.hpp"
 
 namespace vifo {

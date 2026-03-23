@@ -2,7 +2,7 @@
 #include "vifo/formatter/subtitle_formatter.hpp"
 #include "vifo/formatter/video_formatter.hpp"
 #include "vifo/generator/omdb_generator.hpp"
-#include "vifo/media/file.hpp"
+#include "vifo/media_file.hpp"
 
 namespace vifo {
 class VideoGenerator : public OmdbGenerator {

@@ -1,9 +1,9 @@
 #include "vifo/generator/season_generator.hpp"
 #include "detail/common.hpp"
+#include "detail/media_directory.hpp"
 #include "vifo/formatter/subtitle_formatter.hpp"
 #include "vifo/manifest.hpp"
-#include "vifo/media/directory.hpp"
-#include "vifo/media/file.hpp"
+#include "vifo/media_file.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
@@ -22,7 +22,7 @@ struct SeasonDirectory {
 };
 
 [[nodiscard]] auto build_season_directory(fs::path const& directory) -> SeasonDirectory {
-	auto source = MediaDirectory::scan_directory(directory);
+	auto source = detail::MediaDirectory::scan_directory(directory);
 	auto videos = std::vector<MediaFile>{};
 	auto subtitles = std::vector<MediaFile>{};
 	for (auto& file : source.files) {
