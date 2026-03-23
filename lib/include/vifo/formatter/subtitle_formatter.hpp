@@ -9,8 +9,7 @@ namespace vifo {
 namespace fs = std::filesystem;
 
 struct SubtitleFormat {
-	std::string_view primary{"{title}.en.default"};
-	std::string_view secondary{"{title}.en.sub_{number}"};
+	std::string_view output{"{title}.en.sub_{number}"};
 };
 
 class SubtitleFormatter {
@@ -32,8 +31,7 @@ class SubtitleFormatter {
   private:
 	using Expression = expression::Expression;
 
-	Expression m_primary{};
-	Expression m_secondary{};
+	Expression m_output{};
 
 	Environment m_environment{};
 	int m_number{};

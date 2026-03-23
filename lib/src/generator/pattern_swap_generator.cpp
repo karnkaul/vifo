@@ -2,6 +2,7 @@
 #include "detail/common.hpp"
 #include "vifo/formatter/pattern_swap_formatter.hpp"
 #include "vifo/path/scanner.hpp"
+#include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
 #include <filesystem>
 
@@ -42,14 +43,18 @@ auto PatternSwapGenerator::generate_manifest(fs::path const& directory) -> Resul
 	for (auto& source : path_list.paths) {
 		if (source.empty()) { continue; }
 
+		auto const type = fs::is_directory(source) ? MediaFileType::Directory : MediaFileType::Unknown;
 		auto destination = [&] {
 			if (fs::is_regular_file(source)) { return format_path(*m_file, source); }
 			return format_path(m_directory, source);
 		}();
-		if (destination.empty()) { continue; }
+		if (destination.empty()) {
+			ret.orphans.push_back(Manifest::Entry{.source = std::move(source), .type = type});
+			continue;
+		}
 
 		if (source == ret.parent) { ret.parent = ret.parent.parent_path(); }
-		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination)});
+		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination), .type = type});
 	}
 	return ret;
 }

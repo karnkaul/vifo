@@ -1,6 +1,6 @@
 #pragma once
 #include "command/command.hpp"
-#include <string>
+#include "djson/json.hpp"
 #include <string_view>
 
 namespace vifo::cli::command {
@@ -18,8 +18,9 @@ class Patswap : public Command {
 	std::string_view m_type{};
 	int m_max_depth{10};
 	std::string_view m_format_json{};
-	std::string m_input_format{};
-	std::string m_output_format{};
-	std::string m_root{"."};
+	dj::Json m_json{};
+	std::string_view m_input_format{};
+	std::string_view m_output_format{};
+	std::string_view m_root{"."};
 };
 } // namespace vifo::cli::command

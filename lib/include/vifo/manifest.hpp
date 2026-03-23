@@ -3,6 +3,7 @@
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace vifo {
@@ -17,15 +18,21 @@ struct Manifest {
 	struct Entry {
 		fs::path source{};
 		fs::path destination{};
+		MediaFileType type{};
 	};
 
 	class Transformer;
 
 	[[nodiscard]] auto compute_metrics() const -> Metrics;
-	[[nodiscard]] auto format_table() const -> std::string;
+
+	[[nodiscard]] auto format_destinations_table() const -> std::string;
+	[[nodiscard]] auto format_sources_table() const -> std::string;
+	[[nodiscard]] auto format_entries_tables() const -> std::string;
+	[[nodiscard]] auto format_orphans_table() const -> std::string;
 
 	fs::path parent{};
 	std::vector<Entry> entries{};
+	std::vector<Entry> orphans{};
 };
 
 class Manifest::Transformer : public klib::Polymorphic {

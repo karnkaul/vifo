@@ -48,7 +48,8 @@ auto MovieGenerator::create(omdb::IService const& omdb_service, Format const& fo
 }
 
 auto MovieGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
-	if (!fs::is_directory(directory)) { return {}; }
+	// TODO: consolidate
+	if (!fs::is_directory(directory)) { return detail::to_error(Error::Type::Argument, std::format("not a directory: '{}'", directory.generic_string())); }
 
 	auto movie_directory = build_movie_directory(directory);
 	if (movie_directory.video.path.empty()) {
@@ -72,16 +73,24 @@ auto MovieGenerator::generate_manifest(fs::path const& directory) -> Result<Mani
 	m_movie_formatter.set_movie(std::move(omdb_movie->payload));
 
 	auto ret = Manifest{};
-	auto video_entry = Manifest::Entry{.source = std::move(movie_directory.video.path)};
-	video_entry.destination = m_movie_formatter.format_path(video_entry.source);
-	auto const subtitle_directory = m_movie_formatter.get_subtitles_dir_for(video_entry.destination);
-	ret.entries.push_back(std::move(video_entry));
+	detail::filter_en_subtitles(ret, movie_directory.subtitles);
 
-	for (auto& subtitle : movie_directory.subtitles) {
-		auto subtitle_entry = Manifest::Entry{.source = std::move(subtitle.path)};
-		subtitle_entry.destination = m_subtitle_formatter.format_path(subtitle_directory, subtitle_entry.source.extension().string());
-		ret.entries.push_back(std::move(subtitle_entry));
+	auto video_entry = Manifest::Entry{.source = std::move(movie_directory.video.path), .type = movie_directory.video.type};
+	video_entry.destination = m_movie_formatter.format_path(video_entry.source);
+	if (video_entry.destination.empty()) {
+		ret.orphans.push_back(std::move(video_entry));
+		for (auto& subtitle : movie_directory.subtitles) { ret.orphans.push_back(Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type}); }
+	} else {
+		auto const subtitle_directory = m_movie_formatter.get_subtitles_dir_for(video_entry.destination);
+		ret.entries.push_back(std::move(video_entry));
+
+		for (auto& subtitle : movie_directory.subtitles) {
+			auto subtitle_entry = Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type};
+			subtitle_entry.destination = m_subtitle_formatter.format_path(subtitle_directory, subtitle_entry.source.extension().string());
+			ret.entries.push_back(std::move(subtitle_entry));
+		}
 	}
+
 	return ret;
 }
 } // namespace vifo

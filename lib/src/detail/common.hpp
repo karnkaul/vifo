@@ -1,9 +1,12 @@
 #pragma once
 #include "vifo/expression.hpp"
+#include "vifo/manifest.hpp"
+#include "vifo/media/file.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
 #include <expected>
 #include <string_view>
+#include <vector>
 
 namespace vifo::detail {
 [[nodiscard]] auto to_error(Error::Type type, expression::Token token, std::string_view input, std::string_view msg) -> std::unexpected<Error>;
@@ -16,4 +19,6 @@ namespace vifo::detail {
 		.operation = operation,
 	};
 }
+
+void filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files);
 } // namespace vifo::detail

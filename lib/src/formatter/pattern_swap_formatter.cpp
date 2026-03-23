@@ -4,7 +4,6 @@
 #include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
 #include "vifo/util/util.hpp"
-#include <djson/json.hpp>
 #include <algorithm>
 #include <regex>
 #include <string_view>
@@ -118,48 +117,33 @@ class BindingBuilder {
 };
 } // namespace
 
-auto PatternSwapFormat::from_file(std::string_view const path) -> std::optional<PatternSwapFormat> {
-	auto const result = dj::Json::from_file(path);
-	if (!result) { return {}; }
-
-	auto const& json = *result;
-	auto ret = PatternSwapFormat{};
-	from_json(json["input"], ret.input);
-	from_json(json["output"], ret.output);
-	if (ret.input.empty() || ret.output.empty()) { return {}; }
-
-	return ret;
-}
-
-auto PatternSwapFormatter::create(Format format) -> Result<PatternSwapFormatter> {
+auto PatternSwapFormatter::create(Format const& format) -> Result<PatternSwapFormatter> {
 	auto ret = PatternSwapFormatter{};
-	ret.m_source.format = std::move(format.input);
-	ret.m_destination.format = std::move(format.output);
 
 	auto input_expression = Expression{};
 	auto output_expression = Expression{};
-	return expression::parse(ret.m_source.format)
+	return expression::parse(format.input)
 		.and_then([&](Expression ie) {
 			input_expression = std::move(ie);
-			return expression::parse(ret.m_destination.format);
+			return expression::parse(format.output);
 		})
 		.and_then([&](Expression oe) {
 			output_expression = std::move(oe);
-			return ret.build_source(std::move(input_expression));
+			return ret.build_source(format.input, std::move(input_expression));
 		})
-		.and_then([&] { return ret.build_destination(std::move(output_expression)); })
+		.and_then([&] { return ret.build_destination(format.output, std::move(output_expression)); })
 		.transform([&] { return std::move(ret); });
 }
 
 auto PatternSwapFormatter::format_string(std::string_view const input) -> std::string {
 	if (!extract_values(input)) { return {}; }
-	return m_environment.interpolate(m_destination.expression);
+	return m_environment.interpolate(m_destination);
 }
 
-auto PatternSwapFormatter::build_source(Expression expression) -> Result<void> {
-	m_source.expression = std::move(expression);
-	auto binding_builder = BindingBuilder{m_environment, m_source.format};
-	for (auto& atom : m_source.expression.atoms) {
+auto PatternSwapFormatter::build_source(std::string_view const format, Expression expression) -> Result<void> {
+	m_source = std::move(expression);
+	auto binding_builder = BindingBuilder{m_environment, format};
+	for (auto& atom : m_source.atoms) {
 		auto* identifier = std::get_if<Identifier>(&atom.value);
 		if (!identifier) { continue; }
 
@@ -170,22 +154,22 @@ auto PatternSwapFormatter::build_source(Expression expression) -> Result<void> {
 	return {};
 }
 
-auto PatternSwapFormatter::build_destination(Expression destination) -> Result<void> {
-	for (auto const& atom : destination.atoms) {
+auto PatternSwapFormatter::build_destination(std::string_view const format, Expression expression) -> Result<void> {
+	for (auto const& atom : expression.atoms) {
 		auto const* identifier = std::get_if<Identifier>(&atom.value);
 		if (!identifier) { continue; }
 
 		if (!m_environment.find_symbol(identifier->name)) {
-			return format_error(atom.token, m_destination.format, std::format("undefined identifier in output expression: '{}'", identifier->name));
+			return format_error(atom.token, format, std::format("undefined identifier in output expression: '{}'", identifier->name));
 		}
 	}
 
-	m_destination.expression = std::move(destination);
+	m_destination = std::move(expression);
 	return {};
 }
 
 auto PatternSwapFormatter::extract_values(std::string_view input) -> bool {
-	for (auto const& atom : m_source.expression.atoms) {
+	for (auto const& atom : m_source.atoms) {
 		if (!match_symbol(input, atom)) { return false; }
 	}
 	return true;

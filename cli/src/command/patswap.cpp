@@ -1,8 +1,10 @@
 #include "command/patswap.hpp"
+#include "djson/json.hpp"
 #include "klib/args/arg.hpp"
 #include "klib/cli/prompt.hpp"
 #include "klib/enum/bitops.hpp"
 #include "log.hpp"
+#include "vifo/formatter/pattern_swap_formatter.hpp"
 #include "vifo/generator/pattern_swap_generator.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/manifest.hpp"
@@ -12,6 +14,7 @@
 #include <filesystem>
 #include <optional>
 #include <print>
+#include <string_view>
 
 namespace vifo::cli::command {
 namespace {
@@ -27,6 +30,17 @@ auto const type_name_map = klib::EnumNameMap<Type>{
 	{Type::File, "file"},
 	{Type::Any, "any"},
 };
+
+[[nodiscard]] auto format_from_json(dj::Json& out, std::string_view const path) -> std::optional<PatternSwapFormat> {
+	auto json = dj::Json::from_file(path);
+	if (!json) { return {}; }
+	out = std::move(*json);
+	auto ret = PatternSwapFormat{};
+	from_json(out["input"], ret.input);
+	from_json(out["output"], ret.output);
+	if (ret.input.empty() || ret.output.empty()) { return {}; }
+	return ret;
+}
 
 struct Storage {
 	int max_depth{};
@@ -132,7 +146,7 @@ auto StateBuildManifest::execute() -> std::unique_ptr<MachineState> {
 	}
 
 	std::println("parent: {}", m_storage.manifest.parent.generic_string());
-	std::println("{}", m_storage.manifest.format_table());
+	std::println("{}", m_storage.manifest.format_entries_tables());
 
 	m_storage.metrics = m_storage.manifest.compute_metrics();
 	if (m_storage.metrics.duplicates > 0) {
@@ -202,12 +216,12 @@ auto Patswap::execute() -> ExitCode {
 
 	auto format = PatternSwapFormat{};
 	if (!m_format_json.empty()) {
-		auto fmt = PatternSwapFormat::from_file(m_format_json);
+		auto fmt = format_from_json(m_json, m_format_json);
 		if (!fmt) {
 			std::println(stderr, "failed to read format json: '{}'", m_format_json);
 			return ExitCode::IoError;
 		}
-		format = std::move(*fmt);
+		format = *fmt;
 		log.debug("InterpolateFormat extracted from '{}'", m_format_json);
 		log.debug("i: {}, o: {}", format.input, format.output);
 	} else {
@@ -215,12 +229,12 @@ auto Patswap::execute() -> ExitCode {
 			std::println(stderr, "either format json or input and output formats are required");
 			return ExitCode::InvalidArgument;
 		}
-		format = PatternSwapFormat{.input = std::move(m_input_format), .output = std::move(m_output_format)};
+		format = PatternSwapFormat{.input = m_input_format, .output = m_output_format};
 	}
 
 	auto storage = Storage{
 		.max_depth = m_max_depth,
-		.format = std::move(format),
+		.format = format,
 		.root_path = fs::canonical(root),
 		.type = type_name_map.to_enum(m_type).value_or(Type::Dir),
 	};

@@ -69,7 +69,7 @@ auto SeasonGenerator::create(omdb::IService const& omdb_service, Format const& f
 }
 
 auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
-	if (!fs::is_directory(directory)) { return {}; }
+	if (!fs::is_directory(directory)) { return detail::to_error(Error::Type::Argument, std::format("not a directory: '{}'", directory.generic_string())); }
 
 	auto const season_id = util::extract_season_id(directory.filename().string());
 	if (!season_id) { return detail::to_error(Error::Type::Identify, std::format("failed to extract SeasonId: '{}'", directory.generic_string())); }
@@ -96,12 +96,21 @@ auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Man
 	m_season_formatter.set_season(std::move(omdb_season->payload));
 
 	auto ret = Manifest{.parent = directory.parent_path()};
+
 	auto subtitle_directory = fs::path{};
 	for (auto& episode : season_directory.episodes) {
 		auto destination = m_season_formatter.format_path(episode.video.path);
-		if (destination.empty()) { continue; }
+		auto video_entry = Manifest::Entry{.source = std::move(episode.video.path), .type = episode.video.type};
+		if (destination.empty()) {
+			ret.orphans.push_back(std::move(video_entry));
+			for (auto& episode : season_directory.episodes) {
+				for (auto& subtitle : episode.subtitles) { ret.orphans.push_back(Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type}); }
+			}
+			continue;
+		}
 
-		auto video_entry = Manifest::Entry{.source = std::move(episode.video.path)};
+		detail::filter_en_subtitles(ret, episode.subtitles);
+
 		video_entry.destination = m_season_formatter.format_path(video_entry.source);
 		if (subtitle_directory.empty()) {
 			subtitle_directory = util::prefix_parent(video_entry.destination, m_season_formatter.get_subtitles_dir_for(video_entry.destination));
@@ -110,7 +119,7 @@ auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Man
 		ret.entries.push_back(std::move(video_entry));
 
 		for (auto& subtitle : episode.subtitles) {
-			auto subtitle_entry = Manifest::Entry{.source = std::move(subtitle.path)};
+			auto subtitle_entry = Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type};
 			subtitle_entry.destination = m_subtitle_formatter.format_path(subtitle_directory, subtitle_entry.source.extension().string());
 			ret.entries.push_back(std::move(subtitle_entry));
 		}

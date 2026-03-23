@@ -53,10 +53,12 @@ inline auto const outcome_name_map = klib::EnumNameMap<Outcome>{
 	{Outcome::Pass, "Pass"},
 };
 
-enum class MediaFileType : std::int8_t { Video, Subtitle };
+enum class MediaFileType : std::int8_t { Unknown, Video, Subtitle, Directory };
 inline auto const media_file_type_name_map = klib::EnumNameMap<MediaFileType>{
+	{MediaFileType::Unknown, "Unknown"},
 	{MediaFileType::Video, "Video"},
 	{MediaFileType::Subtitle, "Subtitle"},
+	{MediaFileType::Directory, "Directory"},
 };
 
 struct SeasonId {

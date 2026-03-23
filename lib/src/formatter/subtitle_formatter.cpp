@@ -26,15 +26,10 @@ using expression::Identifier;
 auto SubtitleFormatter::create(Format const& format) -> Result<SubtitleFormatter> {
 	auto ret = SubtitleFormatter{};
 
-	return expression::parse(format.primary)
-		.and_then([&](Expression in) { return verify_identifiers(format.primary, std::move(in)); })
-		.and_then([&](Expression verified) {
-			ret.m_primary = std::move(verified);
-			return expression::parse(format.secondary);
-		})
-		.and_then([&](Expression in) { return verify_identifiers(format.secondary, std::move(in)); })
+	return expression::parse(format.output)
+		.and_then([&](Expression in) { return verify_identifiers(format.output, std::move(in)); })
 		.transform([&](Expression verified) {
-			ret.m_secondary = std::move(verified);
+			ret.m_output = std::move(verified);
 			return std::move(ret);
 		});
 }
@@ -50,12 +45,8 @@ void SubtitleFormatter::set_title(std::string title) {
 }
 
 auto SubtitleFormatter::format_stem() -> std::string {
-	auto ret = [&] {
-		if (m_number == 0) { return m_environment.interpolate(m_primary); }
-		return m_environment.interpolate(m_secondary);
-	}();
 	set_number(m_number + 1);
-	return ret;
+	return m_environment.interpolate(m_output);
 }
 
 auto SubtitleFormatter::format_path(fs::path const& parent, std::string_view const extension) -> fs::path {

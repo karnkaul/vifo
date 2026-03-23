@@ -1,12 +1,30 @@
 #include "vifo/manifest.hpp"
 #include "detail/common.hpp"
 #include "vifo/path/transformer.hpp"
+#include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
 #include <array>
 #include <filesystem>
 #include <unordered_set>
 
 namespace vifo {
+namespace {
+void per_row(fs::path const& parent, std::vector<std::string>& row, fs::path const& path, MediaFileType const type) {
+	row.push_back(util::to_relative(parent, path).generic_string());
+	row.emplace_back(media_file_type_name_map.to_name(type));
+}
+
+struct PerSource {
+	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(parent, row, entry.source, entry.type); }
+	fs::path const& parent;
+};
+
+struct PerDestination {
+	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(parent, row, entry.destination, entry.type); }
+	fs::path const& parent;
+};
+} // namespace
+
 auto Manifest::compute_metrics() const -> Metrics {
 	auto ret = Metrics{};
 	auto paths_set = std::unordered_set<fs::path>{};
@@ -19,16 +37,29 @@ auto Manifest::compute_metrics() const -> Metrics {
 	return ret;
 }
 
-auto Manifest::format_table() const -> std::string {
-	static constexpr auto headers_v = std::array{
-		"destination",
-		"source",
-	};
-	auto const per_entry = [this](std::vector<std::string>& row, Entry const& entry) {
-		row.push_back(util::to_relative(parent, entry.destination).generic_string());
-		row.push_back(util::to_relative(parent, entry.source).generic_string());
-	};
-	return util::format_enumerated_table(headers_v, entries, per_entry);
+auto Manifest::format_destinations_table() const -> std::string {
+	if (entries.empty()) { return {}; }
+	static constexpr auto headers_v = std::array{"destination", "type"};
+	return util::format_enumerated_table(headers_v, entries, PerDestination{.parent = parent});
+}
+
+auto Manifest::format_sources_table() const -> std::string {
+	if (entries.empty()) { return {}; }
+	static constexpr auto headers_v = std::array{"source", "type"};
+	return util::format_enumerated_table(headers_v, entries, PerSource{.parent = parent});
+}
+
+auto Manifest::format_entries_tables() const -> std::string {
+	if (entries.empty()) { return {}; }
+	auto ret = format_sources_table();
+	ret.append(format_destinations_table());
+	return ret;
+}
+
+auto Manifest::format_orphans_table() const -> std::string {
+	if (orphans.empty()) { return {}; }
+	static constexpr auto headers_v = std::array{"orphan", "type"};
+	return util::format_enumerated_table(headers_v, orphans, PerSource{.parent = parent});
 }
 
 auto Manifest::Transformer::transform_manifest(Manifest const& manifest, Operation const operation, bool const overwrite) const -> Transaction {
