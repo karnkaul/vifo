@@ -112,9 +112,7 @@ auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Man
 		detail::filter_en_subtitles(ret, episode.subtitles);
 
 		video_entry.destination = m_season_formatter.format_path(video_entry.source);
-		if (subtitle_directory.empty()) {
-			subtitle_directory = util::prefix_parent(video_entry.destination, m_season_formatter.get_subtitles_dir_for(video_entry.destination));
-		}
+		if (subtitle_directory.empty()) { subtitle_directory = util::prefix_parent(video_entry.destination, get_subtitles_dir_for(video_entry.destination)); }
 		m_subtitle_formatter.set_title(video_entry.destination.stem().string());
 		ret.entries.push_back(std::move(video_entry));
 

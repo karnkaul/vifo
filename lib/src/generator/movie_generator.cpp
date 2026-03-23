@@ -36,8 +36,8 @@ struct MovieDirectory {
 
 auto MovieGenerator::create(omdb::IService const& omdb_service, Format const& format) -> Result<MovieGenerator> {
 	auto ret = MovieGenerator{omdb_service};
-	return MovieFormatter::create(format.movie)
-		.and_then([&](MovieFormatter formatter) {
+	return TitleFormatter::create(format.movie)
+		.and_then([&](TitleFormatter formatter) {
 			ret.m_movie_formatter = std::move(formatter);
 			return SubtitleFormatter::create(format.subtitle);
 		})
@@ -70,18 +70,19 @@ auto MovieGenerator::generate_manifest(fs::path const& directory) -> Result<Mani
 
 	m_subtitle_formatter.set_title(omdb_movie->payload.title);
 	m_subtitle_formatter.set_number(0);
-	m_movie_formatter.set_movie(std::move(omdb_movie->payload));
+	m_movie_formatter.set_title(std::move(omdb_movie->payload.title));
+	m_movie_formatter.set_year(omdb_movie->payload.year);
 
 	auto ret = Manifest{};
 	detail::filter_en_subtitles(ret, movie_directory.subtitles);
 
 	auto video_entry = Manifest::Entry{.source = std::move(movie_directory.video.path), .type = movie_directory.video.type};
-	video_entry.destination = m_movie_formatter.format_path(video_entry.source);
+	video_entry.destination = m_movie_formatter.format_video(video_entry.source);
 	if (video_entry.destination.empty()) {
 		ret.orphans.push_back(std::move(video_entry));
 		for (auto& subtitle : movie_directory.subtitles) { ret.orphans.push_back(Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type}); }
 	} else {
-		auto const subtitle_directory = m_movie_formatter.get_subtitles_dir_for(video_entry.destination);
+		auto const subtitle_directory = get_subtitles_dir_for(video_entry.destination);
 		ret.entries.push_back(std::move(video_entry));
 
 		for (auto& subtitle : movie_directory.subtitles) {

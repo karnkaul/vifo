@@ -1,12 +1,12 @@
 #pragma once
-#include "vifo/formatter/movie_formatter.hpp"
 #include "vifo/formatter/subtitle_formatter.hpp"
+#include "vifo/formatter/title_formatter.hpp"
 #include "vifo/generator/omdb_generator.hpp"
 #include "vifo/omdb.hpp"
 
 namespace vifo {
 struct MovieGeneratorFormat {
-	MovieFormat movie{};
+	TitleFormat movie{};
 	SubtitleFormat subtitle{};
 };
 
@@ -21,7 +21,7 @@ class MovieGenerator : public IOmdbGenerator {
 	[[nodiscard]] auto generate_manifest(fs::path const& directory) -> Result<Manifest> final;
 
   private:
-	MovieFormatter m_movie_formatter{};
+	TitleFormatter m_movie_formatter{};
 	SubtitleFormatter m_subtitle_formatter{};
 };
 } // namespace vifo
