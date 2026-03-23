@@ -13,6 +13,11 @@ namespace {
 	static auto const s_resolution_regex = std::regex{R"(\d{3}\d?p)"};
 	return std::regex_match(word.data(), word.data() + word.size(), s_resolution_regex);
 }
+
+[[nodiscard]] auto is_episode_id(std::string_view const word) {
+	static auto const s_regex = std::regex{R"(S\d{2}E\d{2})"};
+	return std::regex_match(word.data(), word.data() + word.size(), s_regex);
+}
 } // namespace
 
 auto TitleParser::parse_and_trim(std::string_view& out_text) -> std::string {
@@ -38,7 +43,7 @@ auto TitleParser::parse(util::WordToken const& token) -> bool {
 	}
 
 	auto const word = token.lexeme;
-	if (m_bracket_depth > 0 || is_metadata(word)) { return m_title.empty(); }
+	if (m_bracket_depth > 0 || is_metadata(word) || is_episode_id(word)) { return m_title.empty(); }
 
 	if (word == "-") { return true; }
 

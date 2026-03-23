@@ -58,4 +58,13 @@ inline auto const media_file_type_name_map = klib::EnumNameMap<MediaFileType>{
 	{MediaFileType::Video, "Video"},
 	{MediaFileType::Subtitle, "Subtitle"},
 };
+
+struct SeasonId {
+	int number{};
+};
+
+struct EpisodeId {
+	int season{};
+	int number{};
+};
 } // namespace vifo

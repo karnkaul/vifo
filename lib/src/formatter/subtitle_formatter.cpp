@@ -44,7 +44,10 @@ void SubtitleFormatter::set_number(int const number) {
 	m_environment.set_symbol(number_identifier_v, std::format("{:02}", m_number));
 }
 
-void SubtitleFormatter::set_title(std::string title) { m_environment.set_symbol(title_identifier_v, std::move(title)); }
+void SubtitleFormatter::set_title(std::string title) {
+	m_environment.set_symbol(title_identifier_v, std::move(title));
+	set_number(0);
+}
 
 auto SubtitleFormatter::format_stem() -> std::string {
 	auto ret = [&] {

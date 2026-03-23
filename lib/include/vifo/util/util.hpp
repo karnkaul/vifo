@@ -1,14 +1,13 @@
 #pragma once
-#include "vifo/types.hpp"
-#include <optional>
-#include <span>
-// #include <optional>
 #include "klib/cli/text_table.hpp"
+#include "vifo/types.hpp"
 #include <algorithm>
 #include <array>
 #include <filesystem>
 #include <format>
+#include <optional>
 #include <ranges>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -73,6 +72,6 @@ constexpr auto is_subtitle_file(std::string_view const extension) { return match
 // [[nodiscard]] auto is_subtitle_directory(fs::path const& path) -> bool;
 // [[nodiscard]] auto is_episode(fs::path const& path) -> bool;
 
-// [[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
-// [[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
+[[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
+[[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
 } // namespace vifo::util
