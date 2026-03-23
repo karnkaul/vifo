@@ -3,6 +3,7 @@
 #include "vifo/formatter/subtitle_formatter.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/media/directory.hpp"
+#include "vifo/media/file.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
@@ -70,7 +71,7 @@ auto SeasonGenerator::create(omdb::IService const& omdb_service, Format const& f
 }
 
 auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
-	auto path = if_directory(directory);
+	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
 	auto season_id = util::extract_season_id(path->filename().string());
@@ -97,34 +98,9 @@ auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Man
 	series_title = omdb_season->payload.title;
 	m_season_formatter.set_season(std::move(omdb_season->payload));
 
-	auto ret = Manifest{.parent = path->parent_path()};
+	auto builder = create_builder(m_season_formatter, path->parent_path());
+	for (auto& episode : season_directory.episodes) { builder.process_video(std::move(episode.video), episode.subtitles); }
 
-	auto subtitle_directory = fs::path{};
-	for (auto& episode : season_directory.episodes) {
-		auto destination = m_season_formatter.format_path(episode.video.path);
-		auto video_entry = Manifest::Entry{.source = std::move(episode.video.path), .type = episode.video.type};
-		if (destination.empty()) {
-			ret.orphans.push_back(std::move(video_entry));
-			for (auto& episode : season_directory.episodes) {
-				for (auto& subtitle : episode.subtitles) { ret.orphans.push_back(Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type}); }
-			}
-			continue;
-		}
-
-		detail::filter_en_subtitles(ret, episode.subtitles);
-
-		video_entry.destination = m_season_formatter.format_path(video_entry.source);
-		if (subtitle_directory.empty()) { subtitle_directory = util::prefix_parent(video_entry.destination, get_subtitles_dir_for(video_entry.destination)); }
-		m_subtitle_formatter.set_title(video_entry.destination.stem().string());
-		ret.entries.push_back(std::move(video_entry));
-
-		for (auto& subtitle : episode.subtitles) {
-			auto subtitle_entry = Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type};
-			subtitle_entry.destination = m_subtitle_formatter.format_path(subtitle_directory, subtitle_entry.source.extension().string());
-			ret.entries.push_back(std::move(subtitle_entry));
-		}
-	}
-
-	return ret;
+	return std::move(builder.manifest);
 }
 } // namespace vifo

@@ -27,7 +27,7 @@ auto TitleFormatter::format_directory(fs::path const& directory) const -> fs::pa
 	return util::prefix_parent(directory, format_dirname());
 }
 
-auto TitleFormatter::format_video(fs::path const& video) const -> fs::path {
+auto TitleFormatter::format_video(fs::path const& video) -> fs::path {
 	auto ret = fs::path{m_environment.interpolate(m_video)};
 	ret += video.extension();
 	if (!video.has_parent_path()) { return ret; }

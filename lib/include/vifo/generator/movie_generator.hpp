@@ -1,7 +1,6 @@
 #pragma once
-#include "vifo/formatter/subtitle_formatter.hpp"
 #include "vifo/formatter/title_formatter.hpp"
-#include "vifo/generator/omdb_generator.hpp"
+#include "vifo/generator/video_generator.hpp"
 #include "vifo/omdb.hpp"
 
 namespace vifo {
@@ -10,9 +9,9 @@ struct MovieGeneratorFormat {
 	SubtitleFormat subtitle{};
 };
 
-class MovieGenerator : public IOmdbGenerator {
+class MovieGenerator : public VideoGenerator {
   public:
-	using IOmdbGenerator::IOmdbGenerator;
+	using VideoGenerator::VideoGenerator;
 
 	using Format = MovieGeneratorFormat;
 
@@ -22,6 +21,5 @@ class MovieGenerator : public IOmdbGenerator {
 
   private:
 	TitleFormatter m_movie_formatter{};
-	SubtitleFormatter m_subtitle_formatter{};
 };
 } // namespace vifo

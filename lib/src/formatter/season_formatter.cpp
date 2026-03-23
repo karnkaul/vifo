@@ -24,7 +24,7 @@ void SeasonFormatter::set_season(omdb::Season season) {
 	m_environment.set_symbol(season_id_identifier_v, std::format("S{:02}", m_season.number));
 }
 
-auto SeasonFormatter::format_path(fs::path const& video) -> fs::path {
+auto SeasonFormatter::format_video(fs::path const& video) -> fs::path {
 	auto const episode_id = util::extract_episode_id(video.stem().string());
 	if (!episode_id) { return {}; }
 

@@ -48,7 +48,7 @@ auto MovieGenerator::create(omdb::IService const& omdb_service, Format const& fo
 }
 
 auto MovieGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
-	auto path = if_directory(directory);
+	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
 	auto movie_directory = build_movie_directory(*path);
@@ -68,30 +68,12 @@ auto MovieGenerator::generate_manifest(fs::path const& directory) -> Result<Mani
 		return detail::to_error(Error::Type::Identify, std::format("failed to identify title for: '{}'", movie_directory.video.path.generic_string()));
 	}
 
-	m_subtitle_formatter.set_title(omdb_movie->payload.title);
-	m_subtitle_formatter.set_number(0);
 	m_movie_formatter.set_title(std::move(omdb_movie->payload.title));
 	m_movie_formatter.set_year(omdb_movie->payload.year);
 
-	auto ret = Manifest{};
-	detail::filter_en_subtitles(ret, movie_directory.subtitles);
+	auto builder = create_builder(m_movie_formatter, path->parent_path());
+	builder.process_video(std::move(movie_directory.video), movie_directory.subtitles);
 
-	auto video_entry = Manifest::Entry{.source = std::move(movie_directory.video.path), .type = movie_directory.video.type};
-	video_entry.destination = m_movie_formatter.format_video(video_entry.source);
-	if (video_entry.destination.empty()) {
-		ret.orphans.push_back(std::move(video_entry));
-		for (auto& subtitle : movie_directory.subtitles) { ret.orphans.push_back(Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type}); }
-	} else {
-		auto const subtitle_directory = get_subtitles_dir_for(video_entry.destination);
-		ret.entries.push_back(std::move(video_entry));
-
-		for (auto& subtitle : movie_directory.subtitles) {
-			auto subtitle_entry = Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type};
-			subtitle_entry.destination = m_subtitle_formatter.format_path(subtitle_directory, subtitle_entry.source.extension().string());
-			ret.entries.push_back(std::move(subtitle_entry));
-		}
-	}
-
-	return ret;
+	return std::move(builder.manifest);
 }
 } // namespace vifo

@@ -1,7 +1,6 @@
 #pragma once
 #include "vifo/formatter/season_formatter.hpp"
-#include "vifo/formatter/subtitle_formatter.hpp"
-#include "vifo/generator/omdb_generator.hpp"
+#include "vifo/generator/video_generator.hpp"
 #include "vifo/omdb.hpp"
 
 namespace vifo {
@@ -10,9 +9,9 @@ struct SeasonGeneratorFormat {
 	SubtitleFormat subtitle{};
 };
 
-class SeasonGenerator : public IOmdbGenerator {
+class SeasonGenerator : public VideoGenerator {
   public:
-	using IOmdbGenerator::IOmdbGenerator;
+	using VideoGenerator::VideoGenerator;
 
 	using Format = SeasonGeneratorFormat;
 
@@ -22,6 +21,5 @@ class SeasonGenerator : public IOmdbGenerator {
 
   private:
 	SeasonFormatter m_season_formatter{};
-	SubtitleFormatter m_subtitle_formatter{};
 };
 } // namespace vifo

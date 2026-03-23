@@ -37,6 +37,11 @@ auto detail::to_error(Error::Type type, std::string_view msg) -> std::unexpected
 	return std::unexpected{Error{.type = type, .message = format_message(type, msg)}};
 }
 
+auto detail::if_directory(fs::path const& path) -> Result<fs::path> {
+	if (!fs::is_directory(path)) { return to_error(Error::Type::Argument, std::format("not a directory: '{}'", path.generic_string())); }
+	return path;
+}
+
 void detail::filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files) {
 	auto const transfer = [&](MediaFile& file) {
 		if (!is_en_subtitle(file.path)) {

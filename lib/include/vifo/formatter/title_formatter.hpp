@@ -1,17 +1,15 @@
 #pragma once
 #include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
-#include <filesystem>
+#include "vifo/formatter/video_formatter.hpp"
 
 namespace vifo {
-namespace fs = std::filesystem;
-
 struct TitleFormat {
 	std::string_view video{"{title}"};
 	std::string_view directory{"({year}) {title}"};
 };
 
-class TitleFormatter {
+class TitleFormatter : public IVideoFormatter {
   public:
 	static constexpr std::string_view title_identifier_v{"title"};
 	static constexpr std::string_view year_identifier_v{"year"};
@@ -25,7 +23,7 @@ class TitleFormatter {
 
 	[[nodiscard]] auto format_dirname() const -> std::string;
 	[[nodiscard]] auto format_directory(fs::path const& source_directory) const -> fs::path;
-	[[nodiscard]] auto format_video(fs::path const& video) const -> fs::path;
+	[[nodiscard]] auto format_video(fs::path const& video) -> fs::path final;
 
   private:
 	expression::Expression m_video{};

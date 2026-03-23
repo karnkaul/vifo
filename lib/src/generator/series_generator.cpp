@@ -17,7 +17,7 @@ auto SeriesGenerator::create(omdb::IService const& omdb_service, Format const& f
 }
 
 auto SeriesGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
-	auto path = if_directory(directory);
+	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
 	auto title = util::identify_title(*path);
