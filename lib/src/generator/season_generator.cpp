@@ -6,6 +6,7 @@
 #include "vifo/omdb.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
+#include <expected>
 #include <filesystem>
 
 namespace vifo {
@@ -69,20 +70,21 @@ auto SeasonGenerator::create(omdb::IService const& omdb_service, Format const& f
 }
 
 auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
-	if (!fs::is_directory(directory)) { return detail::to_error(Error::Type::Argument, std::format("not a directory: '{}'", directory.generic_string())); }
+	auto path = if_directory(directory);
+	if (!path) { return std::unexpected{std::move(path.error())}; }
 
-	auto const season_id = util::extract_season_id(directory.filename().string());
-	if (!season_id) { return detail::to_error(Error::Type::Identify, std::format("failed to extract SeasonId: '{}'", directory.generic_string())); }
+	auto season_id = util::extract_season_id(path->filename().string());
+	if (!season_id) { return detail::to_error(Error::Type::Identify, std::format("failed to extract SeasonId: '{}'", path->generic_string())); }
 
-	auto season_directory = build_season_directory(directory);
+	auto season_directory = build_season_directory(*path);
 	if (season_directory.episodes.empty()) {
-		return detail::to_error(Error::Type::Identify, std::format("no episodes found in: '{}'", directory.generic_string()));
+		return detail::to_error(Error::Type::Identify, std::format("no episodes found in: '{}'", path->generic_string()));
 	}
 
 	auto const& first_episode = season_directory.episodes.front();
 	auto series_title = util::identify_title(first_episode.video.path);
 	if (series_title.empty()) {
-		return detail::to_error(Error::Type::Identify, std::format("failed to identify series title for: '{}'", directory.generic_string()));
+		return detail::to_error(Error::Type::Identify, std::format("failed to identify series title for: '{}'", path->generic_string()));
 	}
 
 	auto omdb_season = m_omdb_service->search_season(series_title, season_id->number);
@@ -95,7 +97,7 @@ auto SeasonGenerator::generate_manifest(fs::path const& directory) -> Result<Man
 	series_title = omdb_season->payload.title;
 	m_season_formatter.set_season(std::move(omdb_season->payload));
 
-	auto ret = Manifest{.parent = directory.parent_path()};
+	auto ret = Manifest{.parent = path->parent_path()};
 
 	auto subtitle_directory = fs::path{};
 	for (auto& episode : season_directory.episodes) {

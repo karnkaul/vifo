@@ -48,12 +48,12 @@ auto MovieGenerator::create(omdb::IService const& omdb_service, Format const& fo
 }
 
 auto MovieGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
-	// TODO: consolidate
-	if (!fs::is_directory(directory)) { return detail::to_error(Error::Type::Argument, std::format("not a directory: '{}'", directory.generic_string())); }
+	auto path = if_directory(directory);
+	if (!path) { return std::unexpected{std::move(path.error())}; }
 
-	auto movie_directory = build_movie_directory(directory);
+	auto movie_directory = build_movie_directory(*path);
 	if (movie_directory.video.path.empty()) {
-		return detail::to_error(Error::Type::Identify, std::format("no video files found in: '{}'", directory.generic_string()));
+		return detail::to_error(Error::Type::Identify, std::format("no video files found in: '{}'", path->generic_string()));
 	}
 
 	auto const title = util::identify_title(movie_directory.video.path);

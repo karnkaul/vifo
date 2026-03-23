@@ -4,6 +4,7 @@
 #include "vifo/manifest.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
+#include <expected>
 #include <filesystem>
 
 namespace vifo {
@@ -16,17 +17,17 @@ auto SeriesGenerator::create(omdb::IService const& omdb_service, Format const& f
 }
 
 auto SeriesGenerator::generate_manifest(fs::path const& directory) -> Result<Manifest> {
-	// TODO: consolidate
-	if (!fs::is_directory(directory)) { return detail::to_error(Error::Type::Argument, std::format("not a directory: '{}'", directory.generic_string())); }
+	auto path = if_directory(directory);
+	if (!path) { return std::unexpected{std::move(path.error())}; }
 
-	auto const title = util::identify_title(directory);
-	if (title.empty()) { return detail::to_error(Error::Type::Identify, std::format("failed to identify title for: '{}'", directory.generic_string())); }
+	auto title = util::identify_title(*path);
+	if (title.empty()) { return detail::to_error(Error::Type::Identify, std::format("failed to identify title for: '{}'", path->generic_string())); }
 
 	auto omdb_series = m_omdb_service->search_series(title);
 	if (!omdb_series) { return detail::to_error(Error::Type::Http, omdb_series.error().text); }
 
 	if (omdb_series->payload.title.empty()) {
-		return detail::to_error(Error::Type::Identify, std::format("failed to identify title for: '{}'", directory.generic_string()));
+		return detail::to_error(Error::Type::Identify, std::format("failed to identify title for: '{}'", path->generic_string()));
 	}
 
 	m_formatter.set_title(std::move(omdb_series->payload.title));
@@ -34,7 +35,7 @@ auto SeriesGenerator::generate_manifest(fs::path const& directory) -> Result<Man
 
 	auto ret = Manifest{};
 
-	auto entry = Manifest::Entry{.source = directory, .type = MediaFileType::Directory};
+	auto entry = Manifest::Entry{.source = std::move(*path), .type = MediaFileType::Directory};
 	entry.destination = m_formatter.format_directory(entry.source);
 	if (entry.destination.empty()) {
 		ret.orphans.push_back(std::move(entry));

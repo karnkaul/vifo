@@ -3,6 +3,7 @@
 #include "vifo/environment.hpp"
 #include "vifo/generator/generator.hpp"
 #include "vifo/omdb.hpp"
+#include <filesystem>
 
 namespace vifo {
 class IOmdbGenerator : public IGenerator {
@@ -14,6 +15,8 @@ class IOmdbGenerator : public IGenerator {
 	std::string subtitles_dirname{"subs"};
 
   protected:
+	[[nodiscard]] static auto if_directory(fs::path const& path) -> Result<fs::path>;
+
 	klib::Ptr<omdb::IService const> m_omdb_service{};
 
 	Environment m_environment{};
