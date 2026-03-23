@@ -1,14 +1,13 @@
 #pragma once
-#include <span>
-// #include "vifo/types.hpp"
-// #include <optional>
-#include "vifo/manifest.hpp"
-#include "vifo/transaction.hpp"
+#include "klib/cli/text_table.hpp"
+#include "vifo/types.hpp"
 #include <algorithm>
 #include <array>
 #include <filesystem>
 #include <format>
+#include <optional>
 #include <ranges>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -31,39 +30,42 @@ auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwr
 [[nodiscard]] auto identify_title(fs::path const& path) -> std::string;
 [[nodiscard]] auto trim_identified_title(std::string_view& out_text) -> std::string;
 
-[[nodiscard]] auto transform(Manifest const& manifest, Operation operation, bool overwrite = false) -> Transaction;
-[[nodiscard]] auto rollback(Transaction const& transaction) -> Transaction;
+template <typename ContainerT, std::equality_comparable Type>
+constexpr auto match_any(ContainerT const& container, Type const& t) {
+	return std::ranges::find(container, t) != std::end(container);
+}
+
+template <typename HeadersT, typename ContainerT, typename ProjT>
+[[nodiscard]] auto format_enumerated_table(HeadersT const& headers, ContainerT const& entries, ProjT per_entry) -> std::string {
+	if (entries.empty()) { return {}; }
+
+	auto builder = klib::TextTable::Builder{};
+	builder.add_column("#", klib::TextTable::Align::Right);
+	for (auto const& header : headers) { builder.add_column(std::string{header}); }
+	auto table = builder.build();
+
+	auto row = std::vector<std::string>{};
+	for (auto const [index, entry] : std::views::enumerate(entries)) {
+		row.reserve(headers.size() + 1);
+		row.push_back(std::format("{}", index + 1));
+		per_entry(row, entry);
+		table.push_row(std::move(row));
+	}
+	return table.serialize();
+}
 
 constexpr auto video_extensions_v = std::array{
 	".mp4", ".mkv", ".avi", ".m4v", ".webm",
 };
-constexpr auto is_video_file(std::string_view const extension) { return std::ranges::find(video_extensions_v, extension) != video_extensions_v.end(); }
+constexpr auto is_video_file(std::string_view const extension) { return match_any(video_extensions_v, extension); }
 
 constexpr auto subtitle_extensions_v = std::array{
 	".srt",
 };
-constexpr auto is_subtitle_file(std::string_view const extension) { return std::ranges::find(subtitle_extensions_v, extension) != subtitle_extensions_v.end(); }
+constexpr auto is_subtitle_file(std::string_view const extension) { return match_any(subtitle_extensions_v, extension); }
 
-// [[nodiscard]] auto is_year(std::string_view word) -> bool;
+[[nodiscard]] auto get_media_file_type(fs::path const& file) -> std::optional<MediaFileType>;
 
-// [[nodiscard]] auto is_season_directory(fs::path const& path) -> bool;
-// [[nodiscard]] auto is_subtitle_directory(fs::path const& path) -> bool;
-// [[nodiscard]] auto is_episode(fs::path const& path) -> bool;
-
-// [[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
-// [[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
-
-template <typename ContainerT, typename ProjT>
-void serialize_enumerated_to(std::string& out, ContainerT const& container, ProjT proj) {
-	if (container.empty()) { return; }
-
-	auto const width = [&] {
-		if (container.size() < 10) { return 1; }
-		if (container.size() < 100) { return 2; }
-		return 3;
-	}();
-
-	for (auto const [index, t] : std::views::enumerate(container)) { std::format_to(std::back_inserter(out), "{:>{}}. {}\n", index + 1, width, proj(t)); }
-	out.pop_back();
-}
+[[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
+[[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
 } // namespace vifo::util

@@ -1,6 +1,7 @@
 #include "app/app.hpp"
 #include "command/command.hpp"
-#include "command/rename_dirs.hpp"
+#include "command/ghost_copy.hpp"
+#include "command/patswap.hpp"
 #include "klib/args/arg.hpp"
 #include "klib/args/parse.hpp"
 #include "klib/args/parse_info.hpp"
@@ -27,7 +28,8 @@ auto App::run(int argc, char const* const* argv) -> int {
 
 	auto const omdb_service = omdb::IService::create(get_api_token, omdb::Curl::Internal);
 
-	add_command<command::RenameDirs>();
+	add_command<command::Patswap>();
+	add_command<command::GhostCopy>();
 
 	auto const parse_result = parse_args(argc, argv);
 	if (parse_result.early_return()) { return parse_result.get_return_code(); }

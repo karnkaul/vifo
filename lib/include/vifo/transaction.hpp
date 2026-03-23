@@ -17,6 +17,7 @@ struct Transaction {
 	[[nodiscard]] static auto format_table(fs::path const& parent, std::span<Record const> records) -> std::string;
 
 	void triage_record(Record record, Outcome outcome);
+	[[nodiscard]] auto rollback() const -> Transaction;
 
 	fs::path parent{};
 	std::vector<Record> success{};

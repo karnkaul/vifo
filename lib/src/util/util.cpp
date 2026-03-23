@@ -1,14 +1,11 @@
-// #include <optional>
-// #include <regex>
 #include "vifo/util/util.hpp"
 #include "detail/title_parser.hpp"
 #include "log.hpp"
-#include "vifo/path/transformer.hpp"
-#include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <regex>
 #include <string_view>
 
 namespace vifo {
@@ -19,16 +16,29 @@ namespace {
 	if (fs::exists(path)) { return fs::is_directory(path); }
 	return fs::create_directories(path);
 }
-
-[[nodiscard]] auto to_record(fs::path source, fs::path destination, Operation const operation) -> Record {
-	return Record{
-		.source = std::move(source),
-		.destination = std::move(destination),
-		.operation = operation,
-	};
-}
 } // namespace
 } // namespace util
+
+auto util::to_int(std::string_view const text, int const fallback) -> int {
+	if (text.empty()) { return fallback; }
+	auto ret = int{};
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+	auto const* end = text.data() + text.size();
+	auto const [_, ec] = std::from_chars(text.data(), end, ret);
+	if (ec != std::errc{}) { return fallback; }
+	return ret;
+}
+
+void util::join_to(std::string& out, std::string_view const item, std::string_view const delim) {
+	if (!out.empty()) { out += delim; }
+	out += item;
+}
+
+auto util::join(std::span<std::string_view const> items, std::string_view const delim) -> std::string {
+	auto ret = std::string{};
+	for (auto const item : items) { join_to(ret, item, delim); }
+	return ret;
+}
 
 auto util::path_if_exists(std::string_view const path) -> fs::path {
 	if (path.empty()) {
@@ -68,10 +78,19 @@ auto util::ghost_copy(fs::path const& source, fs::path const& destination, bool 
 
 	auto ret = std::int64_t{};
 	for (auto const& it : fs::recursive_directory_iterator{source}) {
-		if (!it.is_regular_file()) { continue; }
-
 		auto const relative = fs::relative(it.path(), source);
 		auto const path = root / relative;
+
+		if (fs::exists(path) && !overwrite) { return -1; }
+
+		if (it.is_directory()) {
+			if (!mkdir(it.path())) { return -1; }
+			++ret;
+			continue;
+		}
+
+		if (!it.is_regular_file()) { continue; }
+
 		if (fs::exists(path) && !overwrite) { return -1; }
 		if (!mkdir(path.parent_path())) { return -1; }
 		auto file = std::ofstream{path, std::ios::out};
@@ -99,111 +118,46 @@ auto util::identify_title(fs::path const& path) -> std::string {
 
 auto util::trim_identified_title(std::string_view& out_text) -> std::string { return detail::TitleParser{}.parse_and_trim(out_text); }
 
-auto util::transform(Manifest const& manifest, Operation const operation, bool const overwrite) -> Transaction {
-	auto ret = Transaction{.parent = manifest.parent};
-	auto const transformer = path::Transformer{.overwrite = overwrite};
-	for (auto const& entry : manifest.entries) {
-		auto const outcome = transformer.transform(entry.source, entry.destination, operation);
-		auto record = to_record(entry.source, entry.destination, operation);
-		ret.triage_record(std::move(record), outcome);
+auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileType> {
+	struct MFTExtension {
+		MediaFileType type{};
+		std::vector<std::string_view> extensions{};
+	};
+	static auto const s_mft_extensions = std::array{
+		MFTExtension{.type = MediaFileType::Video, .extensions = {".mp4", ".mkv", ".avi", ".m4v", ".webm"}},
+		MFTExtension{.type = MediaFileType::Subtitle, .extensions = {".srt"}},
+	};
+
+	auto const extension = file.extension().string();
+	for (auto const& mfte : s_mft_extensions) {
+		if (match_any(mfte.extensions, extension)) { return mfte.type; }
 	}
-	return ret;
+	return {};
 }
 
-auto util::rollback(Transaction const& transaction) -> Transaction {
-	auto ret = Transaction{.parent = transaction.parent};
-	auto const transformer = path::Transformer{};
-	for (auto const& record : std::views::reverse(transaction.success)) {
-		auto operation = std::optional<Operation>{};
-		switch (record.operation) {
-		case Operation::Copy: operation = Operation::Delete; break;
-		case Operation::Rename: operation = Operation::Rename; break;
-		case Operation::Delete: break;
-		}
-		if (!operation) { continue; }
+auto util::extract_season_id(std::string const& name) -> std::optional<SeasonId> {
+	if (name.empty()) { return {}; }
 
-		auto const outcome = transformer.transform(record.destination, record.source, *operation);
-		ret.triage_record(to_record(record.destination, record.source, *operation), outcome);
-	}
-	return ret;
+	static auto const s_regex_1 = std::regex{R"(Season.[0-9]{2})"};
+	static auto const s_regex_2 = std::regex{R"(S[0-9]{2})"};
+	auto matches = std::smatch{};
+	if (!std::regex_search(name, matches, s_regex_1) && !std::regex_search(name, matches, s_regex_2)) { return {}; }
+	auto const str = std::string{matches[0]};
+	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
+	if (number <= 0) { return {}; }
+	return SeasonId{.number = number};
 }
 
-auto util::to_int(std::string_view const text, int const fallback) -> int {
-	if (text.empty()) { return fallback; }
-	auto ret = int{};
-	// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-	auto const* end = text.data() + text.size();
-	auto const [_, ec] = std::from_chars(text.data(), end, ret);
-	if (ec != std::errc{}) { return fallback; }
-	return ret;
+auto util::extract_episode_id(std::string const& name) -> std::optional<EpisodeId> {
+	if (name.empty()) { return {}; }
+
+	static auto const s_regex = std::regex{R"(S[0-9]{2}E[0-9]{2})"};
+	auto matches = std::smatch{};
+	if (!std::regex_search(name, matches, s_regex)) { return {}; }
+	auto const str = std::string{matches[0]};
+	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
+	auto const season = to_int(std::string_view{str}.substr(1, 2));
+	if (number <= 0 || season <= 0) { return {}; }
+	return EpisodeId{.season = season, .number = number};
 }
-
-void util::join_to(std::string& out, std::string_view const item, std::string_view const delim) {
-	if (!out.empty()) { out += delim; }
-	out += item;
-}
-
-auto util::join(std::span<std::string_view const> items, std::string_view const delim) -> std::string {
-	auto ret = std::string{};
-	for (auto const item : items) { join_to(ret, item, delim); }
-	return ret;
-}
-
-// auto util::is_year(std::string_view const word) -> bool {
-// 	static auto const s_regex = std::regex{R"([1-3][0-9]{3})"};
-// 	// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-// 	return std::regex_match(word.data(), word.data() + word.size(), s_regex);
-// }
-
-// auto util::is_season_directory(fs::path const& path) -> bool {
-// 	if (!fs::is_directory(path)) { return {}; }
-// 	static auto const s_regex_1 = std::regex{R"(.*Season.[0-9]{2}.*)"};
-// 	static auto const s_regex_2 = std::regex{R"(.*S[0-9]{2}.*)"};
-// 	auto const filename = fs::canonical(path).stem().string();
-// 	return std::regex_match(filename, s_regex_1) || std::regex_match(filename, s_regex_2);
-// }
-
-// auto util::is_subtitle_directory(fs::path const& path) -> bool {
-// 	if (!fs::is_directory(path)) { return false; }
-// 	auto const filename = path.filename().string();
-// 	static constexpr auto subtitle_directories_v = std::array{
-// 		"subs",
-// 		"subtitles",
-// 		"Subs",
-// 		"Subtitles",
-// 	};
-// 	return std::ranges::find(subtitle_directories_v, filename) != subtitle_directories_v.end();
-// }
-
-// auto util::is_episode(fs::path const& path) -> bool {
-// 	if (!fs::exists(path)) { return {}; }
-// 	static auto const s_regex = std::regex{R"(.*S[0-9]{2}E[0-9]{2}.*)"};
-// 	return std::regex_match(fs::canonical(path).string(), s_regex);
-// }
-
-// auto util::extract_season_id(std::string const& name) -> std::optional<SeasonId> {
-// 	if (name.empty()) { return {}; }
-
-// 	static auto const s_regex_1 = std::regex{R"(Season.[0-9]{2})"};
-// 	static auto const s_regex_2 = std::regex{R"(S[0-9]{2})"};
-// 	auto matches = std::smatch{};
-// 	if (!std::regex_search(name, matches, s_regex_1) && !std::regex_search(name, matches, s_regex_2)) { return {}; }
-// 	auto const str = std::string{matches[0]};
-// 	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
-// 	if (number <= 0) { return {}; }
-// 	return SeasonId{number};
-// }
-
-// auto util::extract_episode_id(std::string const& name) -> std::optional<EpisodeId> {
-// 	if (name.empty()) { return {}; }
-
-// 	static auto const s_regex = std::regex{R"(S[0-9]{2}E[0-9]{2})"};
-// 	auto matches = std::smatch{};
-// 	if (!std::regex_search(name, matches, s_regex)) { return {}; }
-// 	auto const str = std::string{matches[0]};
-// 	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
-// 	auto const season = to_int(std::string_view{str}.substr(1, 2));
-// 	if (number <= 0 || season <= 0) { return {}; }
-// 	return EpisodeId{season, number};
-// }
 } // namespace vifo

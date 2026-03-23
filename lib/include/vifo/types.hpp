@@ -5,11 +5,17 @@
 
 namespace vifo {
 struct Error {
-	enum class Type : std::int8_t { Syntax, Format };
+	enum class Type : std::int8_t {
+		Argument,
+		Syntax,
+		Format,
+		Identify,
+		Http,
+	};
 
 	inline static auto const type_name_map = klib::EnumNameMap<Type>{
-		{Type::Syntax, "SyntaxError"},
-		{Type::Format, "FormatError"},
+		{Type::Syntax, "ArgumentError"},   {Type::Syntax, "SyntaxError"}, {Type::Format, "FormatError"},
+		{Type::Identify, "IdentifyError"}, {Type::Http, "HttpError"},
 	};
 
 	Type type{};
@@ -20,13 +26,17 @@ enum class ExitCode : std::int8_t {
 	Success = EXIT_SUCCESS,
 	Failure = EXIT_FAILURE,
 
-	SyntaxError = 10,
-	FormatError = 11,
+	InvalidArgument = 10,
+	SyntaxError = 11,
+	FormatError = 12,
+	IdentifyError = 13,
+	HttpError = 14,
 
-	InvalidArgument = 20,
+	IoError = 20,
 	ForcedHalt = 21,
 
-	TransformFailure = 30,
+	DuplicateDestinations = 30,
+	TransformFailure = 31,
 };
 
 enum class Operation : std::int8_t { Rename, Copy, Delete };
@@ -41,5 +51,26 @@ inline auto const outcome_name_map = klib::EnumNameMap<Outcome>{
 	{Outcome::Success, "Success"},
 	{Outcome::Failure, "Failure"},
 	{Outcome::Pass, "Pass"},
+};
+
+enum class MediaFileType : std::int8_t { Unknown, Video, Subtitle, Directory };
+inline auto const media_file_type_name_map = klib::EnumNameMap<MediaFileType>{
+	{MediaFileType::Unknown, "Unknown"},
+	{MediaFileType::Video, "Video"},
+	{MediaFileType::Subtitle, "Subtitle"},
+	{MediaFileType::Directory, "Directory"},
+};
+
+struct SeasonId {
+	[[nodiscard]] auto format() const -> std::string;
+
+	int number{};
+};
+
+struct EpisodeId {
+	[[nodiscard]] auto format() const -> std::string;
+
+	int season{};
+	int number{};
 };
 } // namespace vifo

@@ -4,17 +4,23 @@
 #include "djson/json.hpp"
 #include "kcurl/curl.hpp"
 #include "kcurl/http.hpp"
-#include "klib/visitor.hpp"
+#include "klib/enum/name.hpp"
 #include "vifo/panic.hpp"
 #include <string>
 #include <string_view>
 
-namespace vifo {
-namespace omdb {
+namespace vifo::omdb {
 namespace http = kcurl::http;
 
 namespace {
 constexpr auto url_v = std::string_view{"http://www.omdbapi.com/"};
+
+enum class Type : std::int8_t { Movie, Series, Episode, COUNT_ };
+auto const type_name_map = klib::EnumNameMap<Type>{
+	{Type::Movie, "movie"},
+	{Type::Series, "series"},
+	{Type::Episode, "episode"},
+};
 
 namespace key {
 constexpr auto apikey_v = std::string_view{"apikey"};
@@ -23,8 +29,6 @@ constexpr auto title_v = std::string_view{"t"};
 constexpr auto season_v = std::string_view{"Season"};
 constexpr auto episode_v = std::string_view{"Episode"};
 } // namespace key
-
-[[nodiscard]] constexpr auto is_valid(Type const type) { return type >= Type{0} && type < Type::COUNT_; }
 
 struct RequestBuilder {
 	auto add_query(std::string_view const key, std::string value) -> RequestBuilder& {
@@ -54,15 +58,11 @@ struct RequestBuilder {
 	http::Request request{.base_url = std::string{url_v}};
 };
 
-[[nodiscard]] auto build_request(Query const& query, std::string_view type) -> kcurl::http::Request {
-	return RequestBuilder{}.add_type(type).add_title(query.title).add_season(query.season).add_episode(query.episode).build();
-}
-
-template <typename Type>
-[[nodiscard]] auto to_payload(http::Response<dj::Json> const& response) -> http::Response<Payload> {
-	auto ret = Type{};
+template <typename T>
+[[nodiscard]] auto to_type(http::Response<dj::Json> const& response) -> http::Response<T> {
+	auto ret = T{};
 	detail::from_json(response.payload, ret);
-	return response.rewrap_as(Payload{std::move(ret)});
+	return response.rewrap_as(std::move(ret));
 }
 
 class Service : public IService {
@@ -72,28 +72,39 @@ class Service : public IService {
 	}
 
   private:
-	struct Search {
+	struct Query {
 		std::string_view title{};
-		std::string_view type{};
 		int season{};
 		int episode{};
 	};
 
-	[[nodiscard]] auto search(Query const& query, std::optional<Type> type) const -> http::Result<Payload> final {
-		if (!type || !is_valid(*type)) {
-			return perform_search(query, {}).transform([](http::Response<dj::Json> in) { return in.rewrap_as(Payload{std::move(in.payload)}); });
-		}
+	[[nodiscard]] static auto build_request(Query const& query, std::string_view type) -> kcurl::http::Request {
+		return RequestBuilder{}.add_type(type).add_title(query.title).add_season(query.season).add_episode(query.episode).build();
+	}
 
-		auto const type_name = type_map.to_name(*type);
-		switch (*type) {
-		case Type::Movie: return perform_search(query, type_name).transform(&to_payload<Movie>);
-		case Type::Series: {
-			if (query.season > 0) { return perform_search(query, type_name).transform(&to_payload<Season>); }
-			return perform_search(query, type_name).transform(&to_payload<Series>);
-		}
-		case Type::Episode: return perform_search(query, type_name).transform(&to_payload<Episode>);
-		default: std::unreachable();
-		}
+	[[nodiscard]] auto search_generic(std::string_view const title) const -> http::Result<dj::Json> final {
+		auto const query = Query{.title = title};
+		return perform_search(query, {});
+	}
+
+	[[nodiscard]] auto search_movie(std::string_view const title) const -> http::Result<Movie> final {
+		auto const query = Query{.title = title};
+		return perform_search(query, type_name_map.to_name(Type::Movie)).transform(&to_type<Movie>);
+	}
+
+	[[nodiscard]] auto search_episode(std::string_view const title, int const season, int const episode) const -> http::Result<Episode> final {
+		auto const query = Query{.title = title, .season = season, .episode = episode};
+		return perform_search(query, type_name_map.to_name(Type::Episode)).transform(&to_type<Episode>);
+	}
+
+	[[nodiscard]] auto search_season(std::string_view const title, int const season) const -> http::Result<Season> final {
+		auto const query = Query{.title = title, .season = season};
+		return perform_search(query, type_name_map.to_name(Type::Series)).transform(&to_type<Season>);
+	}
+
+	[[nodiscard]] auto search_series(std::string_view const title) const -> http::Result<Series> final {
+		auto const query = Query{.title = title};
+		return perform_search(query, type_name_map.to_name(Type::Series)).transform(&to_type<Series>);
 	}
 
 	[[nodiscard]] auto create_secret() const -> kcurl::http::Query {
@@ -138,17 +149,4 @@ void Series::serialize_to(std::string& out) const {
 auto IService::create(GetApiToken get_api_token, Curl const curl) -> std::unique_ptr<IService> {
 	return std::make_unique<Service>(std::move(get_api_token), curl);
 }
-} // namespace omdb
-
-auto omdb::serialize(Payload const& payload) -> std::string {
-	auto const visitor = klib::Visitor{
-		[](dj::Json const& json) { return json.serialize(); },
-		[](auto const& t) {
-			auto ret = std::string{};
-			t.serialize_to(ret);
-			return ret;
-		},
-	};
-	return std::visit(visitor, payload);
-}
-} // namespace vifo
+} // namespace vifo::omdb

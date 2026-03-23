@@ -1,9 +1,25 @@
 #include "detail/title_parser.hpp"
 #include "vifo/panic.hpp"
 #include "vifo/util/util.hpp"
+#include <regex>
 #include <string_view>
 
 namespace vifo::detail {
+namespace {
+[[nodiscard]] auto is_metadata(std::string_view const word) {
+	auto const year = util::to_int(word);
+	if (year > 1000 && year < 4000) { return true; }
+
+	static auto const s_resolution_regex = std::regex{R"(\d{3}\d?p)"};
+	return std::regex_match(word.data(), word.data() + word.size(), s_resolution_regex);
+}
+
+[[nodiscard]] auto is_episode_id(std::string_view const word) {
+	static auto const s_regex = std::regex{R"(S\d{2}E\d{2})"};
+	return std::regex_match(word.data(), word.data() + word.size(), s_regex);
+}
+} // namespace
+
 auto TitleParser::parse_and_trim(std::string_view& out_text) -> std::string {
 	m_title.clear();
 	m_bracket_depth = 0;
@@ -26,9 +42,9 @@ auto TitleParser::parse(util::WordToken const& token) -> bool {
 	default: throw Panic{"internal error: unexpected WordToken::Type"};
 	}
 
-	if (m_bracket_depth > 0) { return m_title.empty(); }
-
 	auto const word = token.lexeme;
+	if (m_bracket_depth > 0 || is_metadata(word) || is_episode_id(word)) { return m_title.empty(); }
+
 	if (word == "-") { return true; }
 
 	util::join_to(m_title, word);

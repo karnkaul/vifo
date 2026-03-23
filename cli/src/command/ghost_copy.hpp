@@ -1,11 +1,11 @@
 #pragma once
 #include "command/command.hpp"
-#include <string>
+#include <string_view>
 
 namespace vifo::cli::command {
-class RenameDirs : public Command {
-	static constexpr std::string_view name_v{"rename-dirs"};
-	static constexpr std::string_view help_v{"rename matching subdirectories via interpolation"};
+class GhostCopy : public Command {
+	static constexpr std::string_view name_v{"ghostcopy"};
+	static constexpr std::string_view help_v{"mirror a directory tree with empty files"};
 
 	[[nodiscard]] auto get_name() const -> std::string_view final { return name_v; }
 	[[nodiscard]] auto get_help() const -> std::string_view final { return help_v; }
@@ -14,9 +14,10 @@ class RenameDirs : public Command {
 
 	[[nodiscard]] auto execute() -> ExitCode final;
 
+	bool m_directories_only{};
+	bool m_overwrite{};
 	int m_max_depth{10};
-	std::string m_input_format{};
-	std::string m_output_format{};
-	std::string m_root{"."};
+	std::string_view m_source{};
+	std::string_view m_destination{"."};
 };
 } // namespace vifo::cli::command
