@@ -18,7 +18,7 @@ auto Title::create(Format const& format) -> Result<Title> {
 }
 
 void Title::set_title(std::string title) { m_environment.set_symbol(title_identifier_v, std::move(title)); }
-void Title::set_year(int const year) { m_environment.set_symbol(year_identifier_v, std::format("{:02}", year)); }
+void Title::set_year(int const year) { m_environment.set_symbol(year_identifier_v, std::format("{:04}", year)); }
 
 auto Title::format_dirname() const -> std::string { return m_environment.interpolate(m_directory); }
 

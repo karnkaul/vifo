@@ -6,6 +6,7 @@
 #include "kcurl/http.hpp"
 #include "klib/enum/name.hpp"
 #include "vifo/panic.hpp"
+#include "vifo/types.hpp"
 #include <string>
 #include <string_view>
 
@@ -139,7 +140,10 @@ void Episode::serialize_to(std::string& out) const {
 
 void Season::serialize_to(std::string& out) const {
 	std::format_to(std::back_inserter(out), " title: {}\n number: {}\n episodes:\n", title, number);
-	for (auto const& episode : episodes) { std::format_to(std::back_inserter(out), "  S{:02}E{:02} - {}\n", number, episode.number, episode.title); }
+	for (auto const& episode : episodes) {
+		auto const id = EpisodeId{.season = number, .number = episode.number};
+		std::format_to(std::back_inserter(out), "  {} - {}\n", id.format(), episode.title);
+	}
 }
 
 void Series::serialize_to(std::string& out) const {
