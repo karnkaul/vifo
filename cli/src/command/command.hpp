@@ -2,6 +2,7 @@
 #include "klib/args/arg.hpp"
 #include "klib/base_types.hpp"
 #include "vifo/types.hpp"
+#include <print>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -19,6 +20,11 @@ class Command : public klib::Polymorphic, public klib::Pinned {
 	[[nodiscard]] auto get_args() const -> std::span<klib::args::Arg const> { return m_args; }
 
   protected:
+	[[nodiscard]] static auto handle_error(Error const& error) -> ExitCode {
+		std::println("{}", error.message);
+		return to_exit_code(error.type);
+	}
+
 	std::vector<klib::args::Arg> m_args{};
 };
 } // namespace vifo::cli
