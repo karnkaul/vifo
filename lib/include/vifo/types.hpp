@@ -39,6 +39,17 @@ enum class ExitCode : std::int8_t {
 	TransformFailure = 31,
 };
 
+[[nodiscard]] constexpr auto to_exit_code(Error::Type const type) {
+	switch (type) {
+	case Error::Type::Argument: return ExitCode::InvalidArgument;
+	case Error::Type::Syntax: return ExitCode::SyntaxError;
+	case Error::Type::Format: return ExitCode::FormatError;
+	case Error::Type::Identify: return ExitCode::IdentifyError;
+	case Error::Type::Http: return ExitCode::HttpError;
+	default: return ExitCode::Failure;
+	}
+}
+
 enum class Operation : std::int8_t { Rename, Copy, Delete };
 inline auto const operation_name_map = klib::EnumNameMap<Operation>{
 	{Operation::Rename, "Rename"},

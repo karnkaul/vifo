@@ -20,6 +20,7 @@ class MachineState : public klib::Polymorphic {
 	virtual auto execute() -> std::unique_ptr<MachineState> = 0;
 
 	[[nodiscard]] auto set_error(ExitCode exit_code, std::string_view message = {}) -> std::unique_ptr<MachineState>;
+	[[nodiscard]] auto handle_error(Error const& error) -> std::unique_ptr<MachineState> { return set_error(to_exit_code(error.type), error.message); }
 
 	[[nodiscard]] auto should_continue(prompt::Selection selection) -> bool;
 	[[nodiscard]] auto should_continue(std::string_view message, std::string& out_line) -> bool;
