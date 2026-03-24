@@ -22,6 +22,9 @@ void print_transaction(Transaction const& transaction) {
 }
 } // namespace
 
+StateTransform::StateTransform(Manifest manifest, std::unique_ptr<MachineState> next)
+	: MachineState("Transform"), m_manifest(std::move(manifest)), m_next(std::move(next)) {}
+
 auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 	if (!confirm_rename()) { return {}; }
 
@@ -43,7 +46,7 @@ auto StateTransform::execute() -> std::unique_ptr<MachineState> {
 
 	std::println("transform complete");
 
-	return {};
+	return std::move(m_next);
 }
 
 void StateTransform::on_transformed(Record const& /*record*/, Outcome const /*outcome*/) const { m_progress->increment_completed(); }

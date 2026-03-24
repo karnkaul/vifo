@@ -4,7 +4,6 @@
 #include "vifo/interpolator/subtitle.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/types.hpp"
-#include "vifo/util/util.hpp"
 #include <algorithm>
 #include <filesystem>
 
@@ -56,16 +55,16 @@ auto Movie::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 		return detail::to_error(Error::Type::Identify, std::format("no video files found in: '{}'", path->generic_string()));
 	}
 
-	auto const title = util::identify_title(movie_directory.video.path);
-	if (title.empty()) {
-		return detail::to_error(Error::Type::Identify, std::format("failed to identify title for: '{}'", movie_directory.video.path.generic_string()));
+	auto const search_title = get_search_title(*path);
+	if (search_title.empty()) {
+		return detail::to_error(Error::Type::Identify, std::format("failed to identify movie title for: '{}'", movie_directory.video.path.generic_string()));
 	}
 
-	auto omdb_movie = m_omdb_service->search_movie(title);
+	auto omdb_movie = m_omdb_service->search_movie(search_title);
 	if (!omdb_movie) { return detail::to_error(Error::Type::Http, omdb_movie.error().text); }
 
 	if (omdb_movie->payload.title.empty()) {
-		return detail::to_error(Error::Type::Identify, std::format("failed to identify title for: '{}'", movie_directory.video.path.generic_string()));
+		return detail::to_error(Error::Type::Identify, std::format("failed to identify movie title for: '{}'", movie_directory.video.path.generic_string()));
 	}
 
 	m_movie.set_title(std::move(omdb_movie->payload.title));

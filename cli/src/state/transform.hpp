@@ -7,7 +7,7 @@
 namespace vifo::cli {
 class StateTransform : public MachineState, Manifest::Transformer {
   public:
-	explicit StateTransform(Manifest manifest) : MachineState("Transform"), m_manifest(std::move(manifest)) {}
+	explicit StateTransform(Manifest manifest, std::unique_ptr<MachineState> next = {});
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
@@ -20,5 +20,6 @@ class StateTransform : public MachineState, Manifest::Transformer {
 	bool m_overwrite{};
 	Transaction m_transaction{};
 	std::unique_ptr<util::Progress> m_progress{};
+	std::unique_ptr<MachineState> m_next{};
 };
 } // namespace vifo::cli
