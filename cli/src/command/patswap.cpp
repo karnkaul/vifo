@@ -37,7 +37,7 @@ void Patswap::populate_args() {
 }
 
 auto Patswap::execute() -> ExitCode {
-	auto root = util::path_if_exists(m_root);
+	auto root = util::path_if_directory(m_root);
 	if (root.empty()) { return ExitCode::InvalidArgument; }
 
 	auto format = format_from_json(m_json, m_format_json);
