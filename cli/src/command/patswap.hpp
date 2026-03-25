@@ -15,12 +15,9 @@ class Patswap : public Command {
 
 	[[nodiscard]] auto execute() -> ExitCode final;
 
-	bool m_scan_files{};
 	int m_max_depth{10};
 	std::string_view m_format_json{};
 	dj::Json m_json{};
-	std::string_view m_input_format{};
-	std::string_view m_output_format{};
 	std::string_view m_root{"."};
 };
 } // namespace vifo::cli::command

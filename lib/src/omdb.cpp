@@ -1,10 +1,10 @@
 #include "vifo/omdb.hpp"
 #include "detail/http_gateway.hpp"
-#include "detail/json_io.hpp"
 #include "djson/json.hpp"
 #include "kcurl/curl.hpp"
 #include "kcurl/http.hpp"
 #include "klib/enum/name.hpp"
+#include "vifo/json_io.hpp"
 #include "vifo/panic.hpp"
 #include "vifo/types.hpp"
 #include <string>
@@ -62,7 +62,7 @@ struct RequestBuilder {
 template <typename T>
 [[nodiscard]] auto to_type(http::Response<dj::Json> const& response) -> http::Response<T> {
 	auto ret = T{};
-	detail::from_json(response.payload, ret);
+	from_json(response.payload, ret);
 	return response.rewrap_as(std::move(ret));
 }
 
