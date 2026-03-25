@@ -61,10 +61,7 @@ class Omdb : public OmdbBase {
 	explicit Omdb(omdb::IService const& omdb_service) : OmdbBase(omdb_service, to_name<FormatterT>()) {}
 
   private:
-	void read_from_json() final {
-		// TODO
-		// from_json(m_json, m_format);
-	}
+	void read_from_json() final { from_json(m_json, m_format); }
 
 	auto create_formatter() -> ExitCode final {
 		auto formatter = FormatterT::create(*m_omdb_service, m_format);
@@ -77,4 +74,6 @@ class Omdb : public OmdbBase {
 };
 
 using Movie = Omdb<formatter::Movie>;
+using Season = Omdb<formatter::Season>;
+using Series = Omdb<formatter::Series>;
 } // namespace vifo::cli::command

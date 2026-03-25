@@ -32,6 +32,8 @@ auto App::run(int argc, char const* const* argv) -> int {
 	add_command<command::Patswap>();
 	add_command<command::GhostCopy>();
 	add_command<command::Movie>(*omdb_service);
+	add_command<command::Season>(*omdb_service);
+	add_command<command::Series>(*omdb_service);
 
 	auto const parse_result = parse_args(argc, argv);
 	if (parse_result.early_return()) { return parse_result.get_return_code(); }
