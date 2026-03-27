@@ -2,6 +2,7 @@
 #include "detail/title_parser.hpp"
 #include "log.hpp"
 #include "vifo/types.hpp"
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -16,6 +17,34 @@ namespace {
 	if (fs::exists(path)) { return fs::is_directory(path); }
 	return fs::create_directories(path);
 }
+
+template <std::size_t N>
+struct Matcher {
+	template <std::convertible_to<char const*>... Ts>
+	explicit Matcher(Ts const... exprs) : regexes{std::regex{exprs}...} {}
+
+	[[nodiscard]] auto is_match(std::string_view const text) const -> bool {
+		auto const pred = [text](std::regex const& r) { return std::regex_match(text.data(), text.data() + text.size(), r); };
+		return std::ranges::any_of(regexes, pred);
+	}
+
+	[[nodiscard]] auto search(std::smatch& out, std::string const& text) const -> bool {
+		auto const pred = [&](std::regex const& r) { return std::regex_search(text, out, r); };
+		return std::ranges::any_of(regexes, pred);
+	}
+
+	std::array<std::regex, N> regexes{};
+};
+
+template <typename... Ts>
+Matcher(Ts...) -> Matcher<sizeof...(Ts)>;
+
+namespace matcher {
+auto const year = Matcher{R"([1-9]\d{3}(?!\d).*)"};
+auto const resolution = Matcher{R"(\d{3}\d?p)"};
+auto const episode_id = Matcher{R"(S\d{2}E\d{2})"};
+auto const season_id = Matcher{R"(Season.\d{2})", R"(S\d{2})"};
+} // namespace matcher
 } // namespace
 } // namespace util
 
@@ -72,6 +101,13 @@ auto util::to_relative(fs::path const& parent, fs::path const& target) -> fs::pa
 	return fs::relative(target, parent);
 }
 
+void util::sanitize_for_path(std::string& out, char const replace) {
+	static constexpr auto forbidden_v = std::array{'<', '>', ':', '\"', '|', '?', '*'};
+	for (char& c : out) {
+		if (match_any(forbidden_v, c)) { c = replace; }
+	}
+}
+
 auto util::ghost_copy(fs::path const& source, fs::path const& destination, bool const overwrite) -> std::int64_t {
 	auto const root = destination / source.filename();
 	if (!mkdir(root)) { return -1; }
@@ -118,6 +154,19 @@ auto util::identify_title(fs::path const& path) -> std::string {
 
 auto util::trim_identified_title(std::string_view& out_text) -> std::string { return detail::TitleParser{}.parse_and_trim(out_text); }
 
+auto util::trim_identified_year(std::string_view& out_text) -> std::string {
+	if (out_text.size() < 4) { return {}; }
+	if (!matcher::year.is_match(out_text)) { return {}; }
+	auto ret = std::string{out_text.substr(0, 4)};
+	out_text.remove_prefix(ret.size());
+	return ret;
+}
+
+auto util::ignore_for_title(std::string_view word) -> bool {
+	if (!trim_identified_year(word).empty()) { return true; }
+	return matcher::resolution.is_match(word) || matcher::episode_id.is_match(word);
+}
+
 auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileType> {
 	struct MFTExtension {
 		MediaFileType type{};
@@ -138,10 +187,8 @@ auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileT
 auto util::extract_season_id(std::string const& name) -> std::optional<SeasonId> {
 	if (name.empty()) { return {}; }
 
-	static auto const s_regex_1 = std::regex{R"(Season.[0-9]{2})"};
-	static auto const s_regex_2 = std::regex{R"(S[0-9]{2})"};
 	auto matches = std::smatch{};
-	if (!std::regex_search(name, matches, s_regex_1) && !std::regex_search(name, matches, s_regex_2)) { return {}; }
+	if (!matcher::season_id.search(matches, name)) { return {}; }
 	auto const str = std::string{matches[0]};
 	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
 	if (number <= 0) { return {}; }
@@ -151,9 +198,8 @@ auto util::extract_season_id(std::string const& name) -> std::optional<SeasonId>
 auto util::extract_episode_id(std::string const& name) -> std::optional<EpisodeId> {
 	if (name.empty()) { return {}; }
 
-	static auto const s_regex = std::regex{R"(S[0-9]{2}E[0-9]{2})"};
 	auto matches = std::smatch{};
-	if (!std::regex_search(name, matches, s_regex)) { return {}; }
+	if (!matcher::episode_id.search(matches, name)) { return {}; }
 	auto const str = std::string{matches[0]};
 	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
 	auto const season = to_int(std::string_view{str}.substr(1, 2));

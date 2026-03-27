@@ -21,5 +21,6 @@ class Movie : public Video {
 
   private:
 	interpolator::Title m_movie{};
+	// TODO: format from json
 };
 } // namespace vifo::formatter

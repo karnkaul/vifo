@@ -19,7 +19,7 @@ jobs:
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 10
             sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 10
       - name: configure
-        run: cmake -S . --preset=ninja-gcc -B build
+        run: cmake -S . --preset=ninja-gcc -B build -DKCURL_CI_NO_LIBCURL=ON
       - name: build debug
         run: cmake --build build --config=Debug -- -v
       - name: build release
@@ -40,7 +40,7 @@ jobs:
             sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 10
             sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 10
       - name: configure
-        run: cmake -S . --preset=ninja-clang -B build
+        run: cmake -S . --preset=ninja-clang -B build -DKCURL_CI_NO_LIBCURL=ON
       - name: build debug
         run: cmake --build build --config=Debug -- -v
       - name: build release
@@ -59,7 +59,7 @@ jobs:
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 10
             sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 10
       - name: configure
-        run: cmake -S . --preset=ninja-gcc -B build
+        run: cmake -S . --preset=ninja-gcc -B build -DKCURL_CI_NO_LIBCURL=ON
       - name: build debug
         run: cmake --build build --config=Debug -- -v
       - name: build release
@@ -80,7 +80,7 @@ jobs:
             sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 10
             sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 10
       - name: configure
-        run: cmake -S . --preset=ninja-clang -B build
+        run: cmake -S . --preset=ninja-clang -B build -DKCURL_CI_NO_LIBCURL=ON
       - name: build debug
         run: cmake --build build --config=Debug -- -v
       - name: build release
@@ -94,7 +94,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: configure
-        run: cmake -S . --preset=vs22 -B build
+        run: cmake -S . --preset=vs22 -B build -DKCURL_CI_NO_LIBCURL=ON
       - name: build debug
         run: cmake --build build --config=Debug --parallel
       - name: build release
@@ -108,7 +108,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: configure
-        run: cmake -S . --preset=ninja-clang -B build
+        run: cmake -S . --preset=ninja-clang -B build -DKCURL_CI_NO_LIBCURL=ON
       - name: build debug
         run: cmake --build build --config=Debug -- -v
       - name: build release
@@ -122,7 +122,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: configure
-        run: cmake -S . --preset=ninja-gcc -B build
+        run: cmake -S . --preset=ninja-gcc -B build -DKCURL_CI_NO_LIBCURL=ON
       - name: build debug
         run: cmake --build build --config=Debug -- -v
       - name: build release

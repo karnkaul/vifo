@@ -2,7 +2,6 @@
 #include "detail/common.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/types.hpp"
-#include "vifo/util/util.hpp"
 #include <expected>
 #include <filesystem>
 
@@ -19,7 +18,7 @@ auto Series::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
-	auto title = util::identify_title(*path);
+	auto title = get_search_title(*path);
 	if (title.empty()) { return detail::to_error(Error::Type::Identify, std::format("failed to identify title for: '{}'", path->generic_string())); }
 
 	auto omdb_series = m_omdb_service->search_series(title);

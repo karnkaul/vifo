@@ -22,6 +22,7 @@ void join_to(std::string& out, std::string_view item, std::string_view delim = "
 [[nodiscard]] auto path_if_exists(std::string_view path) -> fs::path;
 [[nodiscard]] auto path_if_directory(std::string_view path) -> fs::path;
 [[nodiscard]] auto to_relative(fs::path const& parent, fs::path const& target) -> fs::path;
+void sanitize_for_path(std::string& out, char replace = ' ');
 auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwrite) -> std::int64_t;
 
 [[nodiscard]] auto prefix_parent(fs::path const& parent_source, fs::path const& target) -> fs::path;
@@ -29,11 +30,29 @@ auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwr
 
 [[nodiscard]] auto identify_title(fs::path const& path) -> std::string;
 [[nodiscard]] auto trim_identified_title(std::string_view& out_text) -> std::string;
+[[nodiscard]] auto trim_identified_year(std::string_view& out_text) -> std::string;
+
+[[nodiscard]] auto ignore_for_title(std::string_view word) -> bool;
 
 template <typename ContainerT, std::equality_comparable Type>
 constexpr auto match_any(ContainerT const& container, Type const& t) {
 	return std::ranges::find(container, t) != std::end(container);
 }
+
+constexpr auto video_extensions_v = std::array{
+	".mp4", ".mkv", ".avi", ".m4v", ".webm",
+};
+constexpr auto is_video_file(std::string_view const extension) { return match_any(video_extensions_v, extension); }
+
+constexpr auto subtitle_extensions_v = std::array{
+	".srt",
+};
+constexpr auto is_subtitle_file(std::string_view const extension) { return match_any(subtitle_extensions_v, extension); }
+
+[[nodiscard]] auto get_media_file_type(fs::path const& file) -> std::optional<MediaFileType>;
+
+[[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
+[[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
 
 template <typename HeadersT, typename ContainerT, typename ProjT>
 [[nodiscard]] auto format_enumerated_table(HeadersT const& headers, ContainerT const& entries, ProjT per_entry) -> std::string {
@@ -53,19 +72,4 @@ template <typename HeadersT, typename ContainerT, typename ProjT>
 	}
 	return table.serialize();
 }
-
-constexpr auto video_extensions_v = std::array{
-	".mp4", ".mkv", ".avi", ".m4v", ".webm",
-};
-constexpr auto is_video_file(std::string_view const extension) { return match_any(video_extensions_v, extension); }
-
-constexpr auto subtitle_extensions_v = std::array{
-	".srt",
-};
-constexpr auto is_subtitle_file(std::string_view const extension) { return match_any(subtitle_extensions_v, extension); }
-
-[[nodiscard]] auto get_media_file_type(fs::path const& file) -> std::optional<MediaFileType>;
-
-[[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
-[[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
 } // namespace vifo::util

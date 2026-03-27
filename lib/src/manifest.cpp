@@ -5,22 +5,25 @@
 #include "vifo/util/util.hpp"
 #include <array>
 #include <filesystem>
+#include <string_view>
 #include <unordered_set>
 
 namespace vifo {
 namespace {
-void per_row(fs::path const& parent, std::vector<std::string>& row, fs::path const& path, MediaFileType const type) {
-	row.push_back(util::to_relative(parent, path).generic_string());
+void per_row(fs::path const& parent, std::vector<std::string>& row, fs::path const& path, MediaFileType const type, bool const mark_existing) {
+	std::string_view const prefix = mark_existing && fs::exists(path) ? "*" : "";
+	auto relative_path = std::format("{}{}", prefix, util::to_relative(parent, path).generic_string());
+	row.push_back(std::move(relative_path));
 	row.emplace_back(media_file_type_name_map.to_name(type));
 }
 
 struct PerSource {
-	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(parent, row, entry.source, entry.type); }
+	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(parent, row, entry.source, entry.type, false); }
 	fs::path const& parent;
 };
 
 struct PerDestination {
-	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(parent, row, entry.destination, entry.type); }
+	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(parent, row, entry.destination, entry.type, true); }
 	fs::path const& parent;
 };
 } // namespace

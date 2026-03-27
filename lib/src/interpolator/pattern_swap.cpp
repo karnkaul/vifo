@@ -5,7 +5,6 @@
 #include "vifo/expression.hpp"
 #include "vifo/util/util.hpp"
 #include <algorithm>
-#include <regex>
 #include <string_view>
 
 namespace vifo::interpolator {
@@ -49,15 +48,8 @@ class Year : public Binding {
 
   private:
 	[[nodiscard]] auto parse_value(std::string_view& out_input) -> bool final {
-		if (out_input.size() < 4) { return false; }
-
-		static auto const s_regex = std::regex{R"([1-9]\d{3}(?!\d).*)"};
-		char const* end = out_input.data() + out_input.size();
-		if (!std::regex_match(out_input.data(), end, s_regex)) { return false; }
-
-		value = out_input.substr(0, 4);
-		out_input.remove_prefix(value.size());
-		return true;
+		value = util::trim_identified_year(out_input);
+		return !value.empty();
 	}
 };
 
