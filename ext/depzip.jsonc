@@ -10,7 +10,11 @@
     },
     {
       "uri": "karnkaul/klib",
-      "branch": "v0.6.1"
+      "branch": "v0.6.2"
+    },
+    {
+      "uri": "karnkaul/clap",
+      "branch": "v0.1.1"
     }
   ]
 }

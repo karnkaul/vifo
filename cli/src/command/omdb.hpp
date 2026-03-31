@@ -41,7 +41,7 @@ class OmdbBase : public Command {
   private:
 	[[nodiscard]] auto get_name() const -> std::string_view final { return m_command_name; }
 	[[nodiscard]] auto get_help() const -> std::string_view final { return m_command_help; }
-	void populate_args() final;
+	auto get_parameters() -> std::vector<clap::Parameter> final;
 	auto execute() -> ExitCode final;
 
 	[[nodiscard]] auto execute_stub(IFormatter& formatter) -> ExitCode;

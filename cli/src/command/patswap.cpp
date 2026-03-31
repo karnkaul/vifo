@@ -1,5 +1,4 @@
 #include "command/patswap.hpp"
-#include "klib/args/arg.hpp"
 #include "log.hpp"
 #include "state/format.hpp"
 #include "vifo/formatter/pattern_swap.hpp"
@@ -28,11 +27,11 @@ namespace {
 }
 } // namespace
 
-void Patswap::populate_args() {
-	m_args = {
-		klib::args::named_option(m_max_depth, "d,depth", "max subdirectory depth"),
-		klib::args::named_option(m_format_json, "f,format-json", "path to json specifying InterpolateFormat"),
-		klib::args::positional_optional(m_root, "ROOT", "root directory"),
+auto Patswap::get_parameters() -> std::vector<clap::Parameter> {
+	return {
+		clap::named_option(m_max_depth, "d,depth", "max subdirectory depth"),
+		clap::named_option(m_format_json, "f,format-json", "path to json specifying PatternSwap::Format"),
+		clap::positional_optional(m_root, "ROOT", "root directory (default = .)"),
 	};
 }
 
@@ -45,7 +44,7 @@ auto Patswap::execute() -> ExitCode {
 		std::println(stderr, "failed to read format json: '{}'", m_format_json);
 		return ExitCode::IoError;
 	}
-	log.debug("InterpolateFormat extracted from '{}'", m_format_json);
+	log.debug("PatternSwap::Format extracted from '{}'", m_format_json);
 	log.debug("d: {} => {}", format->directory.input, format->directory.output);
 	if (format->file) { log.debug("f: {} => {}", format->file->input, format->file->output); }
 

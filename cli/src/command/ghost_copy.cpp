@@ -1,5 +1,4 @@
 #include "command/ghost_copy.hpp"
-#include "klib/args/arg.hpp"
 #include "vifo/machine_state.hpp"
 #include "vifo/path/list.hpp"
 #include "vifo/path/scanner.hpp"
@@ -64,13 +63,13 @@ auto StateScanSources::should_store([[maybe_unused]] fs::path const& path) const
 }
 } // namespace
 
-void GhostCopy::populate_args() {
-	m_args = {
-		klib::args::named_flag(m_directories_only, "d,dir-only", "only mirror directories"),
-		klib::args::named_flag(m_overwrite, "o,overwrite", "overwrite existing entries"),
-		klib::args::named_option(m_max_depth, "m,max-depth", "max iteration depth"),
-		klib::args::positional_required(m_source, "SRC", "source directory to mirror"),
-		klib::args::positional_optional(m_destination, "DST", "mirror destination"),
+auto GhostCopy::get_parameters() -> std::vector<clap::Parameter> {
+	return {
+		clap::named_flag(m_directories_only, "d,dir-only", "only mirror directories"),
+		clap::named_flag(m_overwrite, "o,overwrite", "overwrite existing entries"),
+		clap::named_option(m_max_depth, "m,max-depth", "max iteration depth"),
+		clap::positional_required(m_source, "SRC", "source directory to mirror"),
+		clap::positional_optional(m_destination, "DST", "mirror destination (default = .)"),
 	};
 }
 
