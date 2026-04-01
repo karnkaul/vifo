@@ -28,15 +28,18 @@ auto Season::interpolate_video(fs::path const& video) -> fs::path {
 	auto const episode_id = util::extract_episode_id(video.stem().string());
 	if (!episode_id) { return {}; }
 
-	auto const it = std::ranges::find_if(m_season.episodes, [episode_id](omdb::Episode const& e) { return e.number == episode_id->number; });
-	if (it == m_season.episodes.end()) { return {}; }
-
-	auto const& episode = *it;
 	m_environment.set_symbol(episode_id_identifier_v, episode_id->format());
-	m_environment.set_symbol(episode_title_identifier_v, episode.title);
 
-	auto ret = fs::path{m_environment.interpolate(m_video)};
-	ret += video.extension();
+	auto const it = std::ranges::find_if(m_season.episodes, [episode_id](omdb::Episode const& e) { return e.number == episode_id->number; });
+	if (it == m_season.episodes.end()) {
+		m_environment.set_symbol(episode_title_identifier_v, "Unknown Title");
+	} else {
+		auto const& episode = *it;
+		m_environment.set_symbol(episode_title_identifier_v, episode.title);
+	}
+
+	auto ret = m_environment.interpolate(m_video);
+	ret += video.extension().string();
 	if (!video.has_parent_path()) { return ret; }
 
 	auto season_directory = video.parent_path();

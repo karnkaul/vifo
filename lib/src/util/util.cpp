@@ -101,11 +101,18 @@ auto util::to_relative(fs::path const& parent, fs::path const& target) -> fs::pa
 	return fs::relative(target, parent);
 }
 
-void util::sanitize_for_path(std::string& out, char const replace) {
+auto util::sanitize_for_path(std::string_view const text, char const replace) -> std::string {
 	static constexpr auto forbidden_v = std::array{'<', '>', ':', '\"', '|', '?', '*'};
-	for (char& c : out) {
-		if (match_any(forbidden_v, c)) { c = replace; }
+	auto ret = std::string{};
+	ret.reserve(text.size());
+	for (char c : text) {
+		if (match_any(forbidden_v, c)) {
+			if (replace == '\0') { continue; }
+			c = replace;
+		}
+		ret.push_back(c);
 	}
+	return ret;
 }
 
 auto util::ghost_copy(fs::path const& source, fs::path const& destination, bool const overwrite) -> std::int64_t {

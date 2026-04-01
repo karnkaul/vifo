@@ -99,7 +99,7 @@ void vifo::to_json(dj::Json& json, interpolator::SubtitleFormat const& format) {
 
 void vifo::from_json(dj::Json const& json, formatter::MovieFormat& format) {
 	from_json(json["movie"], format.movie);
-	from_json(json["subtitle"], format.subtitle);
+	if (auto const& subtitle = json["subtitle"]) { from_json(subtitle, format.subtitle); }
 }
 
 void vifo::to_json(dj::Json& json, formatter::MovieFormat const& format) {
@@ -119,7 +119,7 @@ void vifo::to_json(dj::Json& json, interpolator::SeasonFormat const& format) {
 
 void vifo::from_json(dj::Json const& json, formatter::SeasonFormat& format) {
 	from_json(json["season"], format.season);
-	from_json(json["subtitle"], format.subtitle);
+	if (auto const& subtitle = json["subtitle"]) { from_json(subtitle, format.subtitle); }
 }
 
 void vifo::to_json(dj::Json& json, formatter::SeasonFormat const& format) {

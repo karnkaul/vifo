@@ -8,17 +8,17 @@ namespace {
 void print_transaction(Transaction const& transaction) {
 	if (!transaction.failure.empty()) {
 		std::println(stderr, "[!] some transforms failed:");
-		auto table = Transaction::format_table(transaction.parent, transaction.failure);
+		auto table = Transaction::format_destinations_table(transaction.parent, transaction.failure);
 		std::println(stderr, "{}", table);
 	}
 	if (!transaction.pass.empty()) {
 		std::println("pass:");
-		auto table = Transaction::format_table(transaction.parent, transaction.pass);
+		auto table = Transaction::format_destinations_table(transaction.parent, transaction.pass);
 		std::println(stderr, "{}", table);
 	}
 	if (!transaction.success.empty()) {
 		std::println("success:");
-		auto table = Transaction::format_table(transaction.parent, transaction.success);
+		auto table = Transaction::format_destinations_table(transaction.parent, transaction.success);
 		std::println(stderr, "{}", table);
 	}
 }
@@ -40,6 +40,7 @@ auto StateFormat::execute() -> std::unique_ptr<MachineState> {
 	}
 
 	std::println("parent: {}", manifest->parent.generic_string());
+	if (!manifest->orphans.empty()) { std::println("orphans:\n{}", manifest->format_orphans_table()); }
 	std::println("{}", manifest->format_entries_tables());
 
 	auto const metrics = manifest->compute_metrics();

@@ -39,7 +39,7 @@ auto detail::to_error(Error::Type type, std::string_view msg) -> std::unexpected
 
 auto detail::if_directory(fs::path const& path) -> Result<fs::path> {
 	if (!fs::is_directory(path)) { return to_error(Error::Type::Argument, std::format("not a directory: '{}'", path.generic_string())); }
-	return path;
+	return fs::canonical(path);
 }
 
 void detail::filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files) {

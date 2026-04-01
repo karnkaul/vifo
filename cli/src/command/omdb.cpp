@@ -17,6 +17,7 @@ OmdbBase::OmdbBase(omdb::IService const& omdb_service, std::string_view name) : 
 auto OmdbBase::get_parameters() -> std::vector<clap::Parameter> {
 	return {
 		clap::named_option(m_format_json, "f,format-json", m_json_help),
+		clap::named_option(m_title_override, "t,title-override", "title override"),
 		clap::positional_optional(m_directory, "DIR", m_directory_help),
 	};
 }
@@ -40,6 +41,7 @@ auto OmdbBase::execute() -> ExitCode {
 	auto const result = create_formatter();
 	if (result != ExitCode::Success) { return result; }
 	KLIB_ASSERT(m_formatter);
+	m_formatter->search_title_override = m_title_override;
 
 	return execute_state_machine(std::make_unique<StateFormat>(*m_formatter, std::move(directory)));
 }

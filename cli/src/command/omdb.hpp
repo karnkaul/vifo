@@ -34,7 +34,9 @@ class OmdbBase : public Command {
 	virtual auto create_formatter() -> ExitCode = 0;
 
 	klib::Ptr<omdb::IService const> m_omdb_service{};
-	std::unique_ptr<IFormatter> m_formatter{};
+	std::unique_ptr<formatter::Omdb> m_formatter{};
+
+	std::string_view m_title_override{};
 
 	dj::Json m_json{};
 
