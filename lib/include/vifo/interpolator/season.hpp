@@ -3,10 +3,12 @@
 #include "vifo/expression.hpp"
 #include "vifo/interpolator/video.hpp"
 #include "vifo/omdb.hpp"
+#include "vifo/types.hpp"
 
 namespace vifo::interpolator {
 struct SeasonFormat {
 	std::string_view video{"{series_title} {episode_id} - {episode_title}"};
+	std::string_view video_fallback{"{series_title} {episode_id}"};
 	std::string_view directory{"{series_title} - {season_id}"};
 };
 
@@ -23,7 +25,10 @@ class Season : public IVideo {
 	[[nodiscard]] auto interpolate_video(fs::path const& video) -> fs::path final;
 
   private:
+	[[nodiscard]] auto set_episode(EpisodeId episode_id) -> expression::Expression const&;
+
 	expression::Expression m_video{};
+	std::optional<expression::Expression> m_video_fallback{};
 	expression::Expression m_directory{};
 
 	omdb::Season m_season{};

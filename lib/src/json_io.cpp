@@ -110,11 +110,13 @@ void vifo::to_json(dj::Json& json, formatter::MovieFormat const& format) {
 void vifo::from_json(dj::Json const& json, interpolator::SeasonFormat& format) {
 	from_json(json["directory"], format.directory);
 	from_json(json["video"], format.video);
+	if (auto const& video_fallback = json["video_fallback"]) { from_json(video_fallback, format.video_fallback); }
 }
 
 void vifo::to_json(dj::Json& json, interpolator::SeasonFormat const& format) {
 	to_json(json["directory"], format.directory);
 	to_json(json["video"], format.video);
+	if (!format.video_fallback.empty()) { to_json(json["video_fallback"], format.video_fallback); }
 }
 
 void vifo::from_json(dj::Json const& json, formatter::SeasonFormat& format) {

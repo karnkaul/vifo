@@ -24,6 +24,8 @@ void Video::Builder::process_video(MediaFile video, std::vector<MediaFile>& out_
 		return;
 	}
 
+	if (video_entry.destination == video_entry.source) { return; }
+
 	detail::filter_en_subtitles(manifest, out_subtitles);
 
 	auto const subtitle_directory = m_formatter.get_subtitles_dir_for(video_entry.destination);
@@ -33,6 +35,7 @@ void Video::Builder::process_video(MediaFile video, std::vector<MediaFile>& out_
 	for (auto& subtitle : out_subtitles) {
 		auto subtitle_entry = Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type};
 		subtitle_entry.destination = m_formatter.m_subtitle.interpolate_path(subtitle_directory, subtitle_entry.source.extension().string());
+		if (subtitle_entry.destination == subtitle.path) { continue; }
 		manifest.entries.push_back(std::move(subtitle_entry));
 	}
 }
