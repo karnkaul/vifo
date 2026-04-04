@@ -1,6 +1,6 @@
 #pragma once
-#include "klib/log.hpp"
+#include "klib/log/tagged.hpp"
 
 namespace vifo {
-auto const log = klib::TaggedLogger{"vifo"};
+auto const log = klib::log::Tagged{"vifo"};
 } // namespace vifo

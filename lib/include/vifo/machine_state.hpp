@@ -1,7 +1,7 @@
 #pragma once
 #include "klib/base_types.hpp"
 #include "klib/cli/prompt.hpp"
-#include "klib/log.hpp"
+#include "klib/log/tagged.hpp"
 #include "vifo/types.hpp"
 #include <memory>
 #include <string_view>
@@ -27,7 +27,7 @@ class MachineState : public klib::Polymorphic {
 	[[nodiscard]] auto should_continue(std::string_view message = "continue?") -> bool;
 	[[nodiscard]] auto should_continue(std::span<prompt::Option const> options) -> bool;
 
-	klib::TaggedLogger m_log;
+	klib::log::Tagged m_log;
 
 	ExitCode m_exit_code{ExitCode::Success};
 };
