@@ -25,11 +25,7 @@ namespace {
 
 auto detail::to_error(Error::Type type, expression::Token token, std::string_view input, std::string_view msg) -> std::unexpected<Error> {
 	auto ret = Error{.type = type, .message = format_message(type, msg)};
-	if (!input.empty()) {
-		std::format_to(std::back_inserter(ret.message), "\n | {}\n | ", input);
-		for (std::size_t i = 0; i < token.start_index; ++i) { ret.message.push_back(' '); }
-		for (std::size_t i = 0; i < token.length; ++i) { ret.message.push_back('^'); }
-	}
+	if (!input.empty()) { expression::Token::Highlight{}.format_to(ret.message, token, input); }
 	return std::unexpected{std::move(ret)};
 }
 

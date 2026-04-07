@@ -3,7 +3,7 @@
 #include <exception>
 #include <print>
 
-auto main(int argc, char** argv) -> int {
+int main(int argc, char** argv) {
 	try {
 		return vifo::cli::App{}.run(argc, argv);
 	} catch (std::exception const& e) {
