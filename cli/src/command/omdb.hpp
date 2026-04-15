@@ -34,14 +34,16 @@ class OmdbBase : public Command {
 	virtual auto create_formatter() -> ExitCode = 0;
 
 	klib::Ptr<omdb::IService const> m_omdb_service{};
-	std::unique_ptr<IFormatter> m_formatter{};
+	std::unique_ptr<formatter::Omdb> m_formatter{};
+
+	std::string_view m_title_override{};
 
 	dj::Json m_json{};
 
   private:
 	[[nodiscard]] auto get_name() const -> std::string_view final { return m_command_name; }
 	[[nodiscard]] auto get_help() const -> std::string_view final { return m_command_help; }
-	void populate_args() final;
+	auto get_parameters() -> std::vector<clap::Parameter> final;
 	auto execute() -> ExitCode final;
 
 	[[nodiscard]] auto execute_stub(IFormatter& formatter) -> ExitCode;

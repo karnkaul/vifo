@@ -1,5 +1,5 @@
 #pragma once
-#include "klib/log.hpp"
+#include "klib/log/typed.hpp"
 #include <djson/json.hpp>
 #include <kcurl/http.hpp>
 
@@ -11,6 +11,6 @@ class HttpGateway {
 	[[nodiscard]] auto get_string(http::Request request, http::Query secret) const -> http::Result<std::string>;
 	[[nodiscard]] auto get_json(http::Request request, http::Query secret) const -> http::Result<dj::Json>;
 
-	klib::TypedLogger<HttpGateway> m_log{};
+	klib::log::Typed<HttpGateway> m_log{};
 };
 } // namespace vifo::detail

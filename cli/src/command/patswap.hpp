@@ -11,7 +11,7 @@ class Patswap : public Command {
 	[[nodiscard]] auto get_name() const -> std::string_view final { return name_v; }
 	[[nodiscard]] auto get_help() const -> std::string_view final { return help_v; }
 
-	void populate_args() final;
+	auto get_parameters() -> std::vector<clap::Parameter> final;
 
 	[[nodiscard]] auto execute() -> ExitCode final;
 

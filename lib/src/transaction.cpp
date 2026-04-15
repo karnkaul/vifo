@@ -7,16 +7,14 @@
 #include <ranges>
 
 namespace vifo {
-auto Transaction::format_table(fs::path const& parent, std::span<Record const> records) -> std::string {
+auto Transaction::format_destinations_table(fs::path const& parent, std::span<Record const> records) -> std::string {
 	static constexpr auto headers_v = std::array{
 		"destination",
-		"source",
 	};
-	auto const per_record = [&parent](std::vector<std::string>& row, Record const& record) {
+	auto const per_destination = [&parent](std::vector<std::string>& row, Record const& record) {
 		row.push_back(util::to_relative(parent, record.destination).generic_string());
-		row.push_back(util::to_relative(parent, record.source).generic_string());
 	};
-	return util::format_enumerated_table(headers_v, records, per_record);
+	return util::format_enumerated_table(headers_v, records, per_destination);
 }
 
 void Transaction::triage_record(Record record, Outcome const outcome) {

@@ -1,11 +1,11 @@
 #include "app/app.hpp"
+#include "clap/parameter.hpp"
+#include "clap/parser.hpp"
+#include "clap/spec.hpp"
 #include "command/command.hpp"
 #include "command/ghost_copy.hpp"
 #include "command/omdb.hpp"
 #include "command/patswap.hpp"
-#include "klib/args/arg.hpp"
-#include "klib/args/parse.hpp"
-#include "klib/args/parse_info.hpp"
 #include "klib/env.hpp"
 #include "klib/string/c_string.hpp"
 #include "log.hpp"
@@ -36,13 +36,14 @@ auto App::run(int argc, char const* const* argv) -> int {
 	add_command<command::Series>(*omdb_service);
 
 	auto const parse_result = parse_args(argc, argv);
-	if (parse_result.early_return()) { return parse_result.get_return_code(); }
+	if (parse_result.should_early_exit()) { return parse_result.return_code(); }
 
 	log.debug("{}", build_version_v);
 
-	auto const it = std::ranges::find_if(m_commands, [name = parse_result.get_command_name()](auto const& c) { return c->get_name() == name; });
+	auto const identifier = parse_result.command_identifier();
+	auto const it = std::ranges::find_if(m_commands, [identifier](auto const& c) { return c->get_name() == identifier; });
 	if (it == m_commands.end()) {
-		log.error("unrecognized command: {}", parse_result.get_command_name());
+		log.error("unrecognized command: {}", identifier);
 		return EXIT_FAILURE;
 	}
 
@@ -51,15 +52,23 @@ auto App::run(int argc, char const* const* argv) -> int {
 	return int(command.execute());
 }
 
-auto App::parse_args(int argc, char const* const* argv) -> klib::args::ParseResult {
-	auto const parse_info = klib::args::ParseInfo{
-		.version = build_version_str,
+auto App::parse_args(int argc, char const* const* argv) -> clap::Result {
+	auto spec = clap::spec::Commands{
+		.options =
+			{
+				clap::named_option(m_omdb_token, "o,omdb-token", "omdb API token"),
+			},
+		.program =
+			{
+				.version = build_version_str,
+				.description = "video file formatter",
+			},
 	};
-	auto args = std::vector{
-		klib::args::named_option(m_omdb_token, "o,omdb-token", "omdb API token"),
-	};
-	for (auto const& command : m_commands) { args.push_back(klib::args::command(command->get_args(), command->get_name(), command->get_help())); }
-	return klib::args::parse_main(parse_info, args, argc, argv);
+	spec.commands.reserve(m_commands.size());
+	for (auto const& command : m_commands) { spec.commands.push_back(clap::command(command->get_name(), command->get_parameters(), command->get_help())); }
+
+	auto parser = clap::Parser{std::move(spec)};
+	return parser.parse_main(argc, argv);
 }
 
 void App::set_omdb_token() {

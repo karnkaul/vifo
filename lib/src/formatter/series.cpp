@@ -35,10 +35,12 @@ auto Series::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 
 	auto entry = Manifest::Entry{.source = std::move(*path), .type = MediaFileType::Directory};
 	entry.destination = m_title.format_directory(entry.source);
-	if (entry.destination.empty()) {
-		ret.orphans.push_back(std::move(entry));
-	} else {
-		ret.entries.push_back(std::move(entry));
+	if (entry.destination != entry.source) {
+		if (entry.destination.empty()) {
+			ret.orphans.push_back(std::move(entry));
+		} else {
+			ret.entries.push_back(std::move(entry));
+		}
 	}
 
 	return ret;

@@ -122,7 +122,7 @@ class Service : public IService {
 		return m_gateway.get_json(build_request(query, type), create_secret());
 	}
 
-	klib::TypedLogger<IService> m_log{};
+	klib::log::Typed<IService> m_log{};
 
 	std::optional<kcurl::Curl> m_curl{};
 	detail::HttpGateway m_gateway{};

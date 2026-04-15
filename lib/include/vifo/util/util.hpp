@@ -22,7 +22,7 @@ void join_to(std::string& out, std::string_view item, std::string_view delim = "
 [[nodiscard]] auto path_if_exists(std::string_view path) -> fs::path;
 [[nodiscard]] auto path_if_directory(std::string_view path) -> fs::path;
 [[nodiscard]] auto to_relative(fs::path const& parent, fs::path const& target) -> fs::path;
-void sanitize_for_path(std::string& out, char replace = ' ');
+[[nodiscard]] auto sanitize_for_path(std::string_view text, char replace = '\0') -> std::string;
 auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwrite) -> std::int64_t;
 
 [[nodiscard]] auto prefix_parent(fs::path const& parent_source, fs::path const& target) -> fs::path;

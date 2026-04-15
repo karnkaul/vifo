@@ -1,6 +1,6 @@
 #pragma once
+#include "clap/result.hpp"
 #include "command/command.hpp"
-#include "klib/args/parse_result.hpp"
 #include <memory>
 #include <string_view>
 
@@ -10,13 +10,12 @@ class App {
 	[[nodiscard]] auto run(int argc, char const* const* argv) -> int;
 
   private:
-	[[nodiscard]] auto parse_args(int argc, char const* const* argv) -> klib::args::ParseResult;
+	[[nodiscard]] auto parse_args(int argc, char const* const* argv) -> clap::Result;
 
 	template <std::derived_from<Command> T, typename... Args>
 		requires(std::constructible_from<T, Args...>)
 	void add_command(Args&&... args) {
 		m_commands.push_back(std::make_unique<T>(std::forward<Args>(args)...));
-		m_commands.back()->populate_args();
 	}
 
 	void set_omdb_token();

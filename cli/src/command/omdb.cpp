@@ -1,6 +1,5 @@
 #include "command/omdb.hpp"
 #include "djson/json.hpp"
-#include "klib/args/arg.hpp"
 #include "klib/debug/assert.hpp"
 #include "log.hpp"
 #include "state/format.hpp"
@@ -12,13 +11,14 @@ namespace vifo::cli::command {
 OmdbBase::OmdbBase(omdb::IService const& omdb_service, std::string_view name) : m_omdb_service(&omdb_service), m_command_name(name) {
 	m_command_help = std::format("format a {} directory", m_command_name);
 	m_json_help = std::format("path to json specifying {} format", m_command_name);
-	m_directory_help = std::format("path to {} directory", m_command_name);
+	m_directory_help = std::format("path to {} directory (default = .)", m_command_name);
 }
 
-void OmdbBase::populate_args() {
-	m_args = {
-		klib::args::named_option(m_format_json, "f,format-json", m_json_help),
-		klib::args::positional_optional(m_directory, "DIRECTORY", m_directory_help),
+auto OmdbBase::get_parameters() -> std::vector<clap::Parameter> {
+	return {
+		clap::named_option(m_format_json, "f,format-json", m_json_help),
+		clap::named_option(m_title_override, "t,title-override", "title override"),
+		clap::positional_optional(m_directory, "DIR", m_directory_help),
 	};
 }
 
@@ -41,6 +41,7 @@ auto OmdbBase::execute() -> ExitCode {
 	auto const result = create_formatter();
 	if (result != ExitCode::Success) { return result; }
 	KLIB_ASSERT(m_formatter);
+	m_formatter->search_title_override = m_title_override;
 
 	return execute_state_machine(std::make_unique<StateFormat>(*m_formatter, std::move(directory)));
 }

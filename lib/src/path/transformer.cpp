@@ -25,6 +25,9 @@ auto Transformer::transform(fs::path const& source, fs::path const& destination,
 	auto const outcome = remove_if_overwrite(destination);
 	if (outcome != Outcome::Success) { return outcome; }
 
+	auto const parent = destination.parent_path();
+	if (!parent.empty() && !fs::exists(parent) && !fs::create_directories(parent, err)) { return Outcome::Failure; }
+
 	if (operation == Operation::Copy) {
 		fs::copy(source, destination, err);
 	} else {

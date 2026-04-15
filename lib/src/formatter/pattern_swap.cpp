@@ -52,6 +52,7 @@ auto PatternSwap::generate_manifest(fs::path const& directory) -> Result<Manifes
 			ret.orphans.push_back(Manifest::Entry{.source = std::move(source), .type = type});
 			continue;
 		}
+		if (destination == source) { continue; }
 
 		if (source == ret.parent) { ret.parent = ret.parent.parent_path(); }
 		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination), .type = type});

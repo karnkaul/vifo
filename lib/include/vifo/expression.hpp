@@ -1,28 +1,14 @@
 #pragma once
-#include "klib/enum/name.hpp"
+#include "klib/lerp_expr/token.hpp"
 #include "vifo/result.hpp"
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <string_view>
 #include <variant>
 #include <vector>
 
 namespace vifo::expression {
-struct Token {
-	enum class Type : std::int8_t { Substring, BraceLeft, BraceRight };
-	inline static auto const type_name_map = klib::EnumNameMap<Type>{
-		{Type::Substring, "Substring"},
-		{Type::BraceLeft, "BraceLeft"},
-		{Type::BraceRight, "BraceRight"},
-	};
-
-	[[nodiscard]] auto get_lexeme(std::string_view text) const -> std::string_view;
-
-	Type type{};
-	std::size_t start_index{};
-	std::size_t length{};
-};
+using Token = klib::lerp_expr::Token;
 
 struct Substring {
 	auto consume(std::string_view& out_input) const -> bool;
