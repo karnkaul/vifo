@@ -5,7 +5,6 @@
 #include "kcurl/http.hpp"
 #include "klib/enum/name.hpp"
 #include "vifo/json_io.hpp"
-#include "vifo/panic.hpp"
 #include "vifo/types.hpp"
 #include <string>
 #include <string_view>
@@ -109,12 +108,9 @@ class Service : public IService {
 	}
 
 	[[nodiscard]] auto create_secret() const -> kcurl::http::Query {
-		auto const token = m_get_api_token();
-		if (token.empty()) { throw Panic{"invalid (empty) omdb API token"}; }
-
 		return http::Query{
 			.key = std::string{key::apikey_v},
-			.value = std::string{token},
+			.value = std::string{m_get_api_token()},
 		};
 	}
 
