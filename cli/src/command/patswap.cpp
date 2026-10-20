@@ -51,6 +51,7 @@ auto Patswap::execute() -> ExitCode {
 	auto formatter = formatter::PatternSwap::create(*format);
 	if (!formatter) { return handle_error(formatter.error()); }
 
+	formatter->max_depth = m_max_depth;
 	return execute_state_machine(std::make_unique<StateFormat>(*formatter, std::move(root)));
 }
 } // namespace vifo::cli::command

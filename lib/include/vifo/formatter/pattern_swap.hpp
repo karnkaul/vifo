@@ -15,6 +15,8 @@ class PatternSwap : public IFormatter {
 
 	[[nodiscard]] auto generate_manifest(fs::path const& directory) -> Result<Manifest> final;
 
+	int max_depth{10};
+
   private:
 	[[nodiscard]] auto create_directory(interpolator::PatternSwapFormat const& format) -> Result<void>;
 	[[nodiscard]] auto create_file(std::optional<interpolator::PatternSwapFormat> const& format) -> Result<void>;

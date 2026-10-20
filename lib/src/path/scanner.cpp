@@ -3,10 +3,11 @@
 #include <system_error>
 
 namespace vifo::path {
-void Visitor::visit_path(fs::path path) {
+void Visitor::visit_path(fs::path path, int const max_depth) {
 	if (!fs::is_directory(path) && !fs::is_regular_file(path)) { return; }
 
 	path = fs::canonical(fs::absolute(path));
+	m_max_depth = max_depth;
 	if (fs::is_directory(path)) {
 		iterate(path, 0);
 		accept_directory(path);
@@ -23,7 +24,7 @@ void Visitor::iterate(fs::path const& directory, int const current_depth) {
 		if (!it.is_directory() && !it.is_regular_file()) { continue; }
 
 		if (it.is_directory()) {
-			if (current_depth >= max_depth) { continue; }
+			if (current_depth >= m_max_depth) { continue; }
 			if (should_iterate(it.path())) { iterate(it.path(), current_depth + 1); }
 			accept_directory(it.path());
 		} else {
@@ -32,8 +33,8 @@ void Visitor::iterate(fs::path const& directory, int const current_depth) {
 	}
 }
 
-auto ListScanner::scan_paths(fs::path path) -> List {
-	visit_path(path);
+auto ListScanner::scan_paths(fs::path path, int const max_depth) -> List {
+	visit_path(path, max_depth);
 	m_ret.scan_path = std::move(path);
 	return std::move(m_ret);
 }

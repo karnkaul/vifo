@@ -8,10 +8,12 @@
 
 namespace vifo::formatter {
 namespace {
-struct Scanner : path::ListScanner {
-	[[nodiscard]] auto should_store([[maybe_unused]] fs::path const& path) const -> bool final { return list_files || fs::is_directory(path); }
-
+class Scanner : public path::ListScanner {
+  public:
 	bool list_files{};
+
+  private:
+	[[nodiscard]] auto should_store([[maybe_unused]] fs::path const& path) const -> bool final { return list_files || fs::is_directory(path); }
 };
 
 [[nodiscard]] auto format_path(interpolator::PatternSwap& interpolator, fs::path const& source) -> fs::path {
@@ -35,7 +37,7 @@ auto PatternSwap::generate_manifest(fs::path const& directory) -> Result<Manifes
 
 	auto scanner = Scanner{};
 	scanner.list_files = m_file.has_value();
-	auto path_list = scanner.scan_paths(directory);
+	auto path_list = scanner.scan_paths(directory, max_depth);
 
 	if (path_list.paths.empty()) { return detail::to_error(Error::Type::Identify, std::format("no entries found in: '{}'", directory.generic_string())); }
 

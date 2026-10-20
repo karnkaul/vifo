@@ -7,18 +7,20 @@
 
 namespace vifo::detail {
 auto MediaDirectory::scan_directory(fs::path path) -> MediaDirectory {
-	struct Scanner : path::Visitor {
+	class Scanner : public path::Visitor {
+	  public:
+		MediaDirectory ret{};
+
+	  private:
 		void accept_directory(fs::path const& /*path*/) final {}
 
 		void accept_file(fs::path const& path) final {
 			auto const type = util::get_media_file_type(path);
 			if (!type) { return; }
 
-			auto const size = std::int64_t(fs::file_size(path));
+			auto const size = static_cast<std::int64_t>(fs::file_size(path));
 			ret.files.push_back(MediaFile{.path = path, .size = size, .type = *type});
 		}
-
-		MediaDirectory ret{};
 	};
 
 	auto scanner = Scanner{};
