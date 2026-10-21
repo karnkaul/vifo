@@ -8,7 +8,7 @@ auto HttpGateway::get_string(http::Request request, http::Query secret) const ->
 	};
 
 	auto const log_request = http::to_easy_request(request);
-	request.queries.push_back(std::move(secret));
+	if (!secret.key.empty() && !secret.value.empty()) { request.queries.push_back(std::move(secret)); }
 	auto const easy_request = http::to_easy_request(std::move(request));
 	auto const verb = [&] -> std::string_view {
 		switch (request.verb) {

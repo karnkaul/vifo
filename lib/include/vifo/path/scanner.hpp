@@ -5,9 +5,9 @@
 namespace vifo::path {
 class Visitor : public klib::Polymorphic {
   public:
-	virtual void visit_path(fs::path path);
+	static constexpr auto max_depth_v{10};
 
-	int max_depth{10};
+	virtual void visit_path(fs::path path, int max_depth = max_depth_v);
 
   protected:
 	virtual void accept_directory(fs::path const& path) = 0;
@@ -17,13 +17,13 @@ class Visitor : public klib::Polymorphic {
 
   private:
 	void iterate(fs::path const& directory, int current_depth);
+
+	int m_max_depth{max_depth_v};
 };
 
 class ListScanner : protected Visitor {
   public:
-	[[nodiscard]] virtual auto scan_paths(fs::path path) -> List;
-
-	int max_depth{10};
+	[[nodiscard]] virtual auto scan_paths(fs::path path, int max_depth = max_depth_v) -> List;
 
   protected:
 	[[nodiscard]] virtual auto should_store([[maybe_unused]] fs::path const& path) const -> bool { return true; }

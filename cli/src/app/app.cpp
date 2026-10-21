@@ -76,7 +76,6 @@ void App::set_omdb_token() {
 
 	log.debug("reading omdb API token from env:{}", env_omdb_token_key_v.as_view());
 	auto const omdb_token = klib::env::get_var(env_omdb_token_key_v);
-	if (omdb_token.as_view().empty()) { throw Panic{"invalid (empty) ombd API token"}; }
 	m_omdb_token = omdb_token.as_view();
 }
 } // namespace vifo::cli

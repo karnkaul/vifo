@@ -23,44 +23,50 @@ struct Storage {
 	path::List list{};
 };
 
-class State : public MachineState {
+class Scanner : private path::ListScanner {
   public:
-	explicit State(Storage storage, std::string_view const name) : MachineState(name), m_storage(std::move(storage)) {}
+	explicit Scanner(std::string_view const source, bool const directories_only) : m_source(source), m_directories_only(directories_only) {}
 
-  protected:
-	Storage m_storage{};
-};
-
-class StateScanSources : public State, path::ListScanner {
-  public:
-	explicit StateScanSources(Storage storage) : State(std::move(storage), "ScanSources") { max_depth = storage.max_depth; }
+	[[nodiscard]] auto scan(int const max_depth) -> path::List { return path::ListScanner::scan_paths(m_source, max_depth); }
 
   private:
-	auto execute() -> std::unique_ptr<MachineState> final;
-	[[nodiscard]] auto should_store([[maybe_unused]] fs::path const& path) const -> bool final;
+	[[nodiscard]] auto should_store(fs::path const& path) const -> bool final {
+		if (path == m_source) { return false; }
+		if (m_directories_only) { return fs::is_directory(path); }
+		return true;
+	}
+
+	std::string_view m_source{};
+	bool m_directories_only{};
 };
 
-auto StateScanSources::execute() -> std::unique_ptr<MachineState> {
-	m_storage.list = scan_paths(m_storage.source);
-	if (m_storage.list.paths.empty()) {
-		std::println("nothing to copy");
+class StateScanSources : public MachineState {
+  public:
+	explicit StateScanSources(Storage storage) : MachineState("ScanSources"), m_storage(std::move(storage)), m_max_depth(storage.max_depth) {}
+
+  private:
+	auto execute() -> std::unique_ptr<MachineState> final {
+		auto scanner = Scanner{m_storage.source, m_storage.directories_only};
+		m_storage.list = scanner.scan(m_max_depth);
+		if (m_storage.list.paths.empty()) {
+			std::println("nothing to copy");
+			return {};
+		}
+		std::ranges::reverse(m_storage.list.paths);
+
+		std::println("{}\ndestination: {}", m_storage.list.format_table(), m_storage.destination);
+		if (!should_continue()) { return {}; }
+
+		auto const result = util::ghost_copy(m_storage.source, m_storage.destination, m_storage.overwrite);
+		if (result < 0) { return set_error(ExitCode::Failure, "incomplete / error"); }
+
+		std::println("{} entries replicated", result);
 		return {};
 	}
-	std::ranges::reverse(m_storage.list.paths);
 
-	std::println("{}\ndestination: {}", m_storage.list.format_table(), m_storage.destination);
-	if (!should_continue()) { return {}; }
-
-	auto const result = util::ghost_copy(m_storage.source, m_storage.destination, m_storage.overwrite);
-	if (result < 0) { return set_error(ExitCode::Failure, "incomplete / error"); }
-
-	std::println("{} entries replicated", result);
-	return {};
-}
-
-auto StateScanSources::should_store([[maybe_unused]] fs::path const& path) const -> bool {
-	return path != m_storage.source && (!m_storage.directories_only || fs::is_directory(path));
-}
+	Storage m_storage{};
+	int m_max_depth{};
+};
 } // namespace
 
 auto GhostCopy::get_parameters() -> std::vector<clap::Parameter> {
