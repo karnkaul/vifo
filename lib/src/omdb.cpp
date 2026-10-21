@@ -3,7 +3,6 @@
 #include "djson/json.hpp"
 #include "kcurl/curl.hpp"
 #include "kcurl/http.hpp"
-#include "klib/enum/name.hpp"
 #include "vifo/json_io.hpp"
 #include "vifo/types.hpp"
 #include <string>
