@@ -41,7 +41,7 @@ jobs:
       - name: init
         run: cmake -P .github/init.cmake
       - name: configure
-        run: cmake -S . --preset=${{ matrix.preset }} -B build -DKVF_USE_FREETYPE=OFF
+        run: cmake -S . --preset=${{ matrix.preset }} -B build -DKVF_USE_FREETYPE=OFF -DKCURL_CI_NO_LIBCURL=ON
       - name: build debug
         run: cmake --build build --config=Debug ${{ matrix.build_args }}
       - name: build release
