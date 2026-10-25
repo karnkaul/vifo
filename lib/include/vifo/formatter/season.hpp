@@ -4,11 +4,6 @@
 #include "vifo/omdb.hpp"
 
 namespace vifo::formatter {
-struct SeasonFormat {
-	interpolator::SeasonFormat season{};
-	interpolator::SubtitleFormat subtitle{};
-};
-
 class Season : public Video {
   public:
 	using Video::Video;

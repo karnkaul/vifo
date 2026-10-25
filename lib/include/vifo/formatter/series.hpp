@@ -4,10 +4,6 @@
 #include "vifo/omdb.hpp"
 
 namespace vifo::formatter {
-struct SeriesFormat {
-	interpolator::TitleFormat directory{};
-};
-
 class Series : public Omdb {
   public:
 	using Omdb::Omdb;

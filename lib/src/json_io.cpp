@@ -60,17 +60,17 @@ void vifo::from_json(dj::Json const& json, omdb::Series& out) {
 	from_string(json[key::total_seasons_v], out.total_seasons);
 }
 
-void vifo::from_json(dj::Json const& json, interpolator::PatternSwap::Format& format) {
+void vifo::from_json(dj::Json const& json, interpolator::PatternSwapFormat& format) {
 	from_json(json["input"], format.input);
 	from_json(json["output"], format.output);
 }
 
-void vifo::to_json(dj::Json& json, interpolator::PatternSwap::Format const& format) {
+void vifo::to_json(dj::Json& json, interpolator::PatternSwapFormat const& format) {
 	to_json(json["input"], format.input);
 	to_json(json["output"], format.output);
 }
 
-void vifo::from_json(dj::Json const& json, formatter::PatternSwap::Format& format) {
+void vifo::from_json(dj::Json const& json, formatter::PatternSwapFormat& format) {
 	from_json(json["directory"], format.directory);
 	if (auto const& file = json["file"]) {
 		format.file.emplace();
@@ -78,7 +78,7 @@ void vifo::from_json(dj::Json const& json, formatter::PatternSwap::Format& forma
 	}
 }
 
-void vifo::to_json(dj::Json& json, formatter::PatternSwap::Format const& format) {
+void vifo::to_json(dj::Json& json, formatter::PatternSwapFormat const& format) {
 	to_json(json["directory"], format.directory);
 	if (format.file) { to_json(json["file"], *format.file); }
 }
@@ -132,3 +132,17 @@ void vifo::to_json(dj::Json& json, formatter::SeasonFormat const& format) {
 void vifo::from_json(dj::Json const& json, formatter::SeriesFormat& format) { from_json(json["directory"], format.directory); }
 
 void vifo::to_json(dj::Json& json, formatter::SeriesFormat const& format) { to_json(json["directory"], format.directory); }
+
+void vifo::from_json(dj::Json const& json, Formats& formats) {
+	if (auto const& pattern_swap = json["pattern_swap"]) { from_json(pattern_swap, formats.pattern_swap); }
+	if (auto const& movie = json["movie"]) { from_json(movie, formats.movie); }
+	if (auto const& season = json["season"]) { from_json(season, formats.season); }
+	if (auto const& series = json["series"]) { from_json(series, formats.series); }
+}
+
+void vifo::to_json(dj::Json& json, Formats const& formats) {
+	to_json(json["pattern_swap"], formats.pattern_swap);
+	to_json(json["movie"], formats.movie);
+	to_json(json["season"], formats.season);
+	to_json(json["series"], formats.series);
+}

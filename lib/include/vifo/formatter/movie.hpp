@@ -4,11 +4,6 @@
 #include "vifo/omdb.hpp"
 
 namespace vifo::formatter {
-struct MovieFormat {
-	interpolator::TitleFormat movie{};
-	interpolator::SubtitleFormat subtitle{};
-};
-
 class Movie : public Video {
   public:
 	using Video::Video;

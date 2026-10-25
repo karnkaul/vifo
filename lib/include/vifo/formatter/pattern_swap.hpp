@@ -6,10 +6,7 @@
 namespace vifo::formatter {
 class PatternSwap : public IFormatter {
   public:
-	struct Format {
-		interpolator::PatternSwapFormat directory{};
-		std::optional<interpolator::PatternSwapFormat> file{};
-	};
+	using Format = PatternSwapFormat;
 
 	[[nodiscard]] static auto create(Format const& format) -> Result<PatternSwap>;
 

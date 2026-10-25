@@ -1,6 +1,7 @@
 #pragma once
 #include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
+#include "vifo/formats.hpp"
 #include "vifo/result.hpp"
 #include <filesystem>
 #include <string_view>
@@ -8,16 +9,12 @@
 namespace vifo::interpolator {
 namespace fs = std::filesystem;
 
-struct SubtitleFormat {
-	std::string_view output{"{title}.en.sub_{number}"};
-};
-
 class Subtitle {
   public:
+	using Format = SubtitleFormat;
+
 	static constexpr std::string_view title_identifier_v{"title"};
 	static constexpr std::string_view number_identifier_v{"number"};
-
-	using Format = SubtitleFormat;
 
 	[[nodiscard]] static auto create(Format const& format = {}) -> Result<Subtitle>;
 

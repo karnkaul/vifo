@@ -1,20 +1,16 @@
 #pragma once
 #include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
+#include "vifo/formats.hpp"
 #include "vifo/interpolator/video.hpp"
 
 namespace vifo::interpolator {
-struct TitleFormat {
-	std::string_view video{"{title}"};
-	std::string_view directory{"{title} ({year})"};
-};
-
 class Title : public IVideo {
   public:
+	using Format = TitleFormat;
+
 	static constexpr std::string_view title_identifier_v{"title"};
 	static constexpr std::string_view year_identifier_v{"year"};
-
-	using Format = TitleFormat;
 
 	[[nodiscard]] static auto create(Format const& format = {}) -> Result<Title>;
 

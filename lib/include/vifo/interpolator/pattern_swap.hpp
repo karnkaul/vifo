@@ -1,15 +1,11 @@
 #pragma once
 #include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
+#include "vifo/formats.hpp"
 #include "vifo/result.hpp"
 #include <string_view>
 
 namespace vifo::interpolator {
-struct PatternSwapFormat {
-	std::string_view input{};
-	std::string_view output{};
-};
-
 class PatternSwap {
   public:
 	using Format = PatternSwapFormat;
