@@ -6,7 +6,7 @@
 namespace vifo::interpolator {
 struct TitleFormat {
 	std::string_view video{"{title}"};
-	std::string_view directory{"({year}) {title}"};
+	std::string_view directory{"{title} ({year})"};
 };
 
 class Title : public IVideo {
