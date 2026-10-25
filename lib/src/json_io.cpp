@@ -65,11 +65,6 @@ void vifo::from_json(dj::Json const& json, interpolator::PatternSwapFormat& form
 	from_json(json["output"], format.output);
 }
 
-void vifo::to_json(dj::Json& json, interpolator::PatternSwapFormat const& format) {
-	to_json(json["input"], format.input);
-	to_json(json["output"], format.output);
-}
-
 void vifo::from_json(dj::Json const& json, formatter::PatternSwapFormat& format) {
 	from_json(json["directory"], format.directory);
 	if (auto const& file = json["file"]) {
@@ -78,33 +73,16 @@ void vifo::from_json(dj::Json const& json, formatter::PatternSwapFormat& format)
 	}
 }
 
-void vifo::to_json(dj::Json& json, formatter::PatternSwapFormat const& format) {
-	to_json(json["directory"], format.directory);
-	if (format.file) { to_json(json["file"], *format.file); }
-}
-
 void vifo::from_json(dj::Json const& json, interpolator::TitleFormat& format) {
 	from_json(json["directory"], format.directory);
 	from_json(json["video"], format.video);
 }
 
-void vifo::to_json(dj::Json& json, interpolator::TitleFormat const& format) {
-	to_json(json["directory"], format.directory);
-	to_json(json["video"], format.video);
-}
-
 void vifo::from_json(dj::Json const& json, interpolator::SubtitleFormat& format) { from_json(json["output"], format.output); }
-
-void vifo::to_json(dj::Json& json, interpolator::SubtitleFormat const& format) { to_json(json["output"], format.output); }
 
 void vifo::from_json(dj::Json const& json, formatter::MovieFormat& format) {
 	from_json(json["movie"], format.movie);
 	if (auto const& subtitle = json["subtitle"]) { from_json(subtitle, format.subtitle); }
-}
-
-void vifo::to_json(dj::Json& json, formatter::MovieFormat const& format) {
-	to_json(json["movie"], format.movie);
-	to_json(json["subtitle"], format.subtitle);
 }
 
 void vifo::from_json(dj::Json const& json, interpolator::SeasonFormat& format) {
@@ -113,36 +91,16 @@ void vifo::from_json(dj::Json const& json, interpolator::SeasonFormat& format) {
 	if (auto const& video_fallback = json["video_fallback"]) { from_json(video_fallback, format.video_fallback); }
 }
 
-void vifo::to_json(dj::Json& json, interpolator::SeasonFormat const& format) {
-	to_json(json["directory"], format.directory);
-	to_json(json["video"], format.video);
-	if (!format.video_fallback.empty()) { to_json(json["video_fallback"], format.video_fallback); }
-}
-
 void vifo::from_json(dj::Json const& json, formatter::SeasonFormat& format) {
 	from_json(json["season"], format.season);
 	if (auto const& subtitle = json["subtitle"]) { from_json(subtitle, format.subtitle); }
 }
 
-void vifo::to_json(dj::Json& json, formatter::SeasonFormat const& format) {
-	to_json(json["season"], format.season);
-	to_json(json["subtitle"], format.subtitle);
-}
-
 void vifo::from_json(dj::Json const& json, formatter::SeriesFormat& format) { from_json(json["directory"], format.directory); }
-
-void vifo::to_json(dj::Json& json, formatter::SeriesFormat const& format) { to_json(json["directory"], format.directory); }
 
 void vifo::from_json(dj::Json const& json, Formats& formats) {
 	if (auto const& pattern_swap = json["pattern_swap"]) { from_json(pattern_swap, formats.pattern_swap); }
 	if (auto const& movie = json["movie"]) { from_json(movie, formats.movie); }
 	if (auto const& season = json["season"]) { from_json(season, formats.season); }
 	if (auto const& series = json["series"]) { from_json(series, formats.series); }
-}
-
-void vifo::to_json(dj::Json& json, Formats const& formats) {
-	to_json(json["pattern_swap"], formats.pattern_swap);
-	to_json(json["movie"], formats.movie);
-	to_json(json["season"], formats.season);
-	to_json(json["series"], formats.series);
 }
