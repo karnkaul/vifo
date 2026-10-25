@@ -159,19 +159,8 @@ auto util::identify_title(fs::path const& path) -> std::string {
 	return detail::TitleParser{}.parse(stem.string());
 }
 
-auto util::trim_identified_title(std::string_view& out_text) -> std::string { return detail::TitleParser{}.parse_and_trim(out_text); }
-
-auto util::trim_identified_year(std::string_view& out_text) -> std::string {
-	if (out_text.size() < 4) { return {}; }
-	if (!matcher::year.is_match(out_text)) { return {}; }
-	auto ret = std::string{out_text.substr(0, 4)};
-	out_text.remove_prefix(ret.size());
-	return ret;
-}
-
 auto util::ignore_for_title(std::string_view word) -> bool {
-	if (!trim_identified_year(word).empty()) { return true; }
-	return matcher::resolution.is_match(word) || matcher::episode_id.is_match(word);
+	return matcher::year.is_match(word) || matcher::resolution.is_match(word) || matcher::episode_id.is_match(word);
 }
 
 auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileType> {

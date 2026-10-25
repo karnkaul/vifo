@@ -3,17 +3,16 @@
 #include "vifo/util/util.hpp"
 
 namespace vifo::detail {
-auto TitleParser::parse_and_trim(std::string_view& out_text) -> std::string {
+auto TitleParser::parse(std::string_view const text) -> std::string {
 	m_title.clear();
 	m_bracket_depth = 0;
 
-	auto scanner = util::WordScanner{out_text};
+	auto scanner = util::WordScanner{text};
 	auto token = util::WordToken{};
 	while (scanner.next(token)) {
 		if (!parse(token)) { break; }
 	}
 
-	out_text = scanner.get_remain();
 	return std::move(m_title);
 }
 

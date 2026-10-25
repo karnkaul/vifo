@@ -24,8 +24,6 @@ class WordScanner {
 		return true;
 	}
 
-	[[nodiscard]] constexpr auto get_remain() const -> std::string_view { return m_remain; }
-
   private:
 	using Type = WordToken::Type;
 

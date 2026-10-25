@@ -6,8 +6,7 @@
 namespace vifo::detail {
 class TitleParser {
   public:
-	[[nodiscard]] auto parse(std::string_view text) -> std::string { return parse_and_trim(text); }
-	[[nodiscard]] auto parse_and_trim(std::string_view& out_text) -> std::string;
+	[[nodiscard]] auto parse(std::string_view text) -> std::string;
 
   private:
 	using Type = util::WordToken::Type;
