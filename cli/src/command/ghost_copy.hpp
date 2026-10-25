@@ -12,7 +12,7 @@ class GhostCopy : public Command {
 
 	auto get_parameters() -> std::vector<clap::Parameter> final;
 
-	[[nodiscard]] auto execute() -> ExitCode final;
+	[[nodiscard]] auto execute(Config const& config) -> ExitCode final;
 
 	bool m_directories_only{};
 	bool m_overwrite{};

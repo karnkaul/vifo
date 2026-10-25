@@ -1,6 +1,5 @@
 #pragma once
 #include "command/command.hpp"
-#include "djson/json.hpp"
 #include <string_view>
 
 namespace vifo::cli::command {
@@ -13,11 +12,9 @@ class Patswap : public Command {
 
 	auto get_parameters() -> std::vector<clap::Parameter> final;
 
-	[[nodiscard]] auto execute() -> ExitCode final;
+	[[nodiscard]] auto execute(Config const& config) -> ExitCode final;
 
 	int m_max_depth{10};
-	std::string_view m_format_json{};
-	dj::Json m_json{};
 	std::string_view m_root{"."};
 };
 } // namespace vifo::cli::command

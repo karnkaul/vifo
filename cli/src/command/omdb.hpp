@@ -6,9 +6,9 @@
 #include "vifo/formatter/movie.hpp"
 #include "vifo/formatter/season.hpp"
 #include "vifo/formatter/series.hpp"
-#include "vifo/json_io.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/types.hpp"
+#include "vifo/util/util.hpp"
 #include <string_view>
 
 namespace vifo::cli::command {
@@ -30,8 +30,7 @@ class OmdbBase : public Command {
 		}
 	}
 
-	virtual void read_from_json() = 0;
-	virtual auto create_formatter() -> ExitCode = 0;
+	virtual auto create_formatter(Config const& config) -> ExitCode = 0;
 
 	klib::Ptr<omdb::IService const> m_omdb_service{};
 	std::unique_ptr<formatter::Omdb> m_formatter{};
@@ -44,16 +43,14 @@ class OmdbBase : public Command {
 	[[nodiscard]] auto get_name() const -> std::string_view final { return m_command_name; }
 	[[nodiscard]] auto get_help() const -> std::string_view final { return m_command_help; }
 	auto get_parameters() -> std::vector<clap::Parameter> final;
-	auto execute() -> ExitCode final;
+	auto execute(Config const& config) -> ExitCode final;
 
 	[[nodiscard]] auto execute_stub(IFormatter& formatter) -> ExitCode;
 
 	std::string_view m_command_name{};
 	std::string m_command_help{};
-	std::string m_json_help{};
 	std::string m_directory_help{};
 
-	std::string_view m_format_json{};
 	std::string_view m_directory{"."};
 };
 
@@ -63,16 +60,12 @@ class Omdb : public OmdbBase {
 	explicit Omdb(omdb::IService const& omdb_service) : OmdbBase(omdb_service, to_name<FormatterT>()) {}
 
   private:
-	void read_from_json() final { from_json(m_json, m_format); }
-
-	auto create_formatter() -> ExitCode final {
-		auto formatter = FormatterT::create(*m_omdb_service, m_format);
+	auto create_formatter(Config const& config) -> ExitCode final {
+		auto formatter = FormatterT::create(*m_omdb_service, util::get_format_for<FormatterT>(config.formats));
 		if (!formatter) { return handle_error(formatter.error()); }
 		m_formatter = std::make_unique<FormatterT>(std::move(*formatter));
 		return ExitCode::Success;
 	}
-
-	FormatterT::Format m_format{};
 };
 
 using Movie = Omdb<formatter::Movie>;

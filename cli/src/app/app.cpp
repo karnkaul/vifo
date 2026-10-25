@@ -40,6 +40,8 @@ auto App::run(int argc, char const* const* argv) -> int {
 
 	log.debug("{}", build_version_v);
 
+	m_config_loader.try_load();
+
 	auto const identifier = parse_result.command_identifier();
 	auto const it = std::ranges::find_if(m_commands, [identifier](auto const& c) { return c->get_name() == identifier; });
 	if (it == m_commands.end()) {
@@ -49,7 +51,7 @@ auto App::run(int argc, char const* const* argv) -> int {
 
 	auto& command = **it;
 
-	return int(command.execute());
+	return static_cast<int>(command.execute(m_config_loader.config));
 }
 
 auto App::parse_args(int argc, char const* const* argv) -> clap::Result {
@@ -57,6 +59,7 @@ auto App::parse_args(int argc, char const* const* argv) -> clap::Result {
 		.options =
 			{
 				clap::named_option(m_omdb_token, "o,omdb-token", "omdb API token"),
+				clap::named_option(m_config_path, "c,config", "path to config JSON"),
 			},
 		.program =
 			{

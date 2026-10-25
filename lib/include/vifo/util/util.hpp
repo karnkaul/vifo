@@ -1,5 +1,10 @@
 #pragma once
 #include "klib/cli/text_table.hpp"
+#include "vifo/formats.hpp"
+#include "vifo/formatter/movie.hpp"
+#include "vifo/formatter/pattern_swap.hpp"
+#include "vifo/formatter/season.hpp"
+#include "vifo/formatter/series.hpp"
 #include "vifo/types.hpp"
 #include <algorithm>
 #include <array>
@@ -53,6 +58,19 @@ constexpr auto is_subtitle_file(std::string_view const extension) { return match
 
 [[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
 [[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
+
+template <typename FormatterT>
+[[nodiscard]] auto get_format_for(Formats const& formats) -> decltype(auto) {
+	if constexpr (std::same_as<FormatterT, formatter::Movie>) {
+		return formats.movie;
+	} else if constexpr (std::same_as<FormatterT, formatter::Season>) {
+		return formats.season;
+	} else if constexpr (std::same_as<FormatterT, formatter::Series>) {
+		return formats.series;
+	} else {
+		static_assert(false, "Invalid FormatterT");
+	}
+}
 
 template <typename HeadersT, typename ContainerT, typename ProjT>
 [[nodiscard]] auto format_enumerated_table(HeadersT const& headers, ContainerT const& entries, ProjT per_entry) -> std::string {

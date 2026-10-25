@@ -79,7 +79,7 @@ auto GhostCopy::get_parameters() -> std::vector<clap::Parameter> {
 	};
 }
 
-auto GhostCopy::execute() -> ExitCode {
+auto GhostCopy::execute([[maybe_unused]] Config const& config) -> ExitCode {
 	if (!fs::is_directory(m_source)) {
 		std::println(stderr, "invalid source directory: '{}'", m_source);
 		return ExitCode::InvalidArgument;

@@ -1,8 +1,8 @@
 #pragma once
 #include "clap/result.hpp"
 #include "command/command.hpp"
+#include "config/config_loader.hpp"
 #include <memory>
-#include <string_view>
 
 namespace vifo::cli {
 class App {
@@ -20,8 +20,9 @@ class App {
 
 	void set_omdb_token();
 
+	ConfigLoader m_config_loader{};
 	std::string m_omdb_token{};
-	std::string_view m_title{};
+	std::string_view m_config_path{};
 
 	std::vector<std::unique_ptr<Command>> m_commands{};
 };
