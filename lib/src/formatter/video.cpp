@@ -26,7 +26,7 @@ void Video::Builder::process_video(MediaFile video, std::vector<MediaFile>& out_
 
 	if (video_entry.destination == video_entry.source) { return; }
 
-	detail::filter_en_subtitles(manifest, out_subtitles);
+	detail::filter_en_subtitles(manifest, out_subtitles, video_entry.source.stem().generic_string());
 
 	auto const subtitle_directory = m_formatter.get_subtitles_dir_for(video_entry.destination);
 	m_formatter.m_subtitle.set_title(video_entry.destination.stem().string());

@@ -12,7 +12,7 @@ namespace {
 
 [[nodiscard]] auto is_en_subtitle(fs::path const& path) {
 	auto stem = path.stem().string();
-	for (char& c : stem) { c = char(std::tolower(static_cast<unsigned char>(c))); }
+	for (char& c : stem) { c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); }
 
 	auto scanner = util::WordScanner{stem};
 	auto word = util::WordToken{};
@@ -38,8 +38,10 @@ auto detail::if_directory(fs::path const& path) -> Result<fs::path> {
 	return fs::canonical(path);
 }
 
-void detail::filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files) {
+void detail::filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files, fs::path const& video) {
+	auto const video_stem = video.stem();
 	auto const transfer = [&](MediaFile& file) {
+		if (file.path.stem() == video_stem) { return false; }
 		if (!is_en_subtitle(file.path)) {
 			out_manifest.orphans.push_back(Manifest::Entry{.source = std::move(file.path), .type = file.type});
 			return true;
