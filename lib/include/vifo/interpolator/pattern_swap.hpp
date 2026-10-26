@@ -16,12 +16,22 @@ class PatternSwap {
 	[[nodiscard]] auto interpolate(std::string_view input) -> std::string;
 
   private:
+	struct Source {
+		expression::Expression pre_variable{};
+		expression::Identifier variable{};
+		expression::Expression post_variable{};
+	};
+
 	[[nodiscard]] auto build_source(std::string_view format, expression::Expression expression) -> Result<void>;
 	[[nodiscard]] auto build_destination(std::string_view format, expression::Expression expression) -> Result<void>;
 	[[nodiscard]] auto extract_values(std::string_view input) -> bool;
-	[[nodiscard]] auto match_symbol(std::string_view& out_input, expression::Atom const& atom) -> bool;
+	[[nodiscard]] auto match_symbol(std::string_view& out_input, expression::Atom const& atom, bool front) -> bool;
 
-	expression::Expression m_source{};
+	auto extract_front(std::string_view& out_input) -> bool;
+	auto extract_back(std::string_view& out_input) -> bool;
+	auto extract_variable(std::string_view& out_input) -> bool;
+
+	Source m_source{};
 	expression::Expression m_destination{};
 
 	Environment m_environment{};

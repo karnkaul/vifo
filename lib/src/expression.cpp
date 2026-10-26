@@ -79,9 +79,15 @@ class Parser {
 };
 } // namespace
 
-auto Substring::consume(std::string_view& out_input) const -> bool {
+auto Substring::consume_front(std::string_view& out_input) const -> bool {
 	if (!out_input.starts_with(text)) { return false; }
 	out_input.remove_prefix(text.size());
+	return true;
+}
+
+auto Substring::consume_back(std::string_view& out_input) const -> bool {
+	if (!out_input.ends_with(text)) { return false; }
+	out_input.remove_suffix(text.size());
 	return true;
 }
 } // namespace expression
