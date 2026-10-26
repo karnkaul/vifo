@@ -159,8 +159,10 @@ auto util::identify_title(fs::path const& path) -> std::string {
 	return detail::TitleParser{}.parse(stem.string());
 }
 
-auto util::ignore_for_title(std::string_view word) -> bool {
-	return matcher::year.is_match(word) || matcher::resolution.is_match(word) || matcher::episode_id.is_match(word);
+auto util::is_year(std::string_view const word) -> bool { return matcher::year.is_match(word); }
+
+auto util::ignore_for_title(std::string_view const word) -> bool {
+	return is_year(word) || matcher::resolution.is_match(word) || matcher::episode_id.is_match(word);
 }
 
 auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileType> {

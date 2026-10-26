@@ -2,7 +2,6 @@
 #include "klib/cli/text_table.hpp"
 #include "vifo/formats.hpp"
 #include "vifo/formatter/movie.hpp"
-#include "vifo/formatter/pattern_swap.hpp"
 #include "vifo/formatter/season.hpp"
 #include "vifo/formatter/series.hpp"
 #include "vifo/types.hpp"
@@ -35,6 +34,7 @@ auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwr
 
 [[nodiscard]] auto identify_title(fs::path const& path) -> std::string;
 
+[[nodiscard]] auto is_year(std::string_view word) -> bool;
 [[nodiscard]] auto ignore_for_title(std::string_view word) -> bool;
 
 template <typename ContainerT, std::equality_comparable Type>
@@ -42,14 +42,10 @@ constexpr auto match_any(ContainerT const& container, Type const& t) {
 	return std::ranges::find(container, t) != std::end(container);
 }
 
-constexpr auto video_extensions_v = std::array{
-	".mp4", ".mkv", ".avi", ".m4v", ".webm",
-};
+constexpr auto video_extensions_v = std::array{".mp4", ".mkv", ".avi", ".m4v", ".webm"};
 constexpr auto is_video_file(std::string_view const extension) { return match_any(video_extensions_v, extension); }
 
-constexpr auto subtitle_extensions_v = std::array{
-	".srt",
-};
+constexpr auto subtitle_extensions_v = std::array{".srt"};
 constexpr auto is_subtitle_file(std::string_view const extension) { return match_any(subtitle_extensions_v, extension); }
 
 [[nodiscard]] auto get_media_file_type(fs::path const& file) -> std::optional<MediaFileType>;

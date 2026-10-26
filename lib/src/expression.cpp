@@ -67,7 +67,7 @@ class Parser {
 			auto const i_length = util::to_int(length_str, -1);
 			if (i_length < 0) { return syntax_error(token, std::format("invalid length: {}", length_str)); }
 
-			length = std::size_t(i_length);
+			length = static_cast<std::size_t>(i_length);
 		}
 
 		return Identifier{.name = std::string{name}, .length = length};
