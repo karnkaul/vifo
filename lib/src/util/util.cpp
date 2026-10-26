@@ -40,7 +40,9 @@ template <typename... Ts>
 Matcher(Ts...) -> Matcher<sizeof...(Ts)>;
 
 namespace matcher {
+// TODO: deprecate and remove (incorrect)
 auto const year = Matcher{R"([1-9]\d{3}(?!\d).*)"};
+
 auto const resolution = Matcher{R"(\d{3}\d?p)"};
 auto const episode_id = Matcher{R"(S\d{2}E\d{2})"};
 auto const season_id = Matcher{R"(Season.\d{2})", R"(S\d{2})"};

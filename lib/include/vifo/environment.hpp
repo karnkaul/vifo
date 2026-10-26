@@ -2,7 +2,6 @@
 #include "klib/base_types.hpp"
 #include "klib/ptr.hpp"
 #include "vifo/expression.hpp"
-#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -21,13 +20,14 @@ class Symbol : public klib::Polymorphic {
 };
 
 struct Environment {
-	[[nodiscard]] auto find_symbol(std::string_view name) const -> klib::Ptr<Symbol>;
+	[[nodiscard]] auto find_symbol(std::string_view name) const -> klib::Ptr<Symbol const>;
+	[[nodiscard]] auto find_symbol(std::string_view name) -> klib::Ptr<Symbol>;
 	[[nodiscard]] auto get_value(std::string_view name) const -> std::string_view;
 
 	void set_symbol(std::string_view name, std::string value);
 
 	[[nodiscard]] auto interpolate(expression::Expression const& expression) const -> std::string;
 
-	std::vector<std::unique_ptr<Symbol>> symbols{};
+	std::vector<Symbol> symbols{};
 };
 } // namespace vifo
