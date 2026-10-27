@@ -158,8 +158,10 @@ auto util::concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::p
 auto util::identify_title(fs::path const& path) -> std::string {
 	if (!fs::exists(path)) { return {}; }
 	auto const stem = fs::canonical(path).stem();
-	return detail::TitleParser{}.parse(stem.string());
+	return parse_title(stem.generic_string());
 }
+
+auto util::parse_title(std::string_view const text) -> std::string { return detail::TitleParser{}.parse(text); }
 
 auto util::is_year(std::string_view const word) -> bool { return matcher::year.is_match(word); }
 

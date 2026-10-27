@@ -33,6 +33,7 @@ auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwr
 [[nodiscard]] auto concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::path;
 
 [[nodiscard]] auto identify_title(fs::path const& path) -> std::string;
+[[nodiscard]] auto parse_title(std::string_view text) -> std::string;
 
 [[nodiscard]] auto is_year(std::string_view word) -> bool;
 [[nodiscard]] auto ignore_for_title(std::string_view word) -> bool;

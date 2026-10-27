@@ -6,7 +6,7 @@
 
 namespace vifo::util {
 struct WordToken {
-	enum class Type : std::int8_t { Word, BracketOpen, BracketClose, Phrase };
+	enum class Type : std::int8_t { Word, BracketOpen, BracketClose };
 
 	std::string_view lexeme{};
 	Type type{};
@@ -42,9 +42,6 @@ class WordScanner {
 		return std::ranges::find(close_bracket_v, ch) != close_bracket_v.end();
 	}
 
-	static constexpr auto is_open_phrase(char const ch) -> bool { return ch == '{'; }
-	static constexpr auto is_close_phrase(char const ch) -> bool { return ch == '}'; }
-
 	static constexpr auto is_bracket(char const ch) -> bool { return is_open_bracket(ch) || is_close_bracket(ch); }
 
 	constexpr void skip_whitespace() {
@@ -68,18 +65,6 @@ class WordScanner {
 			return true;
 		}
 		return false;
-	}
-
-	constexpr auto scan_phrase(WordToken& out) -> bool {
-		if (!is_open_phrase(m_remain.front())) { return false; }
-		m_remain.remove_prefix(1);
-		auto length = 1uz;
-		for (; length < m_remain.size(); ++length) {
-			if (is_close_phrase(m_remain.at(length))) { break; }
-		}
-		out = to_token(Type::Phrase, length - 1);
-		m_remain.remove_prefix(1);
-		return true;
 	}
 
 	constexpr auto scan_word() -> WordToken {

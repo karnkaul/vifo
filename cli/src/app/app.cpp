@@ -5,16 +5,14 @@
 #include "command/command.hpp"
 #include "command/ghost_copy.hpp"
 #include "command/omdb.hpp"
+#include "command/parse_title.hpp"
 #include "command/patswap.hpp"
 #include "klib/env.hpp"
 #include "klib/string/c_string.hpp"
 #include "log.hpp"
 #include "vifo/build_version.hpp"
 #include "vifo/omdb.hpp"
-#include "vifo/panic.hpp"
 #include <cstdlib>
-#include <string>
-#include <string_view>
 
 namespace vifo::cli {
 namespace {
@@ -24,13 +22,14 @@ constexpr auto env_omdb_token_key_v = klib::CString{"VIFO_OMDB_TOKEN"};
 auto App::run(int argc, char const* const* argv) -> int {
 	auto const get_api_token = [this] -> std::string_view {
 		set_omdb_token();
-		return m_omdb_token;
+		return m_config_loader.config.omdb_api_token;
 	};
 
 	auto const omdb_service = omdb::IService::create(get_api_token, omdb::Curl::Internal);
 
 	add_command<command::Patswap>();
 	add_command<command::GhostCopy>();
+	add_command<command::ParseTitle>();
 	add_command<command::Movie>(*omdb_service);
 	add_command<command::Season>(*omdb_service);
 	add_command<command::Series>(*omdb_service);
@@ -58,7 +57,6 @@ auto App::parse_args(int argc, char const* const* argv) -> clap::Result {
 	auto spec = clap::spec::Commands{
 		.options =
 			{
-				clap::named_option(m_omdb_token, "o,omdb-token", "omdb API token"),
 				clap::named_option(m_config_path, "c,config", "path to config JSON"),
 			},
 		.program =
@@ -75,10 +73,10 @@ auto App::parse_args(int argc, char const* const* argv) -> clap::Result {
 }
 
 void App::set_omdb_token() {
-	if (!m_omdb_token.empty()) { return; }
+	if (!m_config_loader.config.omdb_api_token.empty()) { return; }
 
 	log.debug("reading omdb API token from env:{}", env_omdb_token_key_v.as_view());
 	auto const omdb_token = klib::env::get_var(env_omdb_token_key_v);
-	m_omdb_token = omdb_token.as_view();
+	m_config_loader.config.omdb_api_token = omdb_token.as_view();
 }
 } // namespace vifo::cli
