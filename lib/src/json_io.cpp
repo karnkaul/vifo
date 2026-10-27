@@ -78,9 +78,7 @@ void vifo::from_json(dj::Json const& json, interpolator::TitleFormat& format) {
 	if (auto const& video = json["video"]) { from_json(video, format.video); }
 }
 
-void vifo::from_json(dj::Json const& json, interpolator::SubtitleFormat& format) {
-	if (auto const& output = json["output"]) { from_json(output, format.output); }
-}
+void vifo::from_json(dj::Json const& json, interpolator::SubtitleFormat& format) { from_json(json, format.output); }
 
 void vifo::from_json(dj::Json const& json, formatter::MovieFormat& format) {
 	if (auto const& movie = json["movie"]) { from_json(movie, format.movie); }
@@ -107,4 +105,5 @@ void vifo::from_json(dj::Json const& json, Formats& formats) {
 	if (auto const& movie = json["movie"]) { from_json(movie, formats.movie); }
 	if (auto const& season = json["season"]) { from_json(season, formats.season); }
 	if (auto const& series = json["series"]) { from_json(series, formats.series); }
+	if (auto const& subtitle = json["subtitle"]) { from_json(subtitle, formats.subtitle); }
 }

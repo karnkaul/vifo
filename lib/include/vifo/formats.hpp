@@ -47,9 +47,14 @@ struct SeriesFormat {
 } // namespace formatter
 
 struct Formats {
+	[[nodiscard]] constexpr auto to_movie_format() const -> formatter::MovieFormat { return {.movie = movie, .subtitle = subtitle}; }
+	[[nodiscard]] constexpr auto to_season_format() const -> formatter::SeasonFormat { return {.season = season, .subtitle = subtitle}; }
+	[[nodiscard]] constexpr auto to_series_format() const -> formatter::SeriesFormat { return {.directory = series}; }
+
 	formatter::PatternSwapFormat pattern_swap{};
-	formatter::MovieFormat movie{};
-	formatter::SeasonFormat season{};
-	formatter::SeriesFormat series{};
+	interpolator::TitleFormat movie{};
+	interpolator::TitleFormat series{};
+	interpolator::SeasonFormat season{};
+	interpolator::SubtitleFormat subtitle{};
 };
 } // namespace vifo

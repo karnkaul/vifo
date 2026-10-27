@@ -53,11 +53,11 @@ constexpr auto is_subtitle_file(std::string_view const extension) { return match
 template <typename FormatterT>
 [[nodiscard]] auto get_format_for(Formats const& formats) -> decltype(auto) {
 	if constexpr (std::same_as<FormatterT, formatter::Movie>) {
-		return formats.movie;
+		return formats.to_movie_format();
 	} else if constexpr (std::same_as<FormatterT, formatter::Season>) {
-		return formats.season;
+		return formats.to_season_format();
 	} else if constexpr (std::same_as<FormatterT, formatter::Series>) {
-		return formats.series;
+		return formats.to_series_format();
 	} else {
 		static_assert(false, "Invalid FormatterT");
 	}
