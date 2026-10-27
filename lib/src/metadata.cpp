@@ -79,7 +79,13 @@ class MetadataBuilder {
 	[[nodiscard]] auto is_regex_match(std::string_view const word) -> bool {
 		if (is_episode_id(word)) { return true; }
 
-		if (!is_season_id(word) && !is_year(word) && !is_resolution(word)) { return false; }
+		if (is_year(word)) {
+			if (!m_ret.title.empty()) { m_skip_titles = true; }
+			return true;
+		}
+
+		if (!is_season_id(word) && !is_resolution(word)) { return false; }
+
 		m_skip_titles = true;
 		return true;
 	}
