@@ -1,6 +1,7 @@
 #include "vifo/interpolator/subtitle.hpp"
 #include "detail/common.hpp"
 #include "vifo/expression.hpp"
+#include "vifo/util/util.hpp"
 #include <filesystem>
 #include <format>
 #include <string_view>
@@ -23,8 +24,9 @@ using expression::Identifier;
 }
 } // namespace
 
-auto Subtitle::create(Format const& format) -> Result<Subtitle> {
+auto Subtitle::create(Format format) -> Result<Subtitle> {
 	auto ret = Subtitle{};
+	util::ensure_nonempty(format);
 
 	return expression::parse(format.output)
 		.and_then([&](Expression in) { return verify_identifiers(format.output, std::move(in)); })

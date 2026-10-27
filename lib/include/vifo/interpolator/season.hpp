@@ -16,7 +16,7 @@ class Season : public IVideo {
 	static constexpr std::string_view season_id_identifier_v{"season_id"};
 	static constexpr std::string_view episode_id_identifier_v{"episode_id"};
 
-	[[nodiscard]] static auto create(Format const& format = {}) -> Result<Season>;
+	[[nodiscard]] static auto create(Format format = {}) -> Result<Season>;
 
 	void set_season(omdb::Season season);
 	[[nodiscard]] auto interpolate_video(fs::path const& video) -> fs::path final;

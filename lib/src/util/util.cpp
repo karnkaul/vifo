@@ -1,4 +1,5 @@
 #include "vifo/util/util.hpp"
+#include "detail/common.hpp"
 #include "log.hpp"
 #include "vifo/types.hpp"
 #include <array>
@@ -15,6 +16,11 @@ namespace {
 	if (fs::exists(path)) { return fs::is_directory(path); }
 	return fs::create_directories(path);
 }
+
+auto verify_non_empty_impl(std::string_view const format, std::string_view const type_name) -> Result<void> {
+	if (!format.empty()) { return {}; }
+	return detail::to_error(Error::Type::Format, std::format("{} is empty", type_name));
+}
 } // namespace
 } // namespace util
 
@@ -26,6 +32,30 @@ auto util::to_int(std::string_view const text, int const fallback) -> int {
 	auto const [_, ec] = std::from_chars(text.data(), end, ret);
 	if (ec != std::errc{}) { return fallback; }
 	return ret;
+}
+
+auto util::verify_non_empty(interpolator::PatternSwapFormat const& format) -> Result<void> {
+	return verify_non_empty_impl(format.input, "PatternSwawpFormat.input").and_then([&] {
+		return verify_non_empty_impl(format.output, "PatternSwawpFormat.output");
+	});
+}
+
+void util::ensure_nonempty(interpolator::TitleFormat& out) {
+	static constexpr auto default_v = interpolator::TitleFormat{};
+	if (out.directory.empty()) { out.directory = default_v.directory; }
+	if (out.video.empty()) { out.video = default_v.video; }
+}
+
+void util::ensure_nonempty(interpolator::SubtitleFormat& out) {
+	static constexpr auto default_v = interpolator::SubtitleFormat{};
+	if (out.output.empty()) { out.output = default_v.output; }
+}
+
+void util::ensure_nonempty(interpolator::SeasonFormat& out) {
+	static constexpr auto default_v = interpolator::SeasonFormat{};
+	if (out.directory.empty()) { out.directory = default_v.directory; }
+	if (out.titled_video.empty()) { out.titled_video = default_v.titled_video; }
+	if (out.untitled_video.empty()) { out.untitled_video = default_v.untitled_video; }
 }
 
 void util::join_to(std::string& out, std::string_view const item, std::string_view const delim) {

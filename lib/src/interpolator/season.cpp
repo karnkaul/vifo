@@ -2,12 +2,14 @@
 #include "vifo/expression.hpp"
 #include "vifo/metadata.hpp"
 #include "vifo/omdb.hpp"
+#include "vifo/util/util.hpp"
 #include <algorithm>
 #include <string_view>
 
 namespace vifo::interpolator {
-auto Season::create(SeasonFormat const& format) -> Result<Season> {
+auto Season::create(Format format) -> Result<Season> {
 	auto ret = Season{};
+	util::ensure_nonempty(format);
 	return expression::parse(format.titled_video)
 		.and_then([&](expression::Expression video) {
 			ret.m_titled_video = std::move(video);

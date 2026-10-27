@@ -25,6 +25,11 @@ inline constexpr auto regex_resolution_v = std::string_view{R"(([1-9]\d{2}\d?p))
 
 [[nodiscard]] auto to_int(std::string_view text, int fallback = 0) -> int;
 
+[[nodiscard]] auto verify_non_empty(interpolator::PatternSwapFormat const& format) -> Result<void>;
+void ensure_nonempty(interpolator::TitleFormat& out);
+void ensure_nonempty(interpolator::SubtitleFormat& out);
+void ensure_nonempty(interpolator::SeasonFormat& out);
+
 void join_to(std::string& out, std::string_view item, std::string_view delim = " ");
 [[nodiscard]] auto join(std::span<std::string_view const> items, std::string_view delim = " ") -> std::string;
 

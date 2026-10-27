@@ -16,7 +16,7 @@ class Subtitle {
 	static constexpr std::string_view title_identifier_v{"title"};
 	static constexpr std::string_view number_identifier_v{"number"};
 
-	[[nodiscard]] static auto create(Format const& format = {}) -> Result<Subtitle>;
+	[[nodiscard]] static auto create(Format format = {}) -> Result<Subtitle>;
 
 	void set_number(int number);
 	void set_title(std::string title);

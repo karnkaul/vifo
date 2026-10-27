@@ -12,7 +12,7 @@ class Title : public IVideo {
 	static constexpr std::string_view title_identifier_v{"title"};
 	static constexpr std::string_view year_identifier_v{"year"};
 
-	[[nodiscard]] static auto create(Format const& format = {}) -> Result<Title>;
+	[[nodiscard]] static auto create(Format format = {}) -> Result<Title>;
 
 	void set_title(std::string title);
 	void set_year(int year);

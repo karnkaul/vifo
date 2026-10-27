@@ -53,7 +53,8 @@ auto PatternSwap::create(Format const& format) -> Result<PatternSwap> {
 
 	auto input_expression = Expression{};
 	auto output_expression = Expression{};
-	return expression::parse(format.input)
+	return util::verify_non_empty(format)
+		.and_then([&] { return expression::parse(format.input); })
 		.and_then([&](Expression ie) {
 			input_expression = std::move(ie);
 			return expression::parse(format.output);
