@@ -87,8 +87,8 @@ void vifo::from_json(dj::Json const& json, formatter::MovieFormat& format) {
 
 void vifo::from_json(dj::Json const& json, interpolator::SeasonFormat& format) {
 	if (auto const& directory = json["directory"]) { from_json(directory, format.directory); }
-	if (auto const& video = json["video"]) { from_json(video, format.video); }
-	if (auto const& video_fallback = json["video_fallback"]) { from_json(video_fallback, format.video_fallback); }
+	if (auto const& video = json["titled_video"]) { from_json(video, format.titled_video); }
+	if (auto const& video_fallback = json["untitled_video"]) { from_json(video_fallback, format.untitled_video); }
 }
 
 void vifo::from_json(dj::Json const& json, formatter::SeasonFormat& format) {

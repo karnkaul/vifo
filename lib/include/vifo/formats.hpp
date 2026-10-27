@@ -19,8 +19,8 @@ struct SubtitleFormat {
 };
 
 struct SeasonFormat {
-	std::string_view video{"{series_title} {episode_id} - {episode_title}"};
-	std::string_view video_fallback{"{series_title} {episode_id}"};
+	std::string_view titled_video{"{series_title} {episode_id} - {episode_title}"};
+	std::string_view untitled_video{"{series_title} {episode_id}"};
 	std::string_view directory{"{series_title} - {season_id}"};
 };
 } // namespace interpolator

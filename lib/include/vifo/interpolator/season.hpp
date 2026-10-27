@@ -22,10 +22,10 @@ class Season : public IVideo {
 	[[nodiscard]] auto interpolate_video(fs::path const& video) -> fs::path final;
 
   private:
-	[[nodiscard]] auto set_episode(EpisodeId episode_id) -> expression::Expression const&;
+	[[nodiscard]] auto get_video_expression_for(EpisodeId episode_id) -> expression::Expression const&;
 
-	expression::Expression m_video{};
-	std::optional<expression::Expression> m_video_fallback{};
+	expression::Expression m_titled_video{};
+	expression::Expression m_untitled_video{};
 	expression::Expression m_directory{};
 
 	omdb::Season m_season{};
