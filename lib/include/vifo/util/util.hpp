@@ -18,6 +18,11 @@
 namespace vifo::util {
 namespace fs = std::filesystem;
 
+inline constexpr auto regex_season_id_v = std::string_view{R"((S\d{2}))"};
+inline constexpr auto regex_episode_id_v = std::string_view{R"((S\d{2}E\d{2}))"};
+inline constexpr auto regex_year_v = std::string_view{R"(([1-9]\d{3}))"};
+inline constexpr auto regex_resolution_v = std::string_view{R"(([1-9]\d{2}\d?p))"};
+
 [[nodiscard]] auto to_int(std::string_view text, int fallback = 0) -> int;
 
 void join_to(std::string& out, std::string_view item, std::string_view delim = " ");
@@ -32,12 +37,6 @@ auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwr
 [[nodiscard]] auto prefix_parent(fs::path const& parent_source, fs::path const& target) -> fs::path;
 [[nodiscard]] auto concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::path;
 
-[[nodiscard]] auto identify_title(fs::path const& path) -> std::string;
-[[nodiscard]] auto parse_title(std::string_view text) -> std::string;
-
-[[nodiscard]] auto is_year(std::string_view word) -> bool;
-[[nodiscard]] auto ignore_for_title(std::string_view word) -> bool;
-
 template <typename ContainerT, std::equality_comparable Type>
 constexpr auto match_any(ContainerT const& container, Type const& t) {
 	return std::ranges::find(container, t) != std::end(container);
@@ -50,9 +49,6 @@ constexpr auto subtitle_extensions_v = std::array{".srt"};
 constexpr auto is_subtitle_file(std::string_view const extension) { return match_any(subtitle_extensions_v, extension); }
 
 [[nodiscard]] auto get_media_file_type(fs::path const& file) -> std::optional<MediaFileType>;
-
-[[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
-[[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
 
 template <typename FormatterT>
 [[nodiscard]] auto get_format_for(Formats const& formats) -> decltype(auto) {

@@ -1,12 +1,10 @@
 #include "vifo/util/util.hpp"
-#include "detail/title_parser.hpp"
 #include "log.hpp"
 #include "vifo/types.hpp"
 #include <array>
 #include <filesystem>
 #include <fstream>
 #include <optional>
-#include <regex>
 #include <string_view>
 
 namespace vifo {
@@ -17,36 +15,6 @@ namespace {
 	if (fs::exists(path)) { return fs::is_directory(path); }
 	return fs::create_directories(path);
 }
-
-template <std::size_t N>
-struct Matcher {
-	template <std::convertible_to<char const*>... Ts>
-	explicit Matcher(Ts const... exprs) : regexes{std::regex{exprs}...} {}
-
-	[[nodiscard]] auto is_match(std::string_view const text) const -> bool {
-		auto const pred = [text](std::regex const& r) { return std::regex_match(text.data(), text.data() + text.size(), r); };
-		return std::ranges::any_of(regexes, pred);
-	}
-
-	[[nodiscard]] auto search(std::smatch& out, std::string const& text) const -> bool {
-		auto const pred = [&](std::regex const& r) { return std::regex_search(text, out, r); };
-		return std::ranges::any_of(regexes, pred);
-	}
-
-	std::array<std::regex, N> regexes{};
-};
-
-template <typename... Ts>
-Matcher(Ts...) -> Matcher<sizeof...(Ts)>;
-
-namespace matcher {
-// TODO: deprecate and remove (incorrect)
-auto const year = Matcher{R"([1-9]\d{3}(?!\d).*)"};
-
-auto const resolution = Matcher{R"(\d{3}\d?p)"};
-auto const episode_id = Matcher{R"(S\d{2}E\d{2})"};
-auto const season_id = Matcher{R"(Season.\d{2})", R"(S\d{2})"};
-} // namespace matcher
 } // namespace
 } // namespace util
 
@@ -155,20 +123,6 @@ auto util::concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::p
 	return prefix / subpath;
 }
 
-auto util::identify_title(fs::path const& path) -> std::string {
-	if (!fs::exists(path)) { return {}; }
-	auto const stem = fs::canonical(path).stem();
-	return parse_title(stem.generic_string());
-}
-
-auto util::parse_title(std::string_view const text) -> std::string { return detail::TitleParser{}.parse(text); }
-
-auto util::is_year(std::string_view const word) -> bool { return matcher::year.is_match(word); }
-
-auto util::ignore_for_title(std::string_view const word) -> bool {
-	return is_year(word) || matcher::resolution.is_match(word) || matcher::episode_id.is_match(word);
-}
-
 auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileType> {
 	struct MFTExtension {
 		MediaFileType type{};
@@ -184,28 +138,5 @@ auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileT
 		if (match_any(mfte.extensions, extension)) { return mfte.type; }
 	}
 	return {};
-}
-
-auto util::extract_season_id(std::string const& name) -> std::optional<SeasonId> {
-	if (name.empty()) { return {}; }
-
-	auto matches = std::smatch{};
-	if (!matcher::season_id.search(matches, name)) { return {}; }
-	auto const str = std::string{matches[0]};
-	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
-	if (number <= 0) { return {}; }
-	return SeasonId{.number = number};
-}
-
-auto util::extract_episode_id(std::string const& name) -> std::optional<EpisodeId> {
-	if (name.empty()) { return {}; }
-
-	auto matches = std::smatch{};
-	if (!matcher::episode_id.search(matches, name)) { return {}; }
-	auto const str = std::string{matches[0]};
-	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
-	auto const season = to_int(std::string_view{str}.substr(1, 2));
-	if (number <= 0 || season <= 0) { return {}; }
-	return EpisodeId{.season = season, .number = number};
 }
 } // namespace vifo

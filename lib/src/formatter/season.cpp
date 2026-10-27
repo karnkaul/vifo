@@ -6,7 +6,6 @@
 #include "vifo/media_file.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/types.hpp"
-#include "vifo/util/util.hpp"
 #include <expected>
 #include <filesystem>
 
@@ -74,28 +73,31 @@ auto Season::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
-	auto season_id = util::extract_season_id(path->filename().string());
-	if (!season_id) { return detail::to_error(Error::Type::Identify, std::format("failed to extract SeasonId: '{}'", path->generic_string())); }
+	auto season_metadata = get_metadata(*path);
+	if (!season_metadata.season_id) { return detail::to_error(Error::Type::Identify, std::format("failed to extract SeasonId: '{}'", path->generic_string())); }
 
 	auto season_directory = build_season_directory(*path);
 	if (season_directory.episodes.empty()) {
 		return detail::to_error(Error::Type::Identify, std::format("no episodes found in: '{}'", path->generic_string()));
 	}
 
-	auto const& first_episode = season_directory.episodes.front();
-	auto search_title = get_search_title(first_episode.video.path);
-	if (search_title.empty()) {
-		return detail::to_error(Error::Type::Identify, std::format("failed to identify series title for: '{}'", path->generic_string()));
+	if (season_metadata.title.empty()) {
+		auto const& first_episode = season_directory.episodes.front();
+		auto episode_metadata = get_metadata(first_episode.video.path);
+		if (episode_metadata.title.empty()) {
+			return detail::to_error(Error::Type::Identify, std::format("failed to identify series title for: '{}'", path->generic_string()));
+		}
+
+		season_metadata.title = std::move(episode_metadata.title);
 	}
 
-	auto omdb_season = m_omdb_service->search_season(search_title, season_id->number);
+	auto omdb_season = m_omdb_service->search_season(season_metadata.title, season_metadata.season_id->number);
 	if (!omdb_season) { return detail::to_error(Error::Type::Http, omdb_season.error().text); }
 
 	if (omdb_season->payload.title.empty()) {
-		return detail::to_error(Error::Type::Identify, std::format("failed to identify series title for: '{}'", first_episode.video.path.generic_string()));
+		return detail::to_error(Error::Type::Identify, std::format("failed to identify series title for: '{}'", path->generic_string()));
 	}
 
-	search_title = omdb_season->payload.title;
 	m_season.set_season(std::move(omdb_season->payload));
 
 	auto builder = create_builder(m_season, path->parent_path());

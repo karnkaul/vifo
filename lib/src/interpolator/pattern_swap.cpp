@@ -2,6 +2,7 @@
 #include "detail/common.hpp"
 #include "vifo/environment.hpp"
 #include "vifo/expression.hpp"
+#include "vifo/util/util.hpp"
 #include <algorithm>
 #include <array>
 #include <ranges>
@@ -39,7 +40,7 @@ constexpr auto keywords_v = std::array{"year"sv};
 
 void append_identifier_regex(std::string& out_regex, std::string_view const name) {
 	if (name == "year") {
-		out_regex.append(R"(([1-9]\d{3}))");
+		out_regex.append(util::regex_year_v);
 		return;
 	}
 
@@ -92,7 +93,7 @@ auto PatternSwap::build_source(std::string_view const format, Expression const& 
 		append_identifier_regex(regex, identifier.name);
 	}
 
-	m_source = std::regex{regex};
+	m_source = util::RegexMatcher{regex};
 	return {};
 }
 
@@ -111,14 +112,10 @@ auto PatternSwap::build_destination(std::string_view format, Expression expressi
 }
 
 auto PatternSwap::extract_values(std::string_view input) -> bool {
-	auto matches = std::smatch{};
-	auto const str = std::string{input};
-	if (!std::regex_match(str, matches, m_source) || matches.empty()) { return false; }
+	auto matches = m_source.get_matches(input);
+	if (matches.size() != m_environment.symbols.size()) { return false; }
 
-	auto const span = std::span{matches}.subspan(1); // exclude first match (whole-string).
-	if (span.size() != m_environment.symbols.size()) { return false; }
-
-	for (auto const& [match, symbol] : std::views::zip(span, m_environment.symbols)) { symbol.value = match.str(); }
+	for (auto const& [match, symbol] : std::views::zip(matches, m_environment.symbols)) { symbol.value = std::move(match); }
 
 	return true;
 }

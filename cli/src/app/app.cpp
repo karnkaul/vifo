@@ -4,8 +4,8 @@
 #include "clap/spec.hpp"
 #include "command/command.hpp"
 #include "command/ghost_copy.hpp"
+#include "command/metadata.hpp"
 #include "command/omdb.hpp"
-#include "command/parse_title.hpp"
 #include "command/patswap.hpp"
 #include "klib/env.hpp"
 #include "klib/string/c_string.hpp"
@@ -29,7 +29,7 @@ auto App::run(int argc, char const* const* argv) -> int {
 
 	add_command<command::Patswap>();
 	add_command<command::GhostCopy>();
-	add_command<command::ParseTitle>();
+	add_command<command::Metadata>();
 	add_command<command::Movie>(*omdb_service);
 	add_command<command::Season>(*omdb_service);
 	add_command<command::Series>(*omdb_service);

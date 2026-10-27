@@ -3,6 +3,7 @@
 #include "vifo/expression.hpp"
 #include "vifo/formats.hpp"
 #include "vifo/result.hpp"
+#include "vifo/util/regex_matcher.hpp"
 #include <regex>
 
 namespace vifo::interpolator {
@@ -20,7 +21,7 @@ class PatternSwap {
 	[[nodiscard]] auto build_destination(std::string_view format, expression::Expression expression) -> Result<void>;
 	[[nodiscard]] auto extract_values(std::string_view input) -> bool;
 
-	std::regex m_source{};
+	util::RegexMatcher m_source{};
 	expression::Expression m_destination{};
 
 	Environment m_environment{};

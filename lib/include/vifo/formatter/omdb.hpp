@@ -2,6 +2,7 @@
 #include "klib/ptr.hpp"
 #include "vifo/environment.hpp"
 #include "vifo/formatter/formatter.hpp"
+#include "vifo/media_file.hpp"
 #include "vifo/omdb.hpp"
 
 namespace vifo::formatter {
@@ -10,6 +11,7 @@ class Omdb : public IFormatter {
 	explicit Omdb(omdb::IService const& omdb_service) : m_omdb_service(&omdb_service) {}
 
 	[[nodiscard]] auto get_search_title(fs::path const& path) const -> std::string;
+	[[nodiscard]] auto get_metadata(fs::path const& path) const -> MediaFile::Metadata;
 
 	std::string search_title_override{};
 
