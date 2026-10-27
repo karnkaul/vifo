@@ -1,6 +1,6 @@
 #include "vifo/interpolator/season.hpp"
 #include "vifo/expression.hpp"
-#include "vifo/media_file.hpp"
+#include "vifo/metadata.hpp"
 #include "vifo/omdb.hpp"
 #include <algorithm>
 #include <string_view>
@@ -37,7 +37,7 @@ void Season::set_season(omdb::Season season) {
 }
 
 auto Season::interpolate_video(fs::path const& video) -> fs::path {
-	auto const metadata = MediaFile::Metadata::build(video.stem().generic_string());
+	auto const metadata = Metadata::build(video.stem().generic_string());
 	if (!metadata.episode_id) { return {}; }
 
 	m_environment.set_symbol(episode_id_identifier_v, metadata.episode_id->format());

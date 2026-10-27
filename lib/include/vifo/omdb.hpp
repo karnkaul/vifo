@@ -54,7 +54,7 @@ enum class Curl : std::int8_t {
 	/// \brief IService owns curl initialization/shutdown.
 	Internal,
 	/// \brief IService does not own curl initialization/shutdown.
-	External
+	External,
 };
 
 using GetApiToken = std::move_only_function<std::string_view()>;

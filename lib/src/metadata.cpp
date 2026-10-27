@@ -1,9 +1,9 @@
-#include "vifo/media_file.hpp"
+#include "vifo/metadata.hpp"
+#include "detail/common.hpp"
 #include "klib/cli/text_table.hpp"
 #include "klib/debug/assert.hpp"
 #include "vifo/util/regex_matcher.hpp"
 #include "vifo/util/util.hpp"
-#include <algorithm>
 #include <ranges>
 #include <vector>
 
@@ -35,8 +35,8 @@ auto const resolution_matcher = RegexMatcher{util::regex_resolution_v};
 
 class MetadataBuilder {
   public:
-	[[nodiscard]] auto operator()(std::string filename) -> MediaFile::Metadata {
-		std::ranges::replace(filename, '.', ' ');
+	[[nodiscard]] auto operator()(fs::path const& path) -> Metadata {
+		auto filename = detail::cleanup_filestem(path);
 
 		for (auto const& it : std::views::split(filename, ' ')) {
 			auto word = std::string_view{it};
@@ -119,15 +119,15 @@ class MetadataBuilder {
 		}
 	}
 
-	MediaFile::Metadata m_ret{};
+	Metadata m_ret{};
 	bool m_skip_titles{};
 	bool m_next_is_season{};
 };
 } // namespace
 
-auto MediaFile::Metadata::build(std::string filename) -> Metadata { return MetadataBuilder{}(std::move(filename)); }
+auto Metadata::build(fs::path const& path) -> Metadata { return MetadataBuilder{}(path); }
 
-auto MediaFile::Metadata::to_table() const -> std::string {
+auto Metadata::to_table() const -> std::string {
 	auto table = klib::TextTable::Builder{}.add_column("key").add_column("value").build();
 	auto row = std::vector<std::string>{};
 	row = {"title", title};

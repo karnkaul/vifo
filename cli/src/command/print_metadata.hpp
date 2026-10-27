@@ -3,9 +3,9 @@
 #include <string_view>
 
 namespace vifo::cli::command {
-class Metadata : public Command {
+class PrintMetadata : public Command {
 	static constexpr std::string_view name_v{"metadata"};
-	static constexpr std::string_view help_v{"parse MediaFile Metadata from an input string"};
+	static constexpr std::string_view help_v{"parse Metadata for a given path/filename"};
 
 	[[nodiscard]] auto get_name() const -> std::string_view final { return name_v; }
 	[[nodiscard]] auto get_help() const -> std::string_view final { return help_v; }

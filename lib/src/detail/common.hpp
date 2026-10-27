@@ -22,5 +22,7 @@ namespace vifo::detail {
 
 [[nodiscard]] auto if_directory(fs::path const& path) -> Result<fs::path>;
 
+[[nodiscard]] auto cleanup_filestem(fs::path const& path) -> std::string;
+
 void filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files, fs::path const& video);
 } // namespace vifo::detail
