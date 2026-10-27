@@ -56,7 +56,20 @@ constexpr auto is_subtitle_file(std::string_view const extension) { return match
 [[nodiscard]] auto get_media_file_type(fs::path const& file) -> std::optional<MediaFileType>;
 
 template <typename FormatterT>
-[[nodiscard]] auto get_format_for(Formats const& formats) -> decltype(auto) {
+[[nodiscard]] auto get_name_for() -> std::string_view {
+	if constexpr (std::same_as<FormatterT, formatter::Movie>) {
+		return "movie";
+	} else if constexpr (std::same_as<FormatterT, formatter::Season>) {
+		return "season";
+	} else if constexpr (std::same_as<FormatterT, formatter::Series>) {
+		return "series";
+	} else {
+		static_assert(false, "Invalid FormatterT");
+	}
+}
+
+template <typename FormatterT>
+[[nodiscard]] auto get_format_for(Formats const& formats) {
 	if constexpr (std::same_as<FormatterT, formatter::Movie>) {
 		return formats.to_movie_format();
 	} else if constexpr (std::same_as<FormatterT, formatter::Season>) {

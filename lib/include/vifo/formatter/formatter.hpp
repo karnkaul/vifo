@@ -1,4 +1,5 @@
 #pragma once
+#include "klib/base_types.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/result.hpp"
 #include <filesystem>

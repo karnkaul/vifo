@@ -65,13 +65,13 @@ auto Manifest::format_orphans_table() const -> std::string {
 	return util::format_enumerated_table(headers_v, orphans, PerSource{.parent = parent});
 }
 
-auto Manifest::Transformer::transform_manifest(Manifest const& manifest, Operation const operation, bool const overwrite) const -> Transaction {
-	auto ret = Transaction{.parent = manifest.parent};
+auto Manifest::transform(Operation const operation, bool const overwrite, OnTransformed on_transformed) const -> Transaction {
+	auto ret = Transaction{.parent = parent};
 	auto const transformer = path::Transformer{.overwrite = overwrite};
-	for (auto const& entry : manifest.entries) {
+	for (auto const& entry : entries) {
 		auto const outcome = transformer.transform(entry.source, entry.destination, operation);
 		auto record = detail::to_record(entry.source, entry.destination, operation);
-		on_transformed(record, outcome);
+		if (on_transformed) { on_transformed(record, outcome); }
 		ret.triage_record(std::move(record), outcome);
 	}
 	return ret;
