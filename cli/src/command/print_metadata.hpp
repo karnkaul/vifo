@@ -12,7 +12,7 @@ class PrintMetadata : public Command {
 
 	auto get_parameters() -> std::vector<clap::Parameter> final;
 
-	[[nodiscard]] auto execute(Config const& config) -> ExitCode final;
+	[[nodiscard]] auto execute() -> ExitCode final;
 
 	std::string_view m_text{};
 };

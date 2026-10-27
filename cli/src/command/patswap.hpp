@@ -4,6 +4,10 @@
 
 namespace vifo::cli::command {
 class Patswap : public Command {
+  public:
+	explicit Patswap(GetConfig get_config) : m_get_config(std::move(get_config)) {}
+
+  private:
 	static constexpr std::string_view name_v{"patswap"};
 	static constexpr std::string_view help_v{"rename matching files/directories via pattern swapping"};
 
@@ -12,7 +16,9 @@ class Patswap : public Command {
 
 	auto get_parameters() -> std::vector<clap::Parameter> final;
 
-	[[nodiscard]] auto execute(Config const& config) -> ExitCode final;
+	[[nodiscard]] auto execute() -> ExitCode final;
+
+	GetConfig m_get_config{};
 
 	int m_max_depth{10};
 	std::string_view m_root{"."};

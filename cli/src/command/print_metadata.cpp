@@ -10,7 +10,7 @@ auto PrintMetadata::get_parameters() -> std::vector<clap::Parameter> {
 	};
 }
 
-auto PrintMetadata::execute([[maybe_unused]] Config const& config) -> ExitCode {
+auto PrintMetadata::execute() -> ExitCode {
 	std::println("input: {}", m_text);
 
 	auto const metadata = Metadata::build(m_text);

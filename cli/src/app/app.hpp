@@ -22,6 +22,7 @@ class App {
 
 	ConfigLoader m_config_loader{};
 	std::string_view m_config_path{};
+	bool m_config_loaded{};
 
 	std::vector<std::unique_ptr<Command>> m_commands{};
 };

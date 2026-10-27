@@ -14,7 +14,7 @@
 namespace vifo::cli::command {
 class OmdbBase : public Command {
   public:
-	explicit OmdbBase(omdb::IService const& omdb_service, std::string_view name);
+	explicit OmdbBase(omdb::IService const& omdb_service, GetConfig get_config, std::string_view name);
 
   protected:
 	template <typename FormatterT>
@@ -33,6 +33,7 @@ class OmdbBase : public Command {
 	virtual auto create_formatter(Config const& config) -> ExitCode = 0;
 
 	klib::Ptr<omdb::IService const> m_omdb_service{};
+	GetConfig m_get_config{};
 	std::unique_ptr<formatter::Omdb> m_formatter{};
 
 	std::string_view m_title_override{};
@@ -43,7 +44,7 @@ class OmdbBase : public Command {
 	[[nodiscard]] auto get_name() const -> std::string_view final { return m_command_name; }
 	[[nodiscard]] auto get_help() const -> std::string_view final { return m_command_help; }
 	auto get_parameters() -> std::vector<clap::Parameter> final;
-	auto execute(Config const& config) -> ExitCode final;
+	auto execute() -> ExitCode final;
 
 	[[nodiscard]] auto execute_stub(IFormatter& formatter) -> ExitCode;
 
@@ -57,7 +58,7 @@ class OmdbBase : public Command {
 template <std::derived_from<IFormatter> FormatterT>
 class Omdb : public OmdbBase {
   public:
-	explicit Omdb(omdb::IService const& omdb_service) : OmdbBase(omdb_service, to_name<FormatterT>()) {}
+	explicit Omdb(omdb::IService const& omdb_service, GetConfig get_config) : OmdbBase(omdb_service, std::move(get_config), to_name<FormatterT>()) {}
 
   private:
 	auto create_formatter(Config const& config) -> ExitCode final {

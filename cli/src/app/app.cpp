@@ -20,26 +20,30 @@ constexpr auto env_omdb_token_key_v = klib::CString{"VIFO_OMDB_TOKEN"};
 } // namespace
 
 auto App::run(int argc, char const* const* argv) -> int {
-	auto const get_api_token = [this] -> std::string_view {
+	auto const get_config = [this] -> Config const& {
+		if (!m_config_loaded) { m_config_loaded = m_config_loader.try_load(m_config_path); }
+		return m_config_loader.config;
+	};
+
+	auto const get_api_token = [&] -> std::string_view {
+		get_config();
 		set_omdb_token();
 		return m_config_loader.config.omdb_api_token;
 	};
 
 	auto const omdb_service = omdb::IService::create(get_api_token, omdb::Curl::Internal);
 
-	add_command<command::Patswap>();
+	add_command<command::Patswap>(get_config);
+	add_command<command::Movie>(*omdb_service, get_config);
+	add_command<command::Season>(*omdb_service, get_config);
+	add_command<command::Series>(*omdb_service, get_config);
 	add_command<command::GhostCopy>();
 	add_command<command::PrintMetadata>();
-	add_command<command::Movie>(*omdb_service);
-	add_command<command::Season>(*omdb_service);
-	add_command<command::Series>(*omdb_service);
 
 	auto const parse_result = parse_args(argc, argv);
 	if (parse_result.should_early_exit()) { return parse_result.return_code(); }
 
 	log.debug("{}", build_version_v);
-
-	m_config_loader.try_load();
 
 	auto const identifier = parse_result.command_identifier();
 	auto const it = std::ranges::find_if(m_commands, [identifier](auto const& c) { return c->get_name() == identifier; });
@@ -50,7 +54,7 @@ auto App::run(int argc, char const* const* argv) -> int {
 
 	auto& command = **it;
 
-	return static_cast<int>(command.execute(m_config_loader.config));
+	return static_cast<int>(command.execute());
 }
 
 auto App::parse_args(int argc, char const* const* argv) -> clap::Result {

@@ -17,11 +17,11 @@ auto Patswap::get_parameters() -> std::vector<clap::Parameter> {
 	};
 }
 
-auto Patswap::execute(Config const& config) -> ExitCode {
+auto Patswap::execute() -> ExitCode {
 	auto root = util::path_if_directory(m_root);
 	if (root.empty()) { return ExitCode::InvalidArgument; }
 
-	auto const& format = config.formats.pattern_swap;
+	auto const& format = m_get_config().formats.pattern_swap;
 	log.debug("d: {} => {}", format.directory.input, format.directory.output);
 	if (format.file) { log.debug("f: {} => {}", format.file->input, format.file->output); }
 
