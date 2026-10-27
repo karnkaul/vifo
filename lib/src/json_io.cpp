@@ -74,29 +74,33 @@ void vifo::from_json(dj::Json const& json, formatter::PatternSwapFormat& format)
 }
 
 void vifo::from_json(dj::Json const& json, interpolator::TitleFormat& format) {
-	from_json(json["directory"], format.directory);
-	from_json(json["video"], format.video);
+	if (auto const& directory = json["directory"]) { from_json(directory, format.directory); }
+	if (auto const& video = json["video"]) { from_json(video, format.video); }
 }
 
-void vifo::from_json(dj::Json const& json, interpolator::SubtitleFormat& format) { from_json(json["output"], format.output); }
+void vifo::from_json(dj::Json const& json, interpolator::SubtitleFormat& format) {
+	if (auto const& output = json["output"]) { from_json(output, format.output); }
+}
 
 void vifo::from_json(dj::Json const& json, formatter::MovieFormat& format) {
-	from_json(json["movie"], format.movie);
+	if (auto const& movie = json["movie"]) { from_json(movie, format.movie); }
 	if (auto const& subtitle = json["subtitle"]) { from_json(subtitle, format.subtitle); }
 }
 
 void vifo::from_json(dj::Json const& json, interpolator::SeasonFormat& format) {
-	from_json(json["directory"], format.directory);
-	from_json(json["video"], format.video);
+	if (auto const& directory = json["directory"]) { from_json(directory, format.directory); }
+	if (auto const& video = json["video"]) { from_json(video, format.video); }
 	if (auto const& video_fallback = json["video_fallback"]) { from_json(video_fallback, format.video_fallback); }
 }
 
 void vifo::from_json(dj::Json const& json, formatter::SeasonFormat& format) {
-	from_json(json["season"], format.season);
+	if (auto const& season = json["season"]) { from_json(season, format.season); }
 	if (auto const& subtitle = json["subtitle"]) { from_json(subtitle, format.subtitle); }
 }
 
-void vifo::from_json(dj::Json const& json, formatter::SeriesFormat& format) { from_json(json["directory"], format.directory); }
+void vifo::from_json(dj::Json const& json, formatter::SeriesFormat& format) {
+	if (auto const& directory = json["directory"]) { from_json(directory, format.directory); }
+}
 
 void vifo::from_json(dj::Json const& json, Formats& formats) {
 	if (auto const& pattern_swap = json["pattern_swap"]) { from_json(pattern_swap, formats.pattern_swap); }
