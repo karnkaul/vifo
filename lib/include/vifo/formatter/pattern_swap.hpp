@@ -6,18 +6,15 @@
 namespace vifo::formatter {
 class PatternSwap : public IFormatter {
   public:
-	struct Format {
-		interpolator::PatternSwapFormat directory{};
-		std::optional<interpolator::PatternSwapFormat> file{};
-	};
+	using Format = PatternSwapFormat;
 
 	[[nodiscard]] static auto create(Format const& format) -> Result<PatternSwap>;
-
-	[[nodiscard]] auto generate_manifest(fs::path const& directory) -> Result<Manifest> final;
 
 	int max_depth{10};
 
   private:
+	[[nodiscard]] auto do_generate_manifest(fs::path const& directory) -> Result<Manifest> final;
+
 	[[nodiscard]] auto create_directory(interpolator::PatternSwapFormat const& format) -> Result<void>;
 	[[nodiscard]] auto create_file(std::optional<interpolator::PatternSwapFormat> const& format) -> Result<void>;
 

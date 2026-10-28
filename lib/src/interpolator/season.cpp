@@ -1,31 +1,25 @@
 #include "vifo/interpolator/season.hpp"
 #include "vifo/expression.hpp"
+#include "vifo/metadata.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/util/util.hpp"
 #include <algorithm>
-#include <string_view>
 
 namespace vifo::interpolator {
-namespace {
-[[nodiscard]] auto parse_if_nonempty(std::string_view const input) -> Result<std::optional<expression::Expression>> {
-	if (input.empty()) { return std::nullopt; }
-	return expression::parse(input);
-}
-} // namespace
-
-auto Season::create(SeasonFormat const& format) -> Result<Season> {
+auto Season::create(Format format) -> Result<Season> {
 	auto ret = Season{};
-	return expression::parse(format.video)
+	util::ensure_nonempty(format);
+	return expression::parse(format.titled_video)
 		.and_then([&](expression::Expression video) {
-			ret.m_video = std::move(video);
+			ret.m_titled_video = std::move(video);
 			return expression::parse(format.directory);
 		})
 		.and_then([&](expression::Expression season_directory) {
 			ret.m_directory = std::move(season_directory);
-			return parse_if_nonempty(format.video_fallback);
+			return expression::parse(format.untitled_video);
 		})
-		.transform([&](std::optional<expression::Expression> episode_fallback) {
-			ret.m_video_fallback = std::move(episode_fallback);
+		.transform([&](expression::Expression episode_fallback) {
+			ret.m_untitled_video = std::move(episode_fallback);
 			return std::move(ret);
 		});
 }
@@ -37,12 +31,10 @@ void Season::set_season(omdb::Season season) {
 }
 
 auto Season::interpolate_video(fs::path const& video) -> fs::path {
-	auto const episode_id = util::extract_episode_id(video.stem().string());
-	if (!episode_id) { return {}; }
+	auto const metadata = Metadata::build(video.stem().generic_string());
+	if (!metadata.episode_id) { return {}; }
 
-	m_environment.set_symbol(episode_id_identifier_v, episode_id->format());
-
-	auto const& video_expression = set_episode(*episode_id);
+	auto const& video_expression = get_video_expression_for(*metadata.episode_id);
 
 	auto ret = m_environment.interpolate(video_expression);
 	ret += video.extension().string();
@@ -53,12 +45,19 @@ auto Season::interpolate_video(fs::path const& video) -> fs::path {
 	return season_directory / ret;
 }
 
-auto Season::set_episode(EpisodeId const episode_id) -> expression::Expression const& {
+auto Season::get_video_expression_for(EpisodeId const episode_id) -> expression::Expression const& {
+	m_environment.set_symbol(episode_id_identifier_v, episode_id.format());
+
 	auto const it = std::ranges::find_if(m_season.episodes, [episode_id](omdb::Episode const& e) { return e.number == episode_id.number; });
-	if (it == m_season.episodes.end()) { return m_video_fallback ? *m_video_fallback : m_video; }
+	if (it == m_season.episodes.end()) { return m_untitled_video; }
 
 	auto const& episode = *it;
-	m_environment.set_symbol(episode_title_identifier_v, episode.title);
-	return m_video;
+
+	if (!episode.title.empty()) {
+		m_environment.set_symbol(episode_title_identifier_v, episode.title);
+		return m_titled_video;
+	}
+
+	return m_untitled_video;
 }
 } // namespace vifo::interpolator

@@ -1,7 +1,6 @@
 #include "vifo/path/list.hpp"
 #include "vifo/util/util.hpp"
 #include <array>
-#include <filesystem>
 
 namespace vifo::path {
 auto List::format_table() const -> std::string {

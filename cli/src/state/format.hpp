@@ -5,16 +5,15 @@
 #include "vifo/manifest.hpp"
 #include "vifo/util/progress.hpp"
 #include <filesystem>
-#include <memory>
+#include <optional>
 
 namespace vifo::cli {
-class StateFormat : public MachineState, Manifest::Transformer {
+class StateFormat : public MachineState {
   public:
 	explicit StateFormat(IFormatter& formatter, fs::path directory, std::unique_ptr<MachineState> next = {});
 
   private:
 	auto execute() -> std::unique_ptr<MachineState> final;
-	void on_transformed(Record const& record, Outcome outcome) const final;
 
 	[[nodiscard]] auto confirm_rename(Manifest const& manifest) -> bool;
 
@@ -23,6 +22,6 @@ class StateFormat : public MachineState, Manifest::Transformer {
 	std::unique_ptr<MachineState> m_next{};
 
 	bool m_overwrite{};
-	std::unique_ptr<util::Progress> m_progress{};
+	std::optional<util::Progress> m_progress{};
 };
 } // namespace vifo::cli

@@ -25,7 +25,7 @@ class Video::Builder {
   public:
 	explicit Builder(Video& formatter, interpolator::IVideo& interpolator, fs::path manifest_parent);
 
-	void process_video(MediaFile video, std::vector<MediaFile>& out_subtitles);
+	void process_video(MediaFile const& video, std::vector<MediaFile>& out_subtitles);
 
 	Manifest manifest{};
 

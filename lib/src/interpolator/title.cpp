@@ -1,11 +1,11 @@
 #include "vifo/interpolator/title.hpp"
 #include "vifo/util/util.hpp"
-#include <filesystem>
 #include <format>
 
 namespace vifo::interpolator {
-auto Title::create(Format const& format) -> Result<Title> {
+auto Title::create(Format format) -> Result<Title> {
 	auto ret = Title{};
+	util::ensure_nonempty(format);
 	return expression::parse(format.video)
 		.and_then([&](expression::Expression video) {
 			ret.m_video = std::move(video);

@@ -8,10 +8,11 @@
 #include <vector>
 
 namespace vifo::expression {
-using Token = klib::lerp_expr::Token;
+using klib::lerp_expr::Token;
 
 struct Substring {
-	auto consume(std::string_view& out_input) const -> bool;
+	auto consume_front(std::string_view& out_input) const -> bool;
+	auto consume_back(std::string_view& out_input) const -> bool;
 
 	std::string text{};
 };

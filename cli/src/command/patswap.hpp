@@ -1,10 +1,13 @@
 #pragma once
 #include "command/command.hpp"
-#include "djson/json.hpp"
 #include <string_view>
 
 namespace vifo::cli::command {
 class Patswap : public Command {
+  public:
+	explicit Patswap(GetConfig get_config) : m_get_config(std::move(get_config)) {}
+
+  private:
 	static constexpr std::string_view name_v{"patswap"};
 	static constexpr std::string_view help_v{"rename matching files/directories via pattern swapping"};
 
@@ -15,9 +18,9 @@ class Patswap : public Command {
 
 	[[nodiscard]] auto execute() -> ExitCode final;
 
+	GetConfig m_get_config{};
+
 	int m_max_depth{10};
-	std::string_view m_format_json{};
-	dj::Json m_json{};
 	std::string_view m_root{"."};
 };
 } // namespace vifo::cli::command

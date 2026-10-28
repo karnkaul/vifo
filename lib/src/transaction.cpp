@@ -3,7 +3,6 @@
 #include "vifo/path/transformer.hpp"
 #include "vifo/util/util.hpp"
 #include <array>
-#include <filesystem>
 #include <ranges>
 
 namespace vifo {

@@ -1,12 +1,16 @@
 #pragma once
 #include "clap/parameter.hpp"
+#include "config/config.hpp"
 #include "klib/base_types.hpp"
 #include "vifo/types.hpp"
+#include <functional>
 #include <print>
 #include <string_view>
 #include <vector>
 
 namespace vifo::cli {
+using GetConfig = std::move_only_function<Config const&()>;
+
 class Command : public klib::Polymorphic, public klib::Pinned {
   public:
 	[[nodiscard]] virtual auto get_name() const -> std::string_view = 0;

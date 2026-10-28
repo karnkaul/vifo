@@ -28,32 +28,34 @@ StateFormat::StateFormat(IFormatter& formatter, fs::path directory, std::unique_
 	: MachineState("Transform"), m_formatter(&formatter), m_directory(std::move(directory)), m_next(std::move(next)) {}
 
 auto StateFormat::execute() -> std::unique_ptr<MachineState> {
-	auto manifest = m_formatter->generate_manifest(m_directory);
-	if (!manifest) {
-		// TODO: override title
-		return handle_error(manifest.error());
+	auto result = m_formatter->generate_manifest(m_directory);
+	if (!result) {
+		// TODO: override title query
+		return handle_error(result.error());
 	}
 
-	if (manifest->entries.empty()) {
+	auto const& manifest = *result;
+	if (manifest.entries.empty()) {
 		std::println("nothing to rename");
 		return {};
 	}
 
-	std::println("parent: {}", manifest->parent.generic_string());
-	if (!manifest->orphans.empty()) { std::println("orphans:\n{}", manifest->format_orphans_table()); }
-	std::println("{}", manifest->format_entries_tables());
+	std::println("parent: {}", manifest.parent.generic_string());
+	if (!manifest.orphans.empty()) { std::println("orphans:\n{}", manifest.format_orphans_table()); }
+	std::println("{}", manifest.format_entries_tables());
 
-	auto const metrics = manifest->compute_metrics();
+	auto const metrics = manifest.compute_metrics();
 	if (metrics.duplicates > 0) {
 		return set_error(ExitCode::DuplicateDestinations, std::format("{} duplicate destinations! aborting", metrics.duplicates + 1));
 	}
 
-	std::println("{} entries to rename, {} existing", manifest->entries.size(), metrics.existing);
+	std::println("{} entries to rename, {} existing", manifest.entries.size(), metrics.existing);
 
-	if (!confirm_rename(*manifest)) { return {}; }
+	if (!confirm_rename(*result)) { return {}; }
 
-	m_progress = std::make_unique<util::Progress>(std::int64_t(manifest->entries.size()));
-	auto transaction = transform_manifest(*manifest, Operation::Rename, m_overwrite);
+	m_progress.emplace(static_cast<std::int64_t>(manifest.entries.size()));
+	auto const func = [this](auto&&...) { m_progress->increment_completed(); };
+	auto transaction = manifest.transform(Operation::Rename, m_overwrite, func);
 	m_progress->finish();
 	print_transaction(transaction);
 
@@ -72,8 +74,6 @@ auto StateFormat::execute() -> std::unique_ptr<MachineState> {
 
 	return std::move(m_next);
 }
-
-void StateFormat::on_transformed(Record const& /*record*/, Outcome const /*outcome*/) const { m_progress->increment_completed(); }
 
 auto StateFormat::confirm_rename(Manifest const& manifest) -> bool {
 	auto const metrics = manifest.compute_metrics();

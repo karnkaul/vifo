@@ -2,9 +2,6 @@
 #include "detail/common.hpp"
 #include "klib/lerp_expr/scanner.hpp"
 #include "vifo/util/util.hpp"
-#include <cstddef>
-#include <string>
-#include <string_view>
 
 namespace vifo {
 namespace expression {
@@ -67,7 +64,7 @@ class Parser {
 			auto const i_length = util::to_int(length_str, -1);
 			if (i_length < 0) { return syntax_error(token, std::format("invalid length: {}", length_str)); }
 
-			length = std::size_t(i_length);
+			length = static_cast<std::size_t>(i_length);
 		}
 
 		return Identifier{.name = std::string{name}, .length = length};
@@ -79,9 +76,15 @@ class Parser {
 };
 } // namespace
 
-auto Substring::consume(std::string_view& out_input) const -> bool {
+auto Substring::consume_front(std::string_view& out_input) const -> bool {
 	if (!out_input.starts_with(text)) { return false; }
 	out_input.remove_prefix(text.size());
+	return true;
+}
+
+auto Substring::consume_back(std::string_view& out_input) const -> bool {
+	if (!out_input.ends_with(text)) { return false; }
+	out_input.remove_suffix(text.size());
 	return true;
 }
 } // namespace expression

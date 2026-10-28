@@ -1,13 +1,10 @@
 #include "vifo/util/util.hpp"
-#include "detail/title_parser.hpp"
+#include "detail/common.hpp"
 #include "log.hpp"
 #include "vifo/types.hpp"
 #include <array>
 #include <filesystem>
 #include <fstream>
-#include <optional>
-#include <regex>
-#include <string_view>
 
 namespace vifo {
 namespace util {
@@ -18,33 +15,10 @@ namespace {
 	return fs::create_directories(path);
 }
 
-template <std::size_t N>
-struct Matcher {
-	template <std::convertible_to<char const*>... Ts>
-	explicit Matcher(Ts const... exprs) : regexes{std::regex{exprs}...} {}
-
-	[[nodiscard]] auto is_match(std::string_view const text) const -> bool {
-		auto const pred = [text](std::regex const& r) { return std::regex_match(text.data(), text.data() + text.size(), r); };
-		return std::ranges::any_of(regexes, pred);
-	}
-
-	[[nodiscard]] auto search(std::smatch& out, std::string const& text) const -> bool {
-		auto const pred = [&](std::regex const& r) { return std::regex_search(text, out, r); };
-		return std::ranges::any_of(regexes, pred);
-	}
-
-	std::array<std::regex, N> regexes{};
-};
-
-template <typename... Ts>
-Matcher(Ts...) -> Matcher<sizeof...(Ts)>;
-
-namespace matcher {
-auto const year = Matcher{R"([1-9]\d{3}(?!\d).*)"};
-auto const resolution = Matcher{R"(\d{3}\d?p)"};
-auto const episode_id = Matcher{R"(S\d{2}E\d{2})"};
-auto const season_id = Matcher{R"(Season.\d{2})", R"(S\d{2})"};
-} // namespace matcher
+auto verify_non_empty_impl(std::string_view const format, std::string_view const type_name) -> Result<void> {
+	if (!format.empty()) { return {}; }
+	return detail::to_error(Error::Type::Format, std::format("{} is empty", type_name));
+}
 } // namespace
 } // namespace util
 
@@ -56,6 +30,30 @@ auto util::to_int(std::string_view const text, int const fallback) -> int {
 	auto const [_, ec] = std::from_chars(text.data(), end, ret);
 	if (ec != std::errc{}) { return fallback; }
 	return ret;
+}
+
+auto util::verify_non_empty(interpolator::PatternSwapFormat const& format) -> Result<void> {
+	return verify_non_empty_impl(format.input, "PatternSwawpFormat.input").and_then([&] {
+		return verify_non_empty_impl(format.output, "PatternSwawpFormat.output");
+	});
+}
+
+void util::ensure_nonempty(interpolator::TitleFormat& out) {
+	static constexpr auto default_v = interpolator::TitleFormat{};
+	if (out.directory.empty()) { out.directory = default_v.directory; }
+	if (out.video.empty()) { out.video = default_v.video; }
+}
+
+void util::ensure_nonempty(interpolator::SubtitleFormat& out) {
+	static constexpr auto default_v = interpolator::SubtitleFormat{};
+	if (out.output.empty()) { out.output = default_v.output; }
+}
+
+void util::ensure_nonempty(interpolator::SeasonFormat& out) {
+	static constexpr auto default_v = interpolator::SeasonFormat{};
+	if (out.directory.empty()) { out.directory = default_v.directory; }
+	if (out.titled_video.empty()) { out.titled_video = default_v.titled_video; }
+	if (out.untitled_video.empty()) { out.untitled_video = default_v.untitled_video; }
 }
 
 void util::join_to(std::string& out, std::string_view const item, std::string_view const delim) {
@@ -121,7 +119,7 @@ auto util::ghost_copy(fs::path const& source, fs::path const& destination, bool 
 
 	auto ret = std::int64_t{};
 	for (auto const& it : fs::recursive_directory_iterator{source}) {
-		auto const relative = fs::relative(it.path(), source);
+		auto const relative = to_relative(source, it.path());
 		auto const path = root / relative;
 
 		if (fs::exists(path) && !overwrite) { return -1; }
@@ -153,27 +151,6 @@ auto util::concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::p
 	return prefix / subpath;
 }
 
-auto util::identify_title(fs::path const& path) -> std::string {
-	if (!fs::exists(path)) { return {}; }
-	auto const stem = fs::canonical(path).stem();
-	return detail::TitleParser{}.parse(stem.string());
-}
-
-auto util::trim_identified_title(std::string_view& out_text) -> std::string { return detail::TitleParser{}.parse_and_trim(out_text); }
-
-auto util::trim_identified_year(std::string_view& out_text) -> std::string {
-	if (out_text.size() < 4) { return {}; }
-	if (!matcher::year.is_match(out_text)) { return {}; }
-	auto ret = std::string{out_text.substr(0, 4)};
-	out_text.remove_prefix(ret.size());
-	return ret;
-}
-
-auto util::ignore_for_title(std::string_view word) -> bool {
-	if (!trim_identified_year(word).empty()) { return true; }
-	return matcher::resolution.is_match(word) || matcher::episode_id.is_match(word);
-}
-
 auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileType> {
 	struct MFTExtension {
 		MediaFileType type{};
@@ -189,28 +166,5 @@ auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileT
 		if (match_any(mfte.extensions, extension)) { return mfte.type; }
 	}
 	return {};
-}
-
-auto util::extract_season_id(std::string const& name) -> std::optional<SeasonId> {
-	if (name.empty()) { return {}; }
-
-	auto matches = std::smatch{};
-	if (!matcher::season_id.search(matches, name)) { return {}; }
-	auto const str = std::string{matches[0]};
-	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
-	if (number <= 0) { return {}; }
-	return SeasonId{.number = number};
-}
-
-auto util::extract_episode_id(std::string const& name) -> std::optional<EpisodeId> {
-	if (name.empty()) { return {}; }
-
-	auto matches = std::smatch{};
-	if (!matcher::episode_id.search(matches, name)) { return {}; }
-	auto const str = std::string{matches[0]};
-	auto const number = to_int(std::string_view{str}.substr(str.size() - 2));
-	auto const season = to_int(std::string_view{str}.substr(1, 2));
-	if (number <= 0 || season <= 0) { return {}; }
-	return EpisodeId{.season = season, .number = number};
 }
 } // namespace vifo

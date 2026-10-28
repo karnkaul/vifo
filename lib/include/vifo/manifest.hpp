@@ -1,8 +1,8 @@
 #pragma once
-#include "klib/base_types.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -21,7 +21,7 @@ struct Manifest {
 		MediaFileType type{};
 	};
 
-	class Transformer;
+	using OnTransformed = std::move_only_function<void(Record const&, Outcome)>;
 
 	[[nodiscard]] auto compute_metrics() const -> Metrics;
 
@@ -30,16 +30,10 @@ struct Manifest {
 	[[nodiscard]] auto format_entries_tables() const -> std::string;
 	[[nodiscard]] auto format_orphans_table() const -> std::string;
 
+	[[nodiscard]] auto transform(Operation operation, bool overwrite, OnTransformed on_transformed = {}) const -> Transaction;
+
 	fs::path parent{};
 	std::vector<Entry> entries{};
 	std::vector<Entry> orphans{};
-};
-
-class Manifest::Transformer : public klib::Polymorphic {
-  public:
-	[[nodiscard]] auto transform_manifest(Manifest const& manifest, Operation operation, bool overwrite) const -> Transaction;
-
-  protected:
-	virtual void on_transformed([[maybe_unused]] Record const& record, [[maybe_unused]] Outcome outcome) const {}
 };
 } // namespace vifo
