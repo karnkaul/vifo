@@ -10,21 +10,19 @@
 
 namespace vifo {
 namespace {
-void per_row(fs::path const& parent, std::vector<std::string>& row, fs::path const& path, MediaFileType const type, bool const mark_existing) {
+void per_row(std::vector<std::string>& row, fs::path const& path, MediaFileType const type, bool const mark_existing) {
 	std::string_view const prefix = mark_existing && fs::exists(path) ? "*" : "";
-	auto relative_path = std::format("{}{}", prefix, util::to_relative(parent, path).generic_string());
+	auto relative_path = std::format("{}{}", prefix, path.generic_string());
 	row.push_back(std::move(relative_path));
 	row.emplace_back(media_file_type_name_map.to_name(type));
 }
 
 struct PerSource {
-	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(parent, row, entry.source, entry.type, false); }
-	fs::path const& parent;
+	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(row, entry.source, entry.type, false); }
 };
 
 struct PerDestination {
-	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(parent, row, entry.destination, entry.type, true); }
-	fs::path const& parent;
+	void operator()(std::vector<std::string>& row, Manifest::Entry const& entry) const { per_row(row, entry.destination, entry.type, true); }
 };
 } // namespace
 
@@ -43,13 +41,13 @@ auto Manifest::compute_metrics() const -> Metrics {
 auto Manifest::format_destinations_table() const -> std::string {
 	if (entries.empty()) { return {}; }
 	static constexpr auto headers_v = std::array{"destination", "type"};
-	return util::format_enumerated_table(headers_v, entries, PerDestination{.parent = parent});
+	return util::format_enumerated_table(headers_v, entries, PerDestination{});
 }
 
 auto Manifest::format_sources_table() const -> std::string {
 	if (entries.empty()) { return {}; }
 	static constexpr auto headers_v = std::array{"source", "type"};
-	return util::format_enumerated_table(headers_v, entries, PerSource{.parent = parent});
+	return util::format_enumerated_table(headers_v, entries, PerSource{});
 }
 
 auto Manifest::format_entries_tables() const -> std::string {
@@ -62,15 +60,17 @@ auto Manifest::format_entries_tables() const -> std::string {
 auto Manifest::format_orphans_table() const -> std::string {
 	if (orphans.empty()) { return {}; }
 	static constexpr auto headers_v = std::array{"orphan", "type"};
-	return util::format_enumerated_table(headers_v, orphans, PerSource{.parent = parent});
+	return util::format_enumerated_table(headers_v, orphans, PerSource{});
 }
 
 auto Manifest::transform(Operation const operation, bool const overwrite, OnTransformed on_transformed) const -> Transaction {
 	auto ret = Transaction{.parent = parent};
 	auto const transformer = path::Transformer{.overwrite = overwrite};
 	for (auto const& entry : entries) {
-		auto const outcome = transformer.transform(entry.source, entry.destination, operation);
-		auto record = detail::to_record(entry.source, entry.destination, operation);
+		auto const source = parent / entry.source;
+		auto const destination = parent / entry.destination;
+		auto const outcome = transformer.transform(source, destination, operation);
+		auto record = detail::to_record(source, destination, operation);
 		if (on_transformed) { on_transformed(record, outcome); }
 		ret.triage_record(std::move(record), outcome);
 	}

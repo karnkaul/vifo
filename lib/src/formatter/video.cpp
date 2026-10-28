@@ -14,13 +14,16 @@ Video::Builder::Builder(Video& formatter, interpolator::IVideo& interpolator, fs
 	manifest.parent = std::move(manifest_parent);
 }
 
-void Video::Builder::process_video(MediaFile video, std::vector<MediaFile>& out_subtitles) {
-	auto video_entry = Manifest::Entry{.source = std::move(video.path), .type = video.type};
+void Video::Builder::process_video(MediaFile const& video, std::vector<MediaFile>& out_subtitles) {
+	auto video_entry = Manifest::Entry{.source = util::to_relative(manifest.parent, video.path), .type = video.type};
 	video_entry.destination = m_interpolator.interpolate_video(video_entry.source);
 
 	if (video_entry.destination.empty()) {
 		manifest.orphans.push_back(std::move(video_entry));
-		for (auto& subtitle : out_subtitles) { manifest.orphans.push_back(Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type}); }
+		for (auto const& subtitle : out_subtitles) {
+			auto entry = Manifest::Entry{.source = util::to_relative(manifest.parent, subtitle.path), .type = subtitle.type};
+			manifest.orphans.push_back(std::move(entry));
+		}
 		return;
 	}
 
@@ -32,8 +35,8 @@ void Video::Builder::process_video(MediaFile video, std::vector<MediaFile>& out_
 	m_formatter.m_subtitle.set_title(video_entry.destination.stem().string());
 	manifest.entries.push_back(std::move(video_entry));
 
-	for (auto& subtitle : out_subtitles) {
-		auto subtitle_entry = Manifest::Entry{.source = std::move(subtitle.path), .type = subtitle.type};
+	for (auto const& subtitle : out_subtitles) {
+		auto subtitle_entry = Manifest::Entry{.source = util::to_relative(manifest.parent, subtitle.path), .type = subtitle.type};
 		subtitle_entry.destination = m_formatter.m_subtitle.interpolate_path(subtitle_directory, subtitle_entry.source.extension().string());
 		if (subtitle_entry.destination == subtitle.path) { continue; }
 		manifest.entries.push_back(std::move(subtitle_entry));

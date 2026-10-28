@@ -25,4 +25,5 @@ namespace vifo::detail {
 [[nodiscard]] auto cleanup_filestem(fs::path const& path) -> std::string;
 
 void filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files, fs::path const& video);
+void ensure_relative_paths(Manifest& out_manifest);
 } // namespace vifo::detail

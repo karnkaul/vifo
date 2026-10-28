@@ -32,7 +32,7 @@ auto PatternSwap::create(Format const& format) -> Result<PatternSwap> {
 	return ret.create_directory(format.directory).and_then([&] { return ret.create_file(format.file); }).transform([&] { return std::move(ret); });
 }
 
-auto PatternSwap::generate_manifest(fs::path const& directory) -> Result<Manifest> {
+auto PatternSwap::do_generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	if (!fs::is_directory(directory)) { return detail::to_error(Error::Type::Argument, std::format("not a directory: '{}'", directory.generic_string())); }
 
 	auto scanner = Scanner{};
@@ -45,19 +45,20 @@ auto PatternSwap::generate_manifest(fs::path const& directory) -> Result<Manifes
 	for (auto& source : path_list.paths) {
 		if (source.empty()) { continue; }
 
+		auto source_relative = util::to_relative(ret.parent, source);
 		auto const type = fs::is_directory(source) ? MediaFileType::Directory : MediaFileType::Unknown;
 		auto destination = [&] {
-			if (fs::is_regular_file(source)) { return format_path(*m_file, source); }
-			return format_path(m_directory, source);
+			if (fs::is_regular_file(source)) { return format_path(*m_file, source_relative); }
+			return format_path(m_directory, source_relative);
 		}();
 		if (destination.empty()) {
-			ret.orphans.push_back(Manifest::Entry{.source = std::move(source), .type = type});
+			ret.orphans.push_back(Manifest::Entry{.source = std::move(source_relative), .type = type});
 			continue;
 		}
-		if (destination == source) { continue; }
+		if (destination == source_relative) { continue; }
 
 		if (source == ret.parent) { ret.parent = ret.parent.parent_path(); }
-		ret.entries.push_back(Manifest::Entry{.source = std::move(source), .destination = std::move(destination), .type = type});
+		ret.entries.push_back(Manifest::Entry{.source = std::move(source_relative), .destination = std::move(destination), .type = type});
 	}
 	return ret;
 }

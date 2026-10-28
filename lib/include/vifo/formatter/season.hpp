@@ -12,9 +12,9 @@ class Season : public Video {
 
 	[[nodiscard]] static auto create(omdb::IService const& omdb_service, Format const& format = {}) -> Result<Season>;
 
-	[[nodiscard]] auto generate_manifest(fs::path const& directory) -> Result<Manifest> final;
-
   private:
+	[[nodiscard]] auto do_generate_manifest(fs::path const& directory) -> Result<Manifest> final;
+
 	interpolator::Season m_season{};
 };
 } // namespace vifo::formatter

@@ -2,6 +2,7 @@
 #include "detail/common.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/types.hpp"
+#include "vifo/util/util.hpp"
 #include <expected>
 #include <filesystem>
 
@@ -14,7 +15,7 @@ auto Series::create(omdb::IService const& omdb_service, Format const& format) ->
 	});
 }
 
-auto Series::generate_manifest(fs::path const& directory) -> Result<Manifest> {
+auto Series::do_generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
@@ -31,9 +32,9 @@ auto Series::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	m_title.set_title(std::move(omdb_series->payload.title));
 	m_title.set_year(omdb_series->payload.year);
 
-	auto ret = Manifest{};
+	auto ret = Manifest{.parent = directory.parent_path()};
 
-	auto entry = Manifest::Entry{.source = std::move(*path), .type = MediaFileType::Directory};
+	auto entry = Manifest::Entry{.source = util::to_relative(ret.parent, *path), .type = MediaFileType::Directory};
 	entry.destination = m_title.format_directory(entry.source);
 	if (entry.destination != entry.source) {
 		if (entry.destination.empty()) {

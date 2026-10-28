@@ -121,7 +121,7 @@ auto util::ghost_copy(fs::path const& source, fs::path const& destination, bool 
 
 	auto ret = std::int64_t{};
 	for (auto const& it : fs::recursive_directory_iterator{source}) {
-		auto const relative = fs::relative(it.path(), source);
+		auto const relative = to_relative(source, it.path());
 		auto const path = root / relative;
 
 		if (fs::exists(path) && !overwrite) { return -1; }

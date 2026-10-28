@@ -46,7 +46,7 @@ auto Movie::create(omdb::IService const& omdb_service, Format const& format) -> 
 		});
 }
 
-auto Movie::generate_manifest(fs::path const& directory) -> Result<Manifest> {
+auto Movie::do_generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
@@ -71,7 +71,7 @@ auto Movie::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	m_movie.set_year(omdb_movie->payload.year);
 
 	auto builder = create_builder(m_movie, path->parent_path());
-	builder.process_video(std::move(movie_directory.video), movie_directory.subtitles);
+	builder.process_video(movie_directory.video, movie_directory.subtitles);
 
 	return std::move(builder.manifest);
 }

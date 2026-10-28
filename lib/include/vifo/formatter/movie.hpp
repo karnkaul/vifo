@@ -12,9 +12,9 @@ class Movie : public Video {
 
 	[[nodiscard]] static auto create(omdb::IService const& omdb_service, Format const& format = {}) -> Result<Movie>;
 
-	[[nodiscard]] auto generate_manifest(fs::path const& directory) -> Result<Manifest> final;
-
   private:
+	[[nodiscard]] auto do_generate_manifest(fs::path const& directory) -> Result<Manifest> final;
+
 	interpolator::Title m_movie{};
 	// TODO: format from json
 };

@@ -69,7 +69,7 @@ auto Season::create(omdb::IService const& omdb_service, Format const& format) ->
 		});
 }
 
-auto Season::generate_manifest(fs::path const& directory) -> Result<Manifest> {
+auto Season::do_generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
@@ -101,7 +101,7 @@ auto Season::generate_manifest(fs::path const& directory) -> Result<Manifest> {
 	m_season.set_season(std::move(omdb_season->payload));
 
 	auto builder = create_builder(m_season, path->parent_path());
-	for (auto& episode : season_directory.episodes) { builder.process_video(std::move(episode.video), episode.subtitles); }
+	for (auto& episode : season_directory.episodes) { builder.process_video(episode.video, episode.subtitles); }
 
 	return std::move(builder.manifest);
 }

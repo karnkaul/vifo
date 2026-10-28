@@ -1,5 +1,6 @@
 #include "detail/common.hpp"
 #include "vifo/media_file.hpp"
+#include "vifo/util/util.hpp"
 #include <algorithm>
 #include <format>
 #include <ranges>
@@ -50,11 +51,27 @@ void detail::filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>&
 	auto const transfer = [&](MediaFile& file) {
 		if (file.path.stem() == video_stem) { return false; }
 		if (!is_en_subtitle(file.path)) {
-			out_manifest.orphans.push_back(Manifest::Entry{.source = std::move(file.path), .type = file.type});
+			auto entry = Manifest::Entry{.source = util::to_relative(out_manifest.parent, file.path), .type = file.type};
+			out_manifest.orphans.push_back(std::move(entry));
 			return true;
 		}
 		return false;
 	};
 	std::erase_if(out_files, transfer);
+}
+
+void detail::ensure_relative_paths(Manifest& out_manifest) {
+	if (out_manifest.parent.empty()) { return; }
+
+	auto const ensure_relative = [&](fs::path& out_path) {
+		if (out_path.is_relative()) { return; }
+		out_path = util::to_relative(out_manifest.parent, out_path);
+	};
+
+	for (auto& entry : out_manifest.entries) {
+		ensure_relative(entry.source);
+		ensure_relative(entry.destination);
+	}
+	for (auto& entry : out_manifest.orphans) { ensure_relative(entry.source); }
 }
 } // namespace vifo
