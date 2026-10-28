@@ -1,4 +1,5 @@
 #include "vifo/util/regex_matcher.hpp"
+#include <span>
 
 namespace vifo::util {
 RegexMatcher::RegexMatcher(std::string_view const pattern) try : m_regex(pattern.data(), pattern.size()) {
