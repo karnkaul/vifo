@@ -35,6 +35,24 @@ target_sources(${PROJECT_NAME} PRIVATE
   ${sources}
 )
 
+target_precompile_headers(${PROJECT_NAME} PRIVATE
+  <algorithm>
+  <array>
+  <cstdint>
+  <expected>
+  <filesystem>
+  <functional>
+  <format>
+  <memory>
+  <optional>
+  <ranges>
+  <span>
+  <string>
+  <string_view>
+  <variant>
+  <vector>
+)
+
 if(WIN32)
   target_compile_definitions(${PROJECT_NAME} PRIVATE
     _CRT_SECURE_NO_WARNINGS=1

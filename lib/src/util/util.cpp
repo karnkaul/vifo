@@ -5,8 +5,6 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
-#include <optional>
-#include <string_view>
 
 namespace vifo {
 namespace util {

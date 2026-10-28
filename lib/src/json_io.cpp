@@ -1,11 +1,5 @@
 #include "vifo/json_io.hpp"
 #include "djson/json.hpp"
-#include "vifo/formatter/movie.hpp"
-#include "vifo/formatter/season.hpp"
-#include "vifo/formatter/series.hpp"
-#include "vifo/interpolator/season.hpp"
-#include "vifo/interpolator/subtitle.hpp"
-#include "vifo/interpolator/title.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/util/util.hpp"
 #include <string_view>

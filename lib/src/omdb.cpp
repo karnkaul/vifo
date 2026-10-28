@@ -5,8 +5,6 @@
 #include "kcurl/http.hpp"
 #include "vifo/json_io.hpp"
 #include "vifo/types.hpp"
-#include <string>
-#include <string_view>
 
 namespace vifo::omdb {
 namespace http = kcurl::http;

@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <array>
 #include <ranges>
-#include <string_view>
 
 namespace vifo::interpolator {
 namespace {

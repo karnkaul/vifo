@@ -5,7 +5,6 @@
 #include "vifo/util/regex_matcher.hpp"
 #include "vifo/util/util.hpp"
 #include <ranges>
-#include <vector>
 
 namespace vifo {
 namespace {

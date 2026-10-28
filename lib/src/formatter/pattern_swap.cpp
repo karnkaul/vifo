@@ -4,7 +4,6 @@
 #include "vifo/path/scanner.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
-#include <filesystem>
 
 namespace vifo::formatter {
 namespace {

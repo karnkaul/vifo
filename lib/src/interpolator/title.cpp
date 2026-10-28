@@ -1,6 +1,5 @@
 #include "vifo/interpolator/title.hpp"
 #include "vifo/util/util.hpp"
-#include <filesystem>
 #include <format>
 
 namespace vifo::interpolator {

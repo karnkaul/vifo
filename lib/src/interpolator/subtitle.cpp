@@ -4,7 +4,6 @@
 #include "vifo/util/util.hpp"
 #include <filesystem>
 #include <format>
-#include <string_view>
 
 namespace vifo::interpolator {
 namespace {

@@ -5,7 +5,6 @@
 #include "vifo/manifest.hpp"
 #include "vifo/types.hpp"
 #include <algorithm>
-#include <filesystem>
 
 namespace vifo::formatter {
 namespace {

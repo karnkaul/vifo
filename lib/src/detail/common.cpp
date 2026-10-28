@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <format>
 #include <ranges>
-#include <string_view>
 
 namespace vifo {
 namespace {

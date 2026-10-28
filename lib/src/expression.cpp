@@ -2,9 +2,6 @@
 #include "detail/common.hpp"
 #include "klib/lerp_expr/scanner.hpp"
 #include "vifo/util/util.hpp"
-#include <cstddef>
-#include <string>
-#include <string_view>
 
 namespace vifo {
 namespace expression {

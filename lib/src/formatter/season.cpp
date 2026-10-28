@@ -6,8 +6,6 @@
 #include "vifo/media_file.hpp"
 #include "vifo/omdb.hpp"
 #include "vifo/types.hpp"
-#include <expected>
-#include <filesystem>
 
 namespace vifo::formatter {
 namespace {
