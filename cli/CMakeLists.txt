@@ -14,7 +14,9 @@ target_sources(${PROJECT_NAME} PRIVATE
   ${sources}
 )
 
-target_precompile_headers(${PROJECT_NAME} REUSE_FROM ${package_name}-lib)
+if (NOT WIN32)
+  target_precompile_headers(${PROJECT_NAME} REUSE_FROM ${package_name}-lib)
+endif()
 
 message(STATUS "[${package_name}] setting up install")
 include(GNUInstallDirs)

@@ -35,7 +35,7 @@ target_sources(${PROJECT_NAME} PRIVATE
   ${sources}
 )
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE
+target_precompile_headers(${PROJECT_NAME} PUBLIC
   <algorithm>
   <array>
   <cstdint>
