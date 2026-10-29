@@ -86,10 +86,11 @@ auto Manifest::merge_child(Manifest const& child, fs::path const& destination_di
 		auto out = Entry{
 			.source = source_prefix / in.source,
 			.destination = destination_prefix / in.destination,
+			.type = in.type,
 		};
 		entries.push_back(std::move(out));
 	}
-	for (auto const& entry : child.orphans) { orphans.push_back(Entry{.source = source_prefix / entry.source}); }
+	for (auto const& entry : child.orphans) { orphans.push_back(Entry{.source = source_prefix / entry.source, .type = entry.type}); }
 
 	return true;
 }
