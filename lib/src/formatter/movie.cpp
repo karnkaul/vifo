@@ -9,11 +9,12 @@
 namespace vifo::formatter {
 namespace {
 struct MovieDirectory {
+	Manifest::Entry directory{};
 	MediaFile video{};
 	std::vector<MediaFile> subtitles{};
 };
 
-[[nodiscard]] auto build_movie_directory(fs::path const& directory) -> MovieDirectory {
+[[nodiscard]] auto build_movie_directory(fs::path directory) -> MovieDirectory {
 	auto source = detail::MediaDirectory::scan_directory(directory);
 	auto videos = std::vector<MediaFile>{};
 	auto subtitles = std::vector<MediaFile>{};
@@ -28,7 +29,11 @@ struct MovieDirectory {
 	if (videos.empty()) { return {}; }
 
 	std::ranges::sort(videos, [](MediaFile const& a, MediaFile const& b) { return a.size > b.size; });
-	return MovieDirectory{.video = std::move(videos.front()), .subtitles = std::move(subtitles)};
+	return MovieDirectory{
+		.directory = Manifest::Entry{.source = std::move(directory), .type = MediaFileType::Directory},
+		.video = std::move(videos.front()),
+		.subtitles = std::move(subtitles),
+	};
 }
 } // namespace
 
@@ -49,12 +54,12 @@ auto Movie::do_generate_manifest(fs::path const& directory) -> Result<Manifest> 
 	auto path = detail::if_directory(directory);
 	if (!path) { return std::unexpected{std::move(path.error())}; }
 
-	auto movie_directory = build_movie_directory(*path);
+	auto movie_directory = build_movie_directory(std::move(*path));
 	if (movie_directory.video.path.empty()) {
 		return detail::to_error(Error::Type::Identify, std::format("no video files found in: '{}'", path->generic_string()));
 	}
 
-	auto const search_title = get_search_title(*path);
+	auto const search_title = get_search_title(movie_directory.directory.source);
 	if (search_title.empty()) {
 		return detail::to_error(Error::Type::Identify, std::format("failed to identify movie title for: '{}'", movie_directory.video.path.generic_string()));
 	}
@@ -66,12 +71,19 @@ auto Movie::do_generate_manifest(fs::path const& directory) -> Result<Manifest> 
 		return detail::to_error(Error::Type::Identify, std::format("failed to identify movie title for: '{}'", movie_directory.video.path.generic_string()));
 	}
 
+	movie_directory.directory.destination = m_movie.format_directory(movie_directory.directory.source);
+
 	m_movie.set_title(std::move(omdb_movie->payload.title));
 	m_movie.set_year(omdb_movie->payload.year);
 
-	auto builder = create_builder(m_movie, path->parent_path());
-	builder.process_video(movie_directory.video, movie_directory.subtitles);
+	auto processor = create_video_processor(m_movie, movie_directory.directory.source.parent_path());
+	processor.process_video(movie_directory.video, movie_directory.subtitles);
 
-	return std::move(builder.manifest);
+	if (processor.manifest.entries.empty() && !movie_directory.directory.destination.empty() &&
+		movie_directory.directory.destination != movie_directory.directory.source) {
+		processor.manifest.entries.push_back(std::move(movie_directory.directory));
+	}
+
+	return std::move(processor.manifest);
 }
 } // namespace vifo::formatter

@@ -6,7 +6,7 @@
 #include <filesystem>
 
 namespace vifo::detail {
-auto MediaDirectory::scan_directory(fs::path path) -> MediaDirectory {
+auto MediaDirectory::scan_directory(fs::path path, int const max_depth) -> MediaDirectory {
 	class Scanner : public path::Visitor {
 	  public:
 		MediaDirectory ret{};
@@ -24,7 +24,7 @@ auto MediaDirectory::scan_directory(fs::path path) -> MediaDirectory {
 	};
 
 	auto scanner = Scanner{};
-	scanner.visit_path(path);
+	scanner.visit_path(path, max_depth);
 	scanner.ret.path = std::move(path);
 	return std::move(scanner.ret);
 }

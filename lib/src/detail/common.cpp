@@ -42,6 +42,7 @@ auto detail::if_directory(fs::path const& path) -> Result<fs::path> {
 auto detail::cleanup_filestem(fs::path const& path) -> std::string {
 	auto ret = path.stem().generic_string();
 	std::ranges::replace(ret, '.', ' ');
+	std::ranges::replace(ret, '_', ' ');
 	return ret;
 }
 

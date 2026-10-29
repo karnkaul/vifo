@@ -45,9 +45,7 @@ auto Series::do_generate_manifest(fs::path const& directory) -> Result<Manifest>
 
 	add_seasons(ret, series_directory);
 
-	if (ret.entries.empty() && ret.orphans.empty() && series_directory.source != series_directory.destination) {
-		ret.entries.push_back(std::move(series_directory));
-	}
+	if (ret.entries.empty() && series_directory.source != series_directory.destination) { ret.entries.push_back(std::move(series_directory)); }
 
 	return ret;
 }

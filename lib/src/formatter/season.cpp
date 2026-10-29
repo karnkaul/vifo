@@ -98,9 +98,9 @@ auto Season::do_generate_manifest(fs::path const& directory) -> Result<Manifest>
 
 	m_season.set_season(std::move(omdb_season->payload));
 
-	auto builder = create_builder(m_season, path->parent_path());
-	for (auto& episode : season_directory.episodes) { builder.process_video(episode.video, episode.subtitles); }
+	auto processor = create_video_processor(m_season, path->parent_path());
+	for (auto& episode : season_directory.episodes) { processor.process_video(episode.video, episode.subtitles); }
 
-	return std::move(builder.manifest);
+	return std::move(processor.manifest);
 }
 } // namespace vifo::formatter

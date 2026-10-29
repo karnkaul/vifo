@@ -6,7 +6,9 @@
 
 namespace vifo::detail {
 struct MediaDirectory {
-	[[nodiscard]] static auto scan_directory(fs::path path) -> MediaDirectory;
+	static constexpr auto max_depth_v{10};
+
+	[[nodiscard]] static auto scan_directory(fs::path path, int max_depth = max_depth_v) -> MediaDirectory;
 
 	[[nodiscard]] auto format_table() const -> std::string;
 

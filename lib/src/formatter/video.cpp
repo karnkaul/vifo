@@ -6,15 +6,16 @@
 namespace vifo::formatter {
 auto Video::get_subtitles_dir_for(fs::path const& media_file) const -> fs::path { return util::prefix_parent(media_file, subtitles_dirname); }
 
-auto Video::create_builder(interpolator::IVideo& interpolator, fs::path manifest_parent) -> Builder {
-	return Builder{*this, interpolator, std::move(manifest_parent)};
+auto Video::create_video_processor(interpolator::IVideo& interpolator, fs::path manifest_parent) -> Processor {
+	return Processor{*this, interpolator, std::move(manifest_parent)};
 }
 
-Video::Builder::Builder(Video& formatter, interpolator::IVideo& interpolator, fs::path manifest_parent) : m_formatter(formatter), m_interpolator(interpolator) {
+Video::Processor::Processor(Video& formatter, interpolator::IVideo& interpolator, fs::path manifest_parent)
+	: m_formatter(formatter), m_interpolator(interpolator) {
 	manifest.parent = std::move(manifest_parent);
 }
 
-void Video::Builder::process_video(MediaFile const& video, std::vector<MediaFile>& out_subtitles) {
+void Video::Processor::process_video(MediaFile const& video, std::vector<MediaFile>& out_subtitles) {
 	auto video_entry = Manifest::Entry{.source = util::to_relative(manifest.parent, video.path), .type = video.type};
 	video_entry.destination = m_interpolator.interpolate_video(video_entry.source);
 
@@ -27,18 +28,16 @@ void Video::Builder::process_video(MediaFile const& video, std::vector<MediaFile
 		return;
 	}
 
-	if (video_entry.destination == video_entry.source) { return; }
-
 	detail::filter_en_subtitles(manifest, out_subtitles, video_entry.source);
 
 	auto const subtitle_directory = m_formatter.get_subtitles_dir_for(video_entry.destination);
 	m_formatter.m_subtitle.set_title(video_entry.destination.stem().string());
-	manifest.entries.push_back(std::move(video_entry));
+	if (video_entry.destination != video_entry.source) { manifest.entries.push_back(std::move(video_entry)); }
 
 	for (auto const& subtitle : out_subtitles) {
 		auto subtitle_entry = Manifest::Entry{.source = util::to_relative(manifest.parent, subtitle.path), .type = subtitle.type};
 		subtitle_entry.destination = m_formatter.m_subtitle.interpolate_path(subtitle_directory, subtitle_entry.source.extension().string());
-		if (subtitle_entry.destination == subtitle.path) { continue; }
+		if (manifest.parent / subtitle_entry.destination == subtitle.path) { continue; }
 		manifest.entries.push_back(std::move(subtitle_entry));
 	}
 }
