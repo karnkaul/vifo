@@ -35,16 +35,7 @@ auto Season::interpolate_video(fs::path const& video) -> fs::path {
 	if (!metadata.episode_id) { return {}; }
 
 	auto const& video_expression = get_video_expression_for(*metadata.episode_id);
-
-	auto ret = m_environment.interpolate(video_expression);
-	if (ret.empty()) { return {}; }
-
-	ret += video.extension().string();
-	if (!video.has_parent_path()) { return ret; }
-
-	auto season_directory = video.parent_path();
-	season_directory.replace_filename(m_environment.interpolate(m_directory));
-	return season_directory / ret;
+	return util::interpolate_video(video, m_environment, m_directory, video_expression);
 }
 
 auto Season::get_video_expression_for(EpisodeId const episode_id) -> expression::Expression const& {

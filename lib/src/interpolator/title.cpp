@@ -24,12 +24,5 @@ auto Title::format_dirname() const -> std::string { return m_environment.interpo
 
 auto Title::format_directory(fs::path const& directory) const -> fs::path { return util::prefix_parent(directory, format_dirname()); }
 
-auto Title::interpolate_video(fs::path const& video) -> fs::path {
-	auto ret = fs::path{m_environment.interpolate(m_video)};
-	if (ret.empty()) { return {}; }
-
-	ret += video.extension();
-	if (!video.has_parent_path()) { return ret; }
-	return video.parent_path() / ret;
-}
+auto Title::interpolate_video(fs::path const& video) -> fs::path { return util::interpolate_video(video, m_environment, m_directory, m_video); }
 } // namespace vifo::interpolator

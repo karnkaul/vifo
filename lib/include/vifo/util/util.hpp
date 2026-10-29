@@ -17,6 +17,7 @@
 
 namespace vifo::util {
 namespace fs = std::filesystem;
+using expression::Expression;
 
 inline constexpr auto regex_season_id_v = std::string_view{R"(([Ss]\d{2}))"};
 inline constexpr auto regex_episode_id_v = std::string_view{R"(([Ss]\d{2}[Ee]\d{2}))"};
@@ -55,6 +56,8 @@ constexpr auto subtitle_extensions_v = std::array{".srt"};
 constexpr auto is_subtitle_file(std::string_view const extension) { return match_any(subtitle_extensions_v, extension); }
 
 [[nodiscard]] auto get_media_file_type(fs::path const& file) -> std::optional<MediaFileType>;
+
+[[nodiscard]] auto interpolate_video(fs::path const& path, Environment const& environment, Expression const& directory, Expression const& video) -> fs::path;
 
 template <typename FormatterT>
 [[nodiscard]] auto get_name_for() -> std::string_view {

@@ -172,4 +172,15 @@ auto util::get_media_file_type(fs::path const& file) -> std::optional<MediaFileT
 	}
 	return {};
 }
+
+auto util::interpolate_video(fs::path const& path, Environment const& environment, Expression const& directory, Expression const& video) -> fs::path {
+	auto ret = fs::path{environment.interpolate(video)};
+	if (ret.empty()) { return {}; }
+
+	ret += path.extension();
+	if (!path.has_parent_path()) { return ret; }
+
+	auto const dirname = environment.interpolate(directory);
+	return prefix_parent(path.parent_path(), dirname) / ret;
+}
 } // namespace vifo
