@@ -18,8 +18,8 @@
 namespace vifo::util {
 namespace fs = std::filesystem;
 
-inline constexpr auto regex_season_id_v = std::string_view{R"((S\d{2}))"};
-inline constexpr auto regex_episode_id_v = std::string_view{R"((S\d{2}E\d{2}))"};
+inline constexpr auto regex_season_id_v = std::string_view{R"(([Ss]\d{2}))"};
+inline constexpr auto regex_episode_id_v = std::string_view{R"(([Ss]\d{2}[Ee]\d{2}))"};
 inline constexpr auto regex_year_v = std::string_view{R"(([1-9]\d{3}))"};
 inline constexpr auto regex_resolution_v = std::string_view{R"(([1-9]\d{2}\d?p))"};
 
@@ -36,6 +36,7 @@ void join_to(std::string& out, std::string_view item, std::string_view delim = "
 [[nodiscard]] auto path_if_exists(std::string_view path) -> fs::path;
 [[nodiscard]] auto path_if_directory(std::string_view path) -> fs::path;
 [[nodiscard]] auto to_relative(fs::path const& parent, fs::path const& target) -> fs::path;
+[[nodiscard]] auto is_parent(fs::path const& parent, fs::path const& subpath) -> bool;
 [[nodiscard]] auto sanitize_for_path(std::string_view text, char replace = '\0') -> std::string;
 auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwrite) -> std::int64_t;
 

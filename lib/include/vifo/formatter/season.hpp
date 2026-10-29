@@ -6,13 +6,13 @@
 namespace vifo::formatter {
 class Season : public Video {
   public:
-	using Video::Video;
-
 	using Format = SeasonFormat;
 
 	[[nodiscard]] static auto create(omdb::IService const& omdb_service, Format const& format = {}) -> Result<Season>;
 
   private:
+	using Video::Video;
+
 	[[nodiscard]] auto do_generate_manifest(fs::path const& directory) -> Result<Manifest> final;
 
 	interpolator::Season m_season{};

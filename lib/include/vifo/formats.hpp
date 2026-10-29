@@ -43,13 +43,14 @@ struct SeasonFormat {
 
 struct SeriesFormat {
 	interpolator::TitleFormat directory{};
+	SeasonFormat season{};
 };
 } // namespace formatter
 
 struct Formats {
 	[[nodiscard]] constexpr auto to_movie_format() const -> formatter::MovieFormat { return {.movie = movie, .subtitle = subtitle}; }
 	[[nodiscard]] constexpr auto to_season_format() const -> formatter::SeasonFormat { return {.season = season, .subtitle = subtitle}; }
-	[[nodiscard]] constexpr auto to_series_format() const -> formatter::SeriesFormat { return {.directory = series}; }
+	[[nodiscard]] constexpr auto to_series_format() const -> formatter::SeriesFormat { return {.directory = series, .season = to_season_format()}; }
 
 	formatter::PatternSwapFormat pattern_swap{};
 	interpolator::TitleFormat movie{};

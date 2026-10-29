@@ -1,5 +1,6 @@
 #include "vifo/formatter/series.hpp"
 #include "detail/common.hpp"
+#include "vifo/formatter/season.hpp"
 #include "vifo/manifest.hpp"
 #include "vifo/types.hpp"
 #include "vifo/util/util.hpp"
@@ -9,6 +10,7 @@
 namespace vifo::formatter {
 auto Series::create(omdb::IService const& omdb_service, Format const& format) -> Result<Series> {
 	auto ret = Series{omdb_service};
+	ret.m_season_format = format.season;
 	return interpolator::Title::create(format.directory).transform([&](interpolator::Title formatter) {
 		ret.m_title = std::move(formatter);
 		return std::move(ret);
@@ -32,18 +34,36 @@ auto Series::do_generate_manifest(fs::path const& directory) -> Result<Manifest>
 	m_title.set_title(std::move(omdb_series->payload.title));
 	m_title.set_year(omdb_series->payload.year);
 
-	auto ret = Manifest{.parent = directory.parent_path()};
+	auto ret = Manifest{.parent = path->parent_path()};
 
-	auto entry = Manifest::Entry{.source = util::to_relative(ret.parent, *path), .type = MediaFileType::Directory};
-	entry.destination = m_title.format_directory(entry.source);
-	if (entry.destination != entry.source) {
-		if (entry.destination.empty()) {
-			ret.orphans.push_back(std::move(entry));
-		} else {
-			ret.entries.push_back(std::move(entry));
-		}
+	auto series_directory = Manifest::Entry{.source = util::to_relative(ret.parent, *path), .type = MediaFileType::Directory};
+	series_directory.destination = m_title.format_directory(series_directory.source);
+	if (series_directory.destination.empty()) {
+		ret.orphans.push_back(std::move(series_directory));
+		return ret;
+	}
+
+	add_seasons(ret, series_directory);
+
+	if (ret.entries.empty() && ret.orphans.empty() && series_directory.source != series_directory.destination) {
+		ret.entries.push_back(std::move(series_directory));
 	}
 
 	return ret;
+}
+
+void Series::add_seasons(Manifest& out, Manifest::Entry const& series_directory) const {
+	auto season = Season::create(*m_omdb_service, m_season_format);
+	if (!season) { return; }
+
+	auto const source = out.parent / series_directory.source;
+	for (auto const& it : fs::directory_iterator{source}) {
+		if (!it.is_directory()) { continue; }
+
+		auto manifest = season->generate_manifest(it.path());
+		if (!manifest) { continue; }
+
+		out.merge_child(*manifest, series_directory.destination);
+	}
 }
 } // namespace vifo::formatter

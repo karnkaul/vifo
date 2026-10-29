@@ -22,16 +22,14 @@ void Title::set_year(int const year) { m_environment.set_symbol(year_identifier_
 
 auto Title::format_dirname() const -> std::string { return m_environment.interpolate(m_directory); }
 
-auto Title::format_directory(fs::path const& directory) const -> fs::path {
-	if (!fs::is_directory(directory)) { return {}; }
-	return util::prefix_parent(directory, format_dirname());
-}
+auto Title::format_directory(fs::path const& directory) const -> fs::path { return util::prefix_parent(directory, format_dirname()); }
 
 auto Title::interpolate_video(fs::path const& video) -> fs::path {
 	auto ret = fs::path{m_environment.interpolate(m_video)};
+	if (ret.empty()) { return {}; }
+
 	ret += video.extension();
 	if (!video.has_parent_path()) { return ret; }
-
-	return format_directory(video.parent_path()) / ret;
+	return video.parent_path() / ret;
 }
 } // namespace vifo::interpolator

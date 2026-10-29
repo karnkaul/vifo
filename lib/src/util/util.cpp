@@ -99,6 +99,11 @@ auto util::to_relative(fs::path const& parent, fs::path const& target) -> fs::pa
 	return fs::relative(target, parent);
 }
 
+auto util::is_parent(fs::path const& parent, fs::path const& subpath) -> bool {
+	if (!parent.is_absolute() || !subpath.is_absolute()) { return false; }
+	return subpath.generic_string().starts_with(parent.generic_string());
+}
+
 auto util::sanitize_for_path(std::string_view const text, char const replace) -> std::string {
 	static constexpr auto forbidden_v = std::array{'<', '>', ':', '\"', '|', '?', '*'};
 	auto ret = std::string{};

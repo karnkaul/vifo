@@ -76,4 +76,21 @@ auto Manifest::transform(Operation const operation, bool const overwrite, OnTran
 	}
 	return ret;
 }
+
+auto Manifest::merge_child(Manifest const& child, fs::path const& destination_directory) -> bool {
+	if (!util::is_parent(parent, child.parent) || !destination_directory.is_relative()) { return false; }
+
+	auto const source_prefix = fs::relative(child.parent, parent);
+	auto const destination_prefix = util::prefix_parent(source_prefix, destination_directory);
+	for (auto const& in : child.entries) {
+		auto out = Entry{
+			.source = source_prefix / in.source,
+			.destination = destination_prefix / in.destination,
+		};
+		entries.push_back(std::move(out));
+	}
+	for (auto const& entry : child.orphans) { orphans.push_back(Entry{.source = source_prefix / entry.source}); }
+
+	return true;
+}
 } // namespace vifo

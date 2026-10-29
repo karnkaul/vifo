@@ -15,6 +15,9 @@ class Series : public Omdb {
   private:
 	[[nodiscard]] auto do_generate_manifest(fs::path const& directory) -> Result<Manifest> final;
 
+	void add_seasons(Manifest& out, Manifest::Entry const& series_directory) const;
+
 	interpolator::Title m_title{};
+	SeasonFormat m_season_format{};
 };
 } // namespace vifo::formatter

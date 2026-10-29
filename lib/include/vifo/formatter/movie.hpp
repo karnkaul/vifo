@@ -6,16 +6,15 @@
 namespace vifo::formatter {
 class Movie : public Video {
   public:
-	using Video::Video;
-
 	using Format = MovieFormat;
 
 	[[nodiscard]] static auto create(omdb::IService const& omdb_service, Format const& format = {}) -> Result<Movie>;
 
   private:
+	using Video::Video;
+
 	[[nodiscard]] auto do_generate_manifest(fs::path const& directory) -> Result<Manifest> final;
 
 	interpolator::Title m_movie{};
-	// TODO: format from json
 };
 } // namespace vifo::formatter

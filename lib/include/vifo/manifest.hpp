@@ -31,6 +31,7 @@ struct Manifest {
 	[[nodiscard]] auto format_orphans_table() const -> std::string;
 
 	[[nodiscard]] auto transform(Operation operation, bool overwrite, OnTransformed on_transformed = {}) const -> Transaction;
+	auto merge_child(Manifest const& child, fs::path const& destination_directory) -> bool;
 
 	fs::path parent{};
 	std::vector<Entry> entries{};
