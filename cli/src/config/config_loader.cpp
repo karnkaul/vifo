@@ -58,7 +58,7 @@ auto ConfigLoader::try_load_json(fs::path const& path) -> bool {
 }
 
 auto ConfigLoader::load_json(fs::path path) -> bool {
-	auto result = dj::Json::from_file(path.generic_string(), dj::ParseMode::Jsonc);
+	auto result = dj::Json::from_file(path.generic_string());
 	if (!result) { return false; }
 
 	m_source = std::move(path);
