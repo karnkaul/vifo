@@ -14,18 +14,18 @@ class Video : public Omdb {
 	std::string subtitles_dirname{"subs"};
 
   protected:
-	class Builder;
+	class Processor;
 
-	[[nodiscard]] auto create_builder(interpolator::IVideo& interpolator, fs::path manifest_parent) -> Builder;
+	[[nodiscard]] auto create_video_processor(interpolator::IVideo& interpolator, fs::path manifest_parent) -> Processor;
 
 	interpolator::Subtitle m_subtitle{};
 };
 
-class Video::Builder {
+class Video::Processor {
   public:
-	explicit Builder(Video& formatter, interpolator::IVideo& interpolator, fs::path manifest_parent);
+	explicit Processor(Video& formatter, interpolator::IVideo& interpolator, fs::path manifest_parent);
 
-	void process_video(MediaFile video, std::vector<MediaFile>& out_subtitles);
+	void process_video(MediaFile const& video, std::vector<MediaFile>& out_subtitles);
 
 	Manifest manifest{};
 

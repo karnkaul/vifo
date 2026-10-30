@@ -4,9 +4,6 @@
 #include "vifo/media_file.hpp"
 #include "vifo/transaction.hpp"
 #include "vifo/types.hpp"
-#include <expected>
-#include <string_view>
-#include <vector>
 
 namespace vifo::detail {
 [[nodiscard]] auto to_error(Error::Type type, expression::Token token, std::string_view input, std::string_view msg) -> std::unexpected<Error>;
@@ -22,5 +19,8 @@ namespace vifo::detail {
 
 [[nodiscard]] auto if_directory(fs::path const& path) -> Result<fs::path>;
 
-void filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files);
+[[nodiscard]] auto cleanup_filestem(fs::path const& path) -> std::string;
+
+void filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files, fs::path const& video);
+void ensure_relative_paths(Manifest& out_manifest);
 } // namespace vifo::detail

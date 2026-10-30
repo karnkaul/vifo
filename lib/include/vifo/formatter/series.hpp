@@ -4,10 +4,6 @@
 #include "vifo/omdb.hpp"
 
 namespace vifo::formatter {
-struct SeriesFormat {
-	interpolator::TitleFormat directory{};
-};
-
 class Series : public Omdb {
   public:
 	using Omdb::Omdb;
@@ -16,9 +12,12 @@ class Series : public Omdb {
 
 	[[nodiscard]] static auto create(omdb::IService const& omdb_service, Format const& format = {}) -> Result<Series>;
 
-	[[nodiscard]] auto generate_manifest(fs::path const& directory) -> Result<Manifest> final;
-
   private:
+	[[nodiscard]] auto do_generate_manifest(fs::path const& directory) -> Result<Manifest> final;
+
+	void add_seasons(Manifest& out, Manifest::Entry const& series_directory) const;
+
 	interpolator::Title m_title{};
+	SeasonFormat m_season_format{};
 };
 } // namespace vifo::formatter

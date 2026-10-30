@@ -1,8 +1,9 @@
 #include "detail/common.hpp"
 #include "vifo/media_file.hpp"
-#include "vifo/util/word_scanner.hpp"
+#include "vifo/util/util.hpp"
+#include <algorithm>
 #include <format>
-#include <string_view>
+#include <ranges>
 
 namespace vifo {
 namespace {
@@ -11,15 +12,15 @@ namespace {
 }
 
 [[nodiscard]] auto is_en_subtitle(fs::path const& path) {
-	auto stem = path.stem().string();
-	for (char& c : stem) { c = char(std::tolower(static_cast<unsigned char>(c))); }
+	auto stem = detail::cleanup_filestem(path);
+	for (char& c : stem) { c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); }
 
-	auto scanner = util::WordScanner{stem};
-	auto word = util::WordToken{};
-	while (scanner.next(word)) {
-		if (word.lexeme == "en" || word.lexeme == "eng" || word.lexeme == "english") { return true; }
-	}
-	return false;
+	static constexpr auto const pred = [](auto const it) {
+		auto const word = std::string_view{it};
+		return word == "en" || word == "eng" || word == "english";
+	};
+
+	return std::ranges::any_of(std::views::split(stem, ' '), pred);
 }
 } // namespace
 
@@ -38,14 +39,39 @@ auto detail::if_directory(fs::path const& path) -> Result<fs::path> {
 	return fs::canonical(path);
 }
 
-void detail::filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files) {
+auto detail::cleanup_filestem(fs::path const& path) -> std::string {
+	auto ret = path.stem().generic_string();
+	std::ranges::replace(ret, '.', ' ');
+	std::ranges::replace(ret, '_', ' ');
+	return ret;
+}
+
+void detail::filter_en_subtitles(Manifest& out_manifest, std::vector<MediaFile>& out_files, fs::path const& video) {
+	auto const video_stem = video.stem();
 	auto const transfer = [&](MediaFile& file) {
+		if (file.path.stem() == video_stem) { return false; }
 		if (!is_en_subtitle(file.path)) {
-			out_manifest.orphans.push_back(Manifest::Entry{.source = std::move(file.path), .type = file.type});
+			auto entry = Manifest::Entry{.source = util::to_relative(out_manifest.parent, file.path), .type = file.type};
+			out_manifest.orphans.push_back(std::move(entry));
 			return true;
 		}
 		return false;
 	};
 	std::erase_if(out_files, transfer);
+}
+
+void detail::ensure_relative_paths(Manifest& out_manifest) {
+	if (out_manifest.parent.empty()) { return; }
+
+	auto const ensure_relative = [&](fs::path& out_path) {
+		if (out_path.is_relative()) { return; }
+		out_path = util::to_relative(out_manifest.parent, out_path);
+	};
+
+	for (auto& entry : out_manifest.entries) {
+		ensure_relative(entry.source);
+		ensure_relative(entry.destination);
+	}
+	for (auto& entry : out_manifest.orphans) { ensure_relative(entry.source); }
 }
 } // namespace vifo

@@ -3,14 +3,11 @@
 #include "vifo/path/transformer.hpp"
 #include "vifo/util/util.hpp"
 #include <array>
-#include <filesystem>
 #include <ranges>
 
 namespace vifo {
 auto Transaction::format_destinations_table(fs::path const& parent, std::span<Record const> records) -> std::string {
-	static constexpr auto headers_v = std::array{
-		"destination",
-	};
+	static constexpr auto headers_v = std::array{"destination"};
 	auto const per_destination = [&parent](std::vector<std::string>& row, Record const& record) {
 		row.push_back(util::to_relative(parent, record.destination).generic_string());
 	};

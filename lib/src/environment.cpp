@@ -4,10 +4,15 @@
 #include <algorithm>
 
 namespace vifo {
-auto Environment::find_symbol(std::string_view const name) const -> klib::Ptr<Symbol> {
-	auto const it = std::ranges::find_if(symbols, [name](auto const& b) { return b->get_name() == name; });
+auto Environment::find_symbol(std::string_view const name) const -> klib::Ptr<Symbol const> {
+	auto const it = std::ranges::find_if(symbols, [name](Symbol const& b) { return b.get_name() == name; });
 	if (it == symbols.end()) { return nullptr; }
-	return it->get();
+	return &*it;
+}
+
+auto Environment::find_symbol(std::string_view name) -> klib::Ptr<Symbol> {
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+	return const_cast<Symbol*>(std::as_const(*this).find_symbol(name).get());
 }
 
 auto Environment::get_value(std::string_view const name) const -> std::string_view {
@@ -18,8 +23,8 @@ auto Environment::get_value(std::string_view const name) const -> std::string_vi
 void Environment::set_symbol(std::string_view const name, std::string value) {
 	auto symbol = find_symbol(name);
 	if (!symbol) {
-		symbols.push_back(std::make_unique<Symbol>(std::string{name}));
-		symbol = symbols.back().get();
+		symbols.emplace_back(std::string{name});
+		symbol = &symbols.back();
 	}
 	symbol->value = std::move(value);
 }

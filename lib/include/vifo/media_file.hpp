@@ -9,6 +9,8 @@ namespace fs = std::filesystem;
 struct MediaFile {
 	using Type = MediaFileType;
 
+	struct Metadata;
+
 	fs::path path{};
 	std::int64_t size{};
 	Type type{};

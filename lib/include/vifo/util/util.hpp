@@ -1,5 +1,9 @@
 #pragma once
 #include "klib/cli/text_table.hpp"
+#include "vifo/formats.hpp"
+#include "vifo/formatter/movie.hpp"
+#include "vifo/formatter/season.hpp"
+#include "vifo/formatter/series.hpp"
 #include "vifo/types.hpp"
 #include <algorithm>
 #include <array>
@@ -13,8 +17,19 @@
 
 namespace vifo::util {
 namespace fs = std::filesystem;
+using expression::Expression;
+
+inline constexpr auto regex_season_id_v = std::string_view{R"(([Ss]\d{2}))"};
+inline constexpr auto regex_episode_id_v = std::string_view{R"(([Ss]\d{2}[Ee]\d{2}))"};
+inline constexpr auto regex_year_v = std::string_view{R"(([1-9]\d{3}))"};
+inline constexpr auto regex_resolution_v = std::string_view{R"(([1-9]\d{2}\d?p))"};
 
 [[nodiscard]] auto to_int(std::string_view text, int fallback = 0) -> int;
+
+[[nodiscard]] auto verify_non_empty(interpolator::PatternSwapFormat const& format) -> Result<void>;
+void ensure_nonempty(interpolator::TitleFormat& out);
+void ensure_nonempty(interpolator::SubtitleFormat& out);
+void ensure_nonempty(interpolator::SeasonFormat& out);
 
 void join_to(std::string& out, std::string_view item, std::string_view delim = " ");
 [[nodiscard]] auto join(std::span<std::string_view const> items, std::string_view delim = " ") -> std::string;
@@ -22,37 +37,53 @@ void join_to(std::string& out, std::string_view item, std::string_view delim = "
 [[nodiscard]] auto path_if_exists(std::string_view path) -> fs::path;
 [[nodiscard]] auto path_if_directory(std::string_view path) -> fs::path;
 [[nodiscard]] auto to_relative(fs::path const& parent, fs::path const& target) -> fs::path;
+[[nodiscard]] auto is_parent(fs::path const& parent, fs::path const& subpath) -> bool;
 [[nodiscard]] auto sanitize_for_path(std::string_view text, char replace = '\0') -> std::string;
 auto ghost_copy(fs::path const& source, fs::path const& destination, bool overwrite) -> std::int64_t;
 
 [[nodiscard]] auto prefix_parent(fs::path const& parent_source, fs::path const& target) -> fs::path;
 [[nodiscard]] auto concat_path(fs::path const& prefix, fs::path const& subpath) -> fs::path;
 
-[[nodiscard]] auto identify_title(fs::path const& path) -> std::string;
-[[nodiscard]] auto trim_identified_title(std::string_view& out_text) -> std::string;
-[[nodiscard]] auto trim_identified_year(std::string_view& out_text) -> std::string;
-
-[[nodiscard]] auto ignore_for_title(std::string_view word) -> bool;
-
 template <typename ContainerT, std::equality_comparable Type>
 constexpr auto match_any(ContainerT const& container, Type const& t) {
 	return std::ranges::find(container, t) != std::end(container);
 }
 
-constexpr auto video_extensions_v = std::array{
-	".mp4", ".mkv", ".avi", ".m4v", ".webm",
-};
+constexpr auto video_extensions_v = std::array{".mp4", ".mkv", ".avi", ".m4v", ".webm"};
 constexpr auto is_video_file(std::string_view const extension) { return match_any(video_extensions_v, extension); }
 
-constexpr auto subtitle_extensions_v = std::array{
-	".srt",
-};
+constexpr auto subtitle_extensions_v = std::array{".srt"};
 constexpr auto is_subtitle_file(std::string_view const extension) { return match_any(subtitle_extensions_v, extension); }
 
 [[nodiscard]] auto get_media_file_type(fs::path const& file) -> std::optional<MediaFileType>;
 
-[[nodiscard]] auto extract_season_id(std::string const& name) -> std::optional<SeasonId>;
-[[nodiscard]] auto extract_episode_id(std::string const& name) -> std::optional<EpisodeId>;
+[[nodiscard]] auto interpolate_video(fs::path const& path, Environment const& environment, Expression const& directory, Expression const& video) -> fs::path;
+
+template <typename FormatterT>
+[[nodiscard]] auto get_name_for() -> std::string_view {
+	if constexpr (std::same_as<FormatterT, formatter::Movie>) {
+		return "movie";
+	} else if constexpr (std::same_as<FormatterT, formatter::Season>) {
+		return "season";
+	} else if constexpr (std::same_as<FormatterT, formatter::Series>) {
+		return "series";
+	} else {
+		static_assert(false, "Invalid FormatterT");
+	}
+}
+
+template <typename FormatterT>
+[[nodiscard]] auto get_format_for(Formats const& formats) {
+	if constexpr (std::same_as<FormatterT, formatter::Movie>) {
+		return formats.to_movie_format();
+	} else if constexpr (std::same_as<FormatterT, formatter::Season>) {
+		return formats.to_season_format();
+	} else if constexpr (std::same_as<FormatterT, formatter::Series>) {
+		return formats.to_series_format();
+	} else {
+		static_assert(false, "Invalid FormatterT");
+	}
+}
 
 template <typename HeadersT, typename ContainerT, typename ProjT>
 [[nodiscard]] auto format_enumerated_table(HeadersT const& headers, ContainerT const& entries, ProjT per_entry) -> std::string {

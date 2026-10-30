@@ -2,7 +2,7 @@
   "packages": [
     {
       "uri": "karnkaul/djson",
-      "branch": "v3.1.5"
+      "branch": "v3.1.6"
     },
     {
       "uri": "karnkaul/kcurl",
