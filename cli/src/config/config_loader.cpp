@@ -67,7 +67,7 @@ auto ConfigLoader::load_json(fs::path path) -> bool {
 }
 
 void ConfigLoader::populate_config() {
-	if (auto const& omdb_api_token = m_json["omdb_api_token"]) { from_json(omdb_api_token, config.omdb_api_token); }
-	if (auto const& formats = m_json["formats"]) { from_json(formats, config.formats); }
+	if (auto const& omdb_api_token = m_json.at("omdb_api_token")) { from_json(omdb_api_token, config.omdb_api_token); }
+	if (auto const& formats = m_json.at("formats")) { from_json(formats, config.formats); }
 }
 } // namespace vifo::cli
